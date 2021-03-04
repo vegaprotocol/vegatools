@@ -40,8 +40,8 @@ func UnsafeWithdrawImpersonateValidators(
 	msgs := map[string]struct{}{}
 
 	var finalmsg string
-	expiry := time.Now().Unix()
-
+	now := time.Now()
+	expiry := now.Add(2 * time.Hour).Unix()
 	nonce := big.NewInt(expiry + 42)
 
 	for _, priv := range privKeys {
