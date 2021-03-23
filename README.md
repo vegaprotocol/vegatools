@@ -1,3 +1,5 @@
+[![Actions Status](https://github.com/vegaprotocol/vegatools/workflows/build/badge.svg)](https://github.com/vegaprotocol/vegatools/actions)
+
 VEGATOOLS
 =========
 
