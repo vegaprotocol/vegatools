@@ -2,7 +2,7 @@
 
 name: YAML lint
 
-on:
+"on":
   pull_request:
     branches: [main, develop]
   # Allows you to run this workflow manually from the Actions tab
