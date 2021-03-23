@@ -34,8 +34,8 @@ jobs:
       - name: Build
         run: make build
 
-      #- name: Tests
-      #  run: make test
+      - name: Tests
+        run: make test
 
       - name: Lint
         run: make lint

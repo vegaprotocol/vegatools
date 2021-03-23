@@ -9,4 +9,5 @@ require (
 	github.com/spf13/cobra v1.1.3 // indirect
 	github.com/vegaprotocol/api-clients v0.31.0 // indirect
 	google.golang.org/grpc v1.35.0 // indirect
+	github.com/stretchr/testify v1.6.1
 )
