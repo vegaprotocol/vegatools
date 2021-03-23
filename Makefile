@@ -1,6 +1,4 @@
 
-GO_FLAGS := -ldflags
-
 .PHONY: deps
 deps:
 	@go get -t -d ./...
@@ -8,7 +6,7 @@ deps:
 .PHONY: build
 build:
 	@mkdir -p build
-	@go build $(GO_FLAGS) -o ./build/vegatools ./
+	@go build -o ./build/vegatools ./
 
 .PHONY: lint
 lint:
