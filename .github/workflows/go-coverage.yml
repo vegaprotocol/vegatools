@@ -18,13 +18,12 @@ jobs:
         with:
           go-version: 1.15
         id: go
-      
+
       - name: Check out code
         uses: actions/checkout@v2
-      
+
       - name: Get dependencies
         run: make deps
 
       - name: Get coverage
         run: make coverage
-
