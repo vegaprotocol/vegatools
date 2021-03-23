@@ -20,6 +20,7 @@ const (
 	withdrawContractName = "withdraw_asset"
 )
 
+// UnsafeWithdrawImpersonateValidators is the main function of `withdraw` package
 func UnsafeWithdrawImpersonateValidators(
 	privKeys []string,
 	receiverAddress string,

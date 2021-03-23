@@ -90,6 +90,7 @@ func run(
 	return nil
 }
 
+// Run is the main function of `stream` package
 func Run(
 	batchSize uint,
 	party, market, serverAddr string,

@@ -1,0 +1,46 @@
+---
+
+name: Go
+
+"on":
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, develop]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch: null
+
+jobs:
+
+  build:
+    name: Build on ${{ matrix.os }} with Go ${{ matrix.go }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        go: ['1.16', '1.15']
+    steps:
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+        id: go
+
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: make deps
+
+      - name: Build
+        run: make build
+
+      - name: Tests
+        run: make test
+
+      - name: Lint
+        run: make lint
+
+      - name: Vet
+        run: make vet
