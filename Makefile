@@ -1,19 +1,5 @@
-ifeq ($(CI),)
-    # Not in CI
-    VERSION := dev-$(USER)
-    VERSION_HASH := $(shell git rev-parse HEAD | cut -b1-8)
-else
-    # In CI
-    ifneq ($(RELEASE_VERSION),)
-        VERSION := $(RELEASE_VERSION)
-    else
-        # No tag, so make one
-        VERSION := $(shell git describe --tags 2>/dev/null)
-    endif
-    VERSION_HASH := $(shell echo "$(GITHUB_SHA)" | cut -b1-8)
-endif
 
-GO_FLAGS := -ldflags "-X main.Version=$(VERSION) -X main.VersionHash=$(VERSION_HASH)"
+GO_FLAGS := -ldflags
 
 .PHONY: deps
 deps:

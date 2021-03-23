@@ -1,4 +1,4 @@
-package main //nolint:testpackage
+package main
 
 import (
 	"io/ioutil"
@@ -20,7 +20,7 @@ func captureOutput(f func()) string {
 	return string(out)
 }
 
-func Test_main(t *testing.T) {
+func TestMain(t *testing.T) {
 	output := captureOutput(func() {
 		main()
 	})

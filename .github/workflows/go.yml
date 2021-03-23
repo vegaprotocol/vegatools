@@ -8,7 +8,7 @@ name: Go
   pull_request:
     branches: [main, develop]
   # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+  workflow_dispatch: null
 
 jobs:
 
@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        go: ['1.15', '1.14']
+        go: ['1.16', '1.15']
     steps:
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v2
