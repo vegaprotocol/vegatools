@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vegaprotocol/api-clients/go/generated/code.vegaprotocol.io/vega/proto"
-	"github.com/vegaprotocol/api-clients/go/generated/code.vegaprotocol.io/vega/proto/api"
+	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto"
+	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto/api"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
