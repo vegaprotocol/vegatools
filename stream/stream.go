@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto"
@@ -75,9 +76,8 @@ func run(
 				if err != nil {
 					log.Printf("unable to marshal event err=%v", err)
 				}
-
 				if logFormat {
-					log.Printf("%v\n", estr)
+					fmt.Printf("{\"time\":\"%v\",%v\n", time.Now().UTC().Format(time.RFC3339Nano), estr[1:])
 				} else {
 					fmt.Printf("%v\n", estr)
 				}
@@ -101,7 +101,6 @@ func Run(
 	party, market, serverAddr string,
 	logFormat bool,
 ) error {
-	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds)
 	flag.Parse()
 
 	if len(serverAddr) <= 0 {
