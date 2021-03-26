@@ -13,6 +13,8 @@ var rootCmd = &cobra.Command{
 	Short: "A collection of tools to speak with a vega node",
 }
 
+// Execute is the main function of `cmd` package
+// Usually called by the `main.main()`
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

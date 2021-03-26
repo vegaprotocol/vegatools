@@ -9,16 +9,19 @@ import (
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
+// Store holds information about Key Store
 type Store struct {
 	ks *keystore.KeyStore
 }
 
+// NewStore creates new instance of Store
 func NewStore() *Store {
 	return &Store{
 		ks: keystore.NewKeyStore("./unsafe_withdraw_keystore", keystore.StandardScryptN, keystore.StandardScryptP),
 	}
 }
 
+// SignWithPassphrase sign to the Key Store
 func (s *Store) SignWithPassphrase(address, passphrase string, data []byte) ([]byte, error) {
 	acc := accounts.Account{
 		Address: ethcmn.Address(ethcmn.HexToAddress(address)),
@@ -26,6 +29,7 @@ func (s *Store) SignWithPassphrase(address, passphrase string, data []byte) ([]b
 	return s.ks.SignHashWithPassphrase(acc, passphrase, data)
 }
 
+// Import gets account address from Key Store
 func (s *Store) Import(privKey, passphrase string) (string, error) {
 	privBytes, err := hex.DecodeString(privKey)
 	if err != nil {
