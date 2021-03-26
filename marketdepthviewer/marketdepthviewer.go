@@ -1,4 +1,4 @@
-package marketDepthViewer
+package marketdepthviewer
 
 import (
 	"bufio"
@@ -31,7 +31,7 @@ var (
 	}
 )
 
-func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketId string) *proto.Market {
+func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string) *proto.Market {
 	marketsRequest := &api.MarketsRequest{}
 
 	marketsResponse, err := dataclient.Markets(context.Background(), marketsRequest)
@@ -41,7 +41,7 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketId string
 
 	// If the user has picked a market already that is valid, use that
 	for _, market := range marketsResponse.Markets {
-		if market.Id == marketId {
+		if market.Id == marketID {
 			return market
 		}
 	}
@@ -260,7 +260,8 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 	}
 }
 
-func Run(gRPCAddress, marketId string) error {
+// Run is the main entry point for this tool
+func Run(gRPCAddress, marketID string) error {
 	// Create connection to vega
 	connection, err := grpc.Dial(gRPCAddress, grpc.WithInsecure())
 	if err != nil {
@@ -271,7 +272,7 @@ func Run(gRPCAddress, marketId string) error {
 	dataclient := api.NewTradingDataServiceClient(connection)
 
 	// Look up all the markets on this node
-	market = getMarketToDisplay(dataclient, marketId)
+	market = getMarketToDisplay(dataclient, marketID)
 	if market == nil {
 		return fmt.Errorf("Failed to get market details")
 	}
