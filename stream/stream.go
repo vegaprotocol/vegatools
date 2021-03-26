@@ -23,6 +23,7 @@ func run(
 	wg *sync.WaitGroup,
 	batchSize uint,
 	party, market, serverAddr string,
+	logFormat bool,
 ) error {
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
@@ -75,7 +76,11 @@ func run(
 					log.Printf("unable to marshal event err=%v", err)
 				}
 
-				fmt.Printf("%v\n", estr)
+				if logFormat {
+					log.Printf("%v\n", estr)
+				} else {
+					fmt.Printf("%v\n", estr)
+				}
 			}
 			if batchSize > 0 {
 				if err := stream.SendMsg(poll); err != nil {
@@ -94,7 +99,9 @@ func run(
 func Run(
 	batchSize uint,
 	party, market, serverAddr string,
+	logFormat bool,
 ) error {
+	log.SetFlags(log.LUTC | log.Ldate | log.Lmicroseconds)
 	flag.Parse()
 
 	if len(serverAddr) <= 0 {
@@ -104,7 +111,7 @@ func Run(
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := sync.WaitGroup{}
-	if err := run(ctx, cancel, &wg, batchSize, party, market, serverAddr); err != nil {
+	if err := run(ctx, cancel, &wg, batchSize, party, market, serverAddr, logFormat); err != nil {
 		return fmt.Errorf("error when starting the stream: %v", err)
 	}
 

@@ -12,6 +12,7 @@ var (
 		party      string
 		market     string
 		serverAddr string
+		logFormat  bool
 	}
 
 	streamCmd = &cobra.Command{
@@ -27,9 +28,10 @@ func init() {
 	streamCmd.Flags().StringVarP(&streamOpts.party, "party", "p", "", "name of the party to listen for updates")
 	streamCmd.Flags().StringVarP(&streamOpts.market, "market", "m", "", "name of the market to listen for updates")
 	streamCmd.Flags().StringVarP(&streamOpts.serverAddr, "address", "a", "", "address of the grpc server")
+	streamCmd.Flags().BoolVar(&streamOpts.logFormat, "log-format", false, "output stream data in log format")
 	streamCmd.MarkFlagRequired("address")
 }
 
 func runStream(cmd *cobra.Command, args []string) error {
-	return stream.Run(streamOpts.batchSize, streamOpts.party, streamOpts.market, streamOpts.serverAddr)
+	return stream.Run(streamOpts.batchSize, streamOpts.party, streamOpts.market, streamOpts.serverAddr, streamOpts.logFormat)
 }
