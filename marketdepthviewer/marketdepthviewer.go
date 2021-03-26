@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"github.com/vegaprotocol/api-clients/go/generated/code.vegaprotocol.io/vega/proto"
+	"github.com/vegaprotocol/api-clients/go/generated/code.vegaprotocol.io/vega/proto/api"
+
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
 )
@@ -30,12 +31,19 @@ var (
 	}
 )
 
-func getMarketToDisplay(dataclient protoapi.TradingDataServiceClient) *proto.Market {
-	marketsRequest := &protoapi.MarketsRequest{}
+func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketId string) *proto.Market {
+	marketsRequest := &api.MarketsRequest{}
 
 	marketsResponse, err := dataclient.Markets(context.Background(), marketsRequest)
 	if err != nil {
 		return nil
+	}
+
+	// If the user has picked a market already that is valid, use that
+	for _, market := range marketsResponse.Markets {
+		if market.Id == marketId {
+			return market
+		}
 	}
 
 	// Print out all the markets with their index
@@ -71,9 +79,9 @@ func getMarketToDisplay(dataclient protoapi.TradingDataServiceClient) *proto.Mar
 	return marketsResponse.Markets[index]
 }
 
-func getMarketDepth(dataclient protoapi.TradingDataServiceClient) {
-	req := &protoapi.MarketDepthSubscribeRequest{
-		MarketId: args.marketID,
+func getMarketDepth(dataclient api.TradingDataServiceClient) {
+	req := &api.MarketDepthSubscribeRequest{
+		MarketId: market.Id,
 	}
 	stream, err := dataclient.MarketDepthSubscribe(context.Background(), req)
 	if err != nil {
@@ -90,9 +98,9 @@ func getMarketDepth(dataclient protoapi.TradingDataServiceClient) {
 	processMarketDepth(stream)
 }
 
-func getMarketDepthUpdates(dataclient protoapi.TradingDataServiceClient) {
+func getMarketDepthUpdates(dataclient api.TradingDataServiceClient) {
 
-	req := &protoapi.MarketDepthUpdatesSubscribeRequest{
+	req := &api.MarketDepthUpdatesSubscribeRequest{
 		MarketId: market.Id,
 	}
 	stream, err := dataclient.MarketDepthUpdatesSubscribe(context.Background(), req)
@@ -109,7 +117,7 @@ func getMarketDepthUpdates(dataclient protoapi.TradingDataServiceClient) {
 	processMarketDepthUpdates(stream)
 }
 
-func processMarketDepthUpdates(stream protoapi.TradingDataService_MarketDepthUpdatesSubscribeClient) {
+func processMarketDepthUpdates(stream api.TradingDataService_MarketDepthUpdatesSubscribeClient) {
 	for {
 		_, err := stream.Recv()
 		if err == io.EOF {
@@ -195,7 +203,7 @@ func drawSequenceNumber(seqNum uint64) {
 	drawString((w/2)-6, 0, whiteStyle, text)
 }
 
-func processMarketDepth(stream protoapi.TradingDataService_MarketDepthSubscribeClient) {
+func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient) {
 	for {
 		o, err := stream.Recv()
 		if err == io.EOF {
@@ -252,22 +260,20 @@ func processMarketDepth(stream protoapi.TradingDataService_MarketDepthSubscribeC
 	}
 }
 
-func Run(gRPCAddress, marketId string) {
+func Run(gRPCAddress, marketId string) error {
 	// Create connection to vega
 	connection, err := grpc.Dial(gRPCAddress, grpc.WithInsecure())
 	if err != nil {
 		// Something went wrong
-		log.Println("Failed to connect to the vega gRPC port: ", err)
-		os.Exit(1)
+		return fmt.Errorf("Failed to connect to the vega gRPC port: %s", err)
 	}
 	defer connection.Close()
-	dataclient := protoapi.NewTradingDataServiceClient(connection)
+	dataclient := api.NewTradingDataServiceClient(connection)
 
 	// Look up all the markets on this node
-	market = getMarketToDisplay(dataclient)
+	market = getMarketToDisplay(dataclient, marketId)
 	if market == nil {
-		log.Println("Failed to get market details, exiting")
-		os.Exit(1)
+		return fmt.Errorf("Failed to get market details")
 	}
 
 	initialiseScreen()

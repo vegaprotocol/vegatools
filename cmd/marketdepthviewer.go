@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"code.vegaprotocol.io/vegatools/marketDepthViewer"
+	marketDepthViewer "code.vegaprotocol.io/vegatools/marketdepthviewer"
+
 	"github.com/spf13/cobra"
 )
 
