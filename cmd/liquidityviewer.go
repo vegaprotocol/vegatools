@@ -25,8 +25,6 @@ func init() {
 	liquidityViewerCmd.Flags().StringVarP(&liquidityViewerOpts.market, "market", "m", "", "name of the market to monitor")
 	liquidityViewerCmd.Flags().StringVarP(&liquidityViewerOpts.serverAddr, "address", "a", "", "address of the grpc server")
 	liquidityViewerCmd.MarkFlagRequired("address")
-	liquidityViewerCmd.MarkFlagRequired("market")
-	//	liquidityViewerCmd.MarkFlagRequired("party")
 }
 
 func runLiquidityViewer(cmd *cobra.Command, args []string) error {
