@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto"
 	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto/api"
@@ -33,6 +32,7 @@ var (
 	acctBond       uint64
 	mapOrders      map[string]*proto.Order = map[string]*proto.Order{}
 	marketData     *proto.MarketData
+	position       *proto.Position
 )
 
 func getLiquidityProvisions(dataclient api.TradingDataServiceClient, marketId string) []*proto.LiquidityProvision {
@@ -104,7 +104,7 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 
 	fmt.Println("Using market:", index)
 
-	return marketsResponse.Markets[index]
+	return validMarkets[index]
 }
 
 func getPartyToDisplay(dataclient api.TradingDataServiceClient, marketID, partyID string) *proto.LiquidityProvision {
@@ -159,6 +159,7 @@ func getAccountDetails(dataclient api.TradingDataServiceClient, marketId, partyI
 	}
 
 	for _, acct := range response.Accounts {
+		log.Println(acct)
 		switch acct.Type {
 		case proto.AccountType_ACCOUNT_TYPE_BOND:
 			acctBond = acct.Balance
@@ -170,186 +171,62 @@ func getAccountDetails(dataclient api.TradingDataServiceClient, marketId, partyI
 	}
 }
 
-func initialiseScreen() error {
-	var e error
-	ts, e = tcell.NewScreen()
-	if e != nil {
-		log.Fatalln("Failed to create new tcell screen", e)
-		return e
+func subscribePositions(dataclient api.TradingDataServiceClient, marketID string, userKey string) {
+	req := &api.PositionsSubscribeRequest{
+		MarketId: marketID,
+		PartyId:  userKey,
+	}
+	stream, err := dataclient.PositionsSubscribe(context.Background(), req)
+	if err != nil {
+		log.Fatalln("Failed to subscribe to positions: ", err)
 	}
 
-	e = ts.Init()
-	if e != nil {
-		log.Fatalln("Failed to initialise the tcell screen", e)
-		return e
-	}
-
-	whiteStyle = tcell.StyleDefault.
-		Background(tcell.ColorReset).
-		Foreground(tcell.ColorWhite)
-	greenStyle = tcell.StyleDefault.
-		Background(tcell.ColorReset).
-		Foreground(tcell.ColorGreen)
-	redStyle = tcell.StyleDefault.
-		Background(tcell.ColorReset).
-		Foreground(tcell.ColorRed)
-
-	return nil
+	// Run in background and process messages
+	go processPositions(stream)
 }
 
-func drawString(x, y int, style tcell.Style, str string) {
-	for i, c := range str {
-		ts.SetContent(x+i, y, c, nil, style)
-	}
-}
-
-func drawScreen() {
-	ts.Clear()
-	drawHeaders()
-	drawTime()
-	drawLP()
-	drawAccounts()
-	drawOrders()
-	drawMarketState()
-	ts.Show()
-}
-
-func drawHeaders() {
-	w, _ := ts.Size()
-
-	// If we have a market name, use that
-	if market != nil {
-		text := fmt.Sprintf("Market: %s [%s]", market.TradableInstrument.Instrument.Name, market.Id)
-		drawString(0, 0, whiteStyle, text)
-	} else {
-		text := fmt.Sprintf("Market: %s", market.Id)
-		drawString(0, 0, whiteStyle, text)
-	}
-	drawString(w-26, 0, whiteStyle, "Last Update Time:")
-}
-
-func drawLP() {
-	w, _ := ts.Size()
-	hw := w / 2
-	buyStartRow := 2
-	buyTitle := "Buy Side Shape"
-	drawString((w/4)-(len(buyTitle)/2), buyStartRow, greenStyle, buyTitle)
-	drawString(0, buyStartRow+1, whiteStyle, "OrderID")
-	drawString(hw/4, buyStartRow+1, whiteStyle, "Reference")
-	drawString(hw/2, buyStartRow+1, whiteStyle, "Offset")
-	drawString((3*hw)/4, buyStartRow+1, whiteStyle, "Proportion")
-	for index, lor := range lp.Buys {
-		buyRow := buyStartRow + index + 2
-		drawString(0, buyRow, whiteStyle, lor.OrderId)
-		drawString(hw/4, buyRow, whiteStyle, lor.LiquidityOrder.Reference.String())
-		offset := strconv.Itoa(int(lor.LiquidityOrder.Offset))
-		drawString(hw/2, buyRow, whiteStyle, offset)
-		proportion := strconv.Itoa(int(lor.LiquidityOrder.Proportion))
-		drawString((3*hw)/4, buyRow, whiteStyle, proportion)
-	}
-
-	sellStartRow := 2
-	sellTitle := "Sell Side Shape"
-	drawString((3*w)/4-(len(sellTitle)/2), sellStartRow, redStyle, sellTitle)
-	drawString(hw, buyStartRow+1, whiteStyle, "OrderID")
-	drawString(hw+(hw/4), buyStartRow+1, whiteStyle, "Reference")
-	drawString(hw+(hw/2), buyStartRow+1, whiteStyle, "Offset")
-	drawString(hw+((3*hw)/4), buyStartRow+1, whiteStyle, "Proportion")
-	for index, lor := range lp.Sells {
-		sellRow := sellStartRow + index + 2
-		drawString(hw, sellRow, whiteStyle, lor.OrderId)
-		drawString(hw+(hw/4), sellRow, whiteStyle, lor.LiquidityOrder.Reference.String())
-		offset := strconv.Itoa(int(lor.LiquidityOrder.Offset))
-		drawString(hw+(hw/2), sellRow, whiteStyle, offset)
-		proportion := strconv.Itoa(int(lor.LiquidityOrder.Proportion))
-		drawString(hw+((hw*3)/4), sellRow, whiteStyle, proportion)
-	}
-}
-
-// Bottom row of display
-func drawMarketState() {
-	if marketData == nil {
-		return
-	}
-
-	w, h := ts.Size()
-
-	text := fmt.Sprintf("Market State: %s", marketData.MarketTradingMode.String())
-	drawString((w+len(text))/2, 0, whiteStyle, text)
-
-	drawString(w-1, h-1, redStyle, "*")
-}
-
-func drawAccounts() {
-	w, h := ts.Size()
-
-	text := fmt.Sprintf("General Account %d", acctGeneral)
-	drawString((0*w)/3, h-1, whiteStyle, text)
-	text = fmt.Sprintf("Margin Account %d", acctMargin)
-	drawString((w-len(text))/2, h-1, whiteStyle, text)
-	text = fmt.Sprintf("Bond Account %d", acctBond)
-	drawString(w-len(text)-1, h-1, whiteStyle, text)
-}
-
-func drawTime() {
-	now := time.Now()
-	w, _ := ts.Size()
-	text := fmt.Sprintf("%02d:%02d:%02d", now.Hour(), now.Minute(), now.Second())
-	drawString(w-8, 0, whiteStyle, text)
-}
-
-func drawOrders() {
-	w, h := ts.Size()
-	hw := w / 2
-	buyStartRow := h / 2
-
-	// Buy header
-	drawString(0, buyStartRow, whiteStyle, "OrderID")
-	drawString(hw/4, buyStartRow, whiteStyle, "Price")
-	drawString(hw/2, buyStartRow, whiteStyle, "Size")
-	drawString((3*hw)/4, buyStartRow, whiteStyle, "Remaining")
-
-	sellStartRow := h / 2
-	drawString(hw, sellStartRow, whiteStyle, "OrderID")
-	drawString(hw+(hw/4), sellStartRow, whiteStyle, "Price")
-	drawString(hw+(hw/2), sellStartRow, whiteStyle, "Size")
-	drawString(hw+((3*hw)/4), sellStartRow, whiteStyle, "Remaining")
-
-	for _, order := range mapOrders {
-		if order != nil {
-			if order.Side == proto.Side_SIDE_BUY {
-				buyStartRow++
-				drawString(0, buyStartRow, whiteStyle, order.Id)
-				drawString(hw/4, buyStartRow, whiteStyle, strconv.FormatUint(order.Price, 10))
-				drawString(hw/2, buyStartRow, whiteStyle, strconv.FormatUint(order.Size, 10))
-				drawString((3*hw)/4, buyStartRow, whiteStyle, strconv.FormatUint(order.Remaining, 10))
-			} else {
-				sellStartRow++
-				drawString(hw, sellStartRow, whiteStyle, order.Id)
-				drawString(hw+(hw/4), sellStartRow, whiteStyle, strconv.FormatUint(order.Price, 10))
-				drawString(hw+(hw/2), sellStartRow, whiteStyle, strconv.FormatUint(order.Size, 10))
-				drawString(hw+((3*hw)/4), sellStartRow, whiteStyle, strconv.FormatUint(order.Remaining, 10))
-			}
+func processPositions(stream api.TradingDataService_PositionsSubscribeClient) {
+	for {
+		o, err := stream.Recv()
+		if err == io.EOF {
+			log.Println("positions: stream closed by server err:", err)
+			break
 		}
+		if err != nil {
+			log.Println("positions: stream closed err:", err)
+			break
+		}
+		position = o.GetPosition()
 	}
 }
 
 func subscribeFeeds(dataclient api.TradingDataServiceClient) {
 	// We need to subscribe to the eventbus so that we can get hold of the
 	// LP, order and margin updates for a party
-	events := []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA,
-		proto.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION,
+	events := []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA}
+
+	eventBusDataReq := &api.ObserveEventBusRequest{
+		Type:     events,
+		MarketId: market.Id,
+	}
+	subscribeEventBus(dataclient, eventBusDataReq, processEventBusData)
+
+	events2 := []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION,
 		proto.BusEventType_BUS_EVENT_TYPE_ORDER,
 		proto.BusEventType_BUS_EVENT_TYPE_ACCOUNT}
-	subscribeEventBus(dataclient, events)
-}
 
-func subscribeEventBus(dataclient api.TradingDataServiceClient, events []proto.BusEventType) {
-	eventBusDataReq := &api.ObserveEventBusRequest{
-		Type: events,
-		//		MarketId: lp.MarketId,
+	eventBusDataReq2 := &api.ObserveEventBusRequest{
+		Type:    events2,
 		PartyId: lp.PartyId,
 	}
+	subscribeEventBus(dataclient, eventBusDataReq2, processEventBusData2)
+
+	subscribePositions(dataclient, market.Id, lp.PartyId)
+}
+
+type eventHandler func(api.TradingDataService_ObserveEventBusClient)
+
+func subscribeEventBus(dataclient api.TradingDataServiceClient, eventBusDataReq *api.ObserveEventBusRequest, fn eventHandler) {
 	// First we have to create the stream
 	stream, err := dataclient.ObserveEventBus(context.Background())
 	if err != nil {
@@ -361,7 +238,7 @@ func subscribeEventBus(dataclient api.TradingDataServiceClient, events []proto.B
 	if err != nil {
 		log.Fatalln("Unable to send event bus request on the stream", err)
 	}
-	go processEventBusData(stream)
+	go fn(stream)
 }
 
 func processEventBusData(stream api.TradingDataService_ObserveEventBusClient) {
@@ -377,17 +254,38 @@ func processEventBusData(stream api.TradingDataService_ObserveEventBusClient) {
 		}
 
 		for _, event := range eb.Events {
+			log.Println(event)
 			switch event.Type {
 			case proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
 				marketData = event.GetMarketData()
 				drawScreen()
+			}
+		}
+	}
+}
+
+func processEventBusData2(stream api.TradingDataService_ObserveEventBusClient) {
+	for {
+		eb, err := stream.Recv()
+		if err == io.EOF {
+			log.Println("event bus data2: stream closed by server err:", err)
+			break
+		}
+		if err != nil {
+			log.Println("event bus data2: stream closed err:", err)
+			break
+		}
+
+		for _, event := range eb.Events {
+			log.Println(event)
+			switch event.Type {
 			case proto.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
 				lp = event.GetLiquidityProvision()
+				populateOrderMap()
 				drawScreen()
 			case proto.BusEventType_BUS_EVENT_TYPE_ORDER:
 				// Check we are interested in this order
-				if _, ok := mapOrders[event.GetOrder().Id]; ok {
-					mapOrders[event.GetOrder().Id] = event.GetOrder()
+				if processOrder(event.GetOrder()) {
 					drawScreen()
 				}
 			case proto.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
@@ -406,19 +304,42 @@ func processEventBusData(stream api.TradingDataService_ObserveEventBusClient) {
 	}
 }
 
+func processOrder(order *proto.Order) bool {
+	if _, ok := mapOrders[order.Id]; ok {
+		if order.Status != proto.Order_STATUS_ACTIVE ||
+			order.Remaining == 0 {
+			delete(mapOrders, order.Id)
+		} else {
+			mapOrders[order.Id] = order
+		}
+	}
+	return true
+}
+
 func populateOrderMap() {
 	// Go through the lp and extract the order IDs
 	for _, lo := range lp.Buys {
-		mapOrders[lo.OrderId] = nil
+		if _, ok := mapOrders[lo.OrderId]; !ok {
+			mapOrders[lo.OrderId] = nil
+		}
 	}
 
 	for _, lo := range lp.Sells {
-		mapOrders[lo.OrderId] = nil
+		if _, ok := mapOrders[lo.OrderId]; !ok {
+			mapOrders[lo.OrderId] = nil
+		}
 	}
 }
 
 // Run is the main entry point for this tool
 func Run(gRPCAddress, marketID, partyID string) error {
+	f, err := os.OpenFile("liquidity.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+	log.SetOutput(f)
+
 	// Create connection to vega
 	connection, err := grpc.Dial(gRPCAddress, grpc.WithInsecure())
 	if err != nil {
