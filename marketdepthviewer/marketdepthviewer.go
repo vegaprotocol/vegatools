@@ -46,6 +46,11 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 		}
 	}
 
+	// If there is only one market, pick that automatically
+	if len(marketsResponse.Markets) == 1 {
+		return marketsResponse.Markets[0]
+	}
+
 	// Print out all the markets with their index
 	for index, market := range marketsResponse.Markets {
 		fmt.Printf("[%d]:%s (%s) [%s]\n", index, market.State.String(), market.TradableInstrument.Instrument.Name, market.Id)
@@ -168,18 +173,19 @@ func drawHeaders() {
 	w, h := ts.Size()
 
 	// Draw the headings
-	drawString((w/4)-2, 1, whiteStyle, "Bids")
-	drawString((3*w/4)-2, 1, whiteStyle, "Asks")
+	drawString((w/4)-2, 2, whiteStyle, "Bids")
+	drawString((3*w/4)-2, 2, whiteStyle, "Asks")
 
-	drawString((w/4)-19, 2, whiteStyle, "--Volume--")
-	drawString((w/4)+8, 2, whiteStyle, "---Price---")
-	drawString((3*w/4)-22, 2, whiteStyle, "---Price---")
-	drawString((3*w/4)+9, 2, whiteStyle, "--Volume--")
+	drawString((w/4)-19, 3, whiteStyle, "--Volume--")
+	drawString((w/4)+8, 3, whiteStyle, "---Price---")
+	drawString((3*w/4)-22, 3, whiteStyle, "---Price---")
+	drawString((3*w/4)+9, 3, whiteStyle, "--Volume--")
 
 	// If we have a market name, use that
 	if market != nil {
-		text := fmt.Sprintf("Market: %s [%s]", market.TradableInstrument.Instrument.Name, market.Id)
+		text := fmt.Sprintf("Market: %s", market.TradableInstrument.Instrument.Name)
 		drawString(0, 0, whiteStyle, text)
+		drawString(0, 1, whiteStyle, market.Id)
 	} else {
 		text := fmt.Sprintf("Market: %s", market.Id)
 		drawString(0, 0, whiteStyle, text)
@@ -233,9 +239,9 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 				continue
 			}
 			text := fmt.Sprintf("%12d", pl.Volume)
-			drawString((w/4)-21, index+3, greenStyle, text)
+			drawString((w/4)-21, index+4, greenStyle, text)
 			text = fmt.Sprintf("%12d", pl.Price)
-			drawString((w/4)+7, index+3, greenStyle, text)
+			drawString((w/4)+7, index+4, greenStyle, text)
 		}
 
 		// Print Sells
@@ -246,9 +252,9 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 				continue
 			}
 			text := fmt.Sprintf("%d", pl.Price)
-			drawString((3*w/4)-22, index+3, redStyle, text)
+			drawString((3*w/4)-22, index+4, redStyle, text)
 			text = fmt.Sprintf("%d", pl.Volume)
-			drawString((3*w/4)+9, index+3, redStyle, text)
+			drawString((3*w/4)+9, index+4, redStyle, text)
 		}
 
 		text := fmt.Sprintf("%8d", bidVolume)

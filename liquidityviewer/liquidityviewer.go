@@ -74,6 +74,11 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 		}
 	}
 
+	// If we only have one option, pick it automatically
+	if len(validMarkets) == 1 {
+		return validMarkets[0]
+	}
+
 	// Print out all the markets with their index
 	for index, market := range validMarkets {
 		fmt.Printf("[%d]:%s (%s) [%s]\n", index, market.State.String(), market.TradableInstrument.Instrument.Name, market.Id)
@@ -118,6 +123,11 @@ func getPartyToDisplay(dataclient api.TradingDataServiceClient, marketID, partyI
 		}
 	}
 
+	// If we only have one option, choose it automatically
+	if len(lps) == 1 {
+		return lps[0]
+	}
+
 	// Print out all the parties with their index
 	for index, lp := range lps {
 		fmt.Printf("[%d]:%s\n", index, lp.PartyId)
@@ -154,7 +164,7 @@ func getAccountDetails(dataclient api.TradingDataServiceClient, marketId, partyI
 
 	response, err := dataclient.PartyAccounts(context.Background(), lpReq)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 		return
 	}
 
@@ -178,7 +188,7 @@ func subscribePositions(dataclient api.TradingDataServiceClient, marketID string
 	}
 	stream, err := dataclient.PositionsSubscribe(context.Background(), req)
 	if err != nil {
-		log.Fatalln("Failed to subscribe to positions: ", err)
+		log.Panicln("Failed to subscribe to positions: ", err)
 	}
 
 	// Run in background and process messages
@@ -189,11 +199,11 @@ func processPositions(stream api.TradingDataService_PositionsSubscribeClient) {
 	for {
 		o, err := stream.Recv()
 		if err == io.EOF {
-			log.Println("positions: stream closed by server err:", err)
+			log.Panicln("positions: stream closed by server err:", err)
 			break
 		}
 		if err != nil {
-			log.Println("positions: stream closed err:", err)
+			log.Panicln("positions: stream closed err:", err)
 			break
 		}
 		position = o.GetPosition()
@@ -230,13 +240,13 @@ func subscribeEventBus(dataclient api.TradingDataServiceClient, eventBusDataReq 
 	// First we have to create the stream
 	stream, err := dataclient.ObserveEventBus(context.Background())
 	if err != nil {
-		log.Fatalln("Failed to subscribe to event bus data: ", err)
+		log.Panicln("Failed to subscribe to event bus data: ", err)
 	}
 
 	// Then we subscribe to the data
 	err = stream.SendMsg(eventBusDataReq)
 	if err != nil {
-		log.Fatalln("Unable to send event bus request on the stream", err)
+		log.Panicln("Unable to send event bus request on the stream", err)
 	}
 	go fn(stream)
 }
@@ -245,11 +255,11 @@ func processEventBusData(stream api.TradingDataService_ObserveEventBusClient) {
 	for {
 		eb, err := stream.Recv()
 		if err == io.EOF {
-			log.Println("event bus data: stream closed by server err:", err)
+			log.Panicln("event bus data: stream closed by server err:", err)
 			break
 		}
 		if err != nil {
-			log.Println("event bus data: stream closed err:", err)
+			log.Panicln("event bus data: stream closed err:", err)
 			break
 		}
 
@@ -268,11 +278,11 @@ func processEventBusData2(stream api.TradingDataService_ObserveEventBusClient) {
 	for {
 		eb, err := stream.Recv()
 		if err == io.EOF {
-			log.Println("event bus data2: stream closed by server err:", err)
+			log.Panicln("event bus data2: stream closed by server err:", err)
 			break
 		}
 		if err != nil {
-			log.Println("event bus data2: stream closed err:", err)
+			log.Panicln("event bus data2: stream closed err:", err)
 			break
 		}
 
@@ -361,7 +371,7 @@ func Run(gRPCAddress, marketID, partyID string) error {
 		return fmt.Errorf("failed to get the party details")
 	}
 
-	getAccountDetails(dataclient, market.Id, partyID, market.TradableInstrument.Instrument.GetFuture().GetSettlementAsset())
+	getAccountDetails(dataclient, market.Id, lp.PartyId, market.TradableInstrument.Instrument.GetFuture().GetSettlementAsset())
 
 	populateOrderMap()
 

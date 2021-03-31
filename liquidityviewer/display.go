@@ -136,6 +136,9 @@ func drawMarketState() {
 
 	text = fmt.Sprintf("Commitment: %d", lp.CommitmentAmount)
 	drawString(((w-len(text))*2)/3, 0, whiteStyle, text)
+
+	text = fmt.Sprintf("Stake (Target:%s/Suppled:%s)", marketData.TargetStake, marketData.SuppliedStake)
+	drawString(w-len(text), 1, whiteStyle, text)
 }
 
 func drawAccounts() {
