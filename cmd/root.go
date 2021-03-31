@@ -9,7 +9,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "stream",
+	Use:   "vegatools",
 	Short: "A collection of tools to speak with a vega node",
 }
 
