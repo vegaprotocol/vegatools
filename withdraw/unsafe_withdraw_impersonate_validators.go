@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -48,7 +49,7 @@ func UnsafeWithdrawImpersonateValidators(
 	for _, priv := range privKeys {
 		address, err := wstore.Import(priv, passphrase)
 		if err != nil {
-			return fmt.Errorf("unable to import key: %w, (you may want to delete the unsafe_withdraw_keystore folder)", err)
+			return fmt.Errorf("unable to import key: %w, (you may want to delete the %s folder)", err, keystoreDir)
 		}
 		fmt.Printf("generating signature for address: %v\n", address)
 
@@ -64,16 +65,19 @@ func UnsafeWithdrawImpersonateValidators(
 		finalmsg = "0x" + hex.EncodeToString(msg)
 		sigs = sigs + hex.EncodeToString(sig)
 	}
+	if len(msgs) != 1 {
+		fmt.Printf("Incorrect message count: %v\n", len(msgs))
+		os.Exit(1)
+	}
+	fmt.Printf("Message: %v\n\n", finalmsg)
 
-	fmt.Printf("bridge address: %v\n", bridgeAddress)
-	fmt.Printf("asset source: %v\n", ethereumAssetID)
-	fmt.Printf("receiver: %v\n", receiverAddress)
-	fmt.Printf("msgs are unique: %v\n", len(msgs) == 1)
-	fmt.Printf("msg: %v\n", finalmsg)
-	fmt.Printf("sig bundle: %v\n", sigs)
-	fmt.Printf("amount: %v\n", amount)
-	fmt.Printf("expiry: %v\n", expiry)
-	fmt.Printf("nonce: %v\n", nonce)
+	fmt.Printf("Asset source (address) : %v\n", ethereumAssetID)
+	fmt.Printf("Amount (uint256)       : %v\n", amount)
+	fmt.Printf("Expiry (uint256)       : %v\n", expiry)
+	fmt.Printf("Target (address)       : %v\n", receiverAddress)
+	fmt.Printf("Nonce (uint256)        : %v\n", nonce)
+	fmt.Printf("Signature (bytes)      : %v\n", sigs)
+	fmt.Printf("Value in ETH: 0\n")
 
 	return nil
 }

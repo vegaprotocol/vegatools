@@ -28,16 +28,3 @@ This will listen to all event from this testnet node, run the following commands
 ```
 vegatools stream -h
 ```
-
-### Vega unsafe_withdraw_impersonate_validators
-
-This command is used to impersonate validators in the eyes of bridge into withdrawing funds. This command end up being handy, when a network will crash / is being reset but people didn't have time to withdraw their funds.
-
-This require validators private keys, and is meant for testnet `ONLY`.
-
-Here's an example on how to run it:
-```
-vegatools unsafe_withdraw_impersonate_validators --amount="1000" --asset-address="0x7e50...8e344" --bridge-address="0x4761...4883" --receiver-address="0xE20c...74EE" --priv-keys="keys.json"
-```
-
-This will dump on your terminal the information that you will need to call the withdraw method from the bridge smart contract, you then just need to load the bridge smart contract into MEW, and copy past the details that the command did output to you.
