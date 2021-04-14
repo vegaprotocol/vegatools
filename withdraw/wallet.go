@@ -2,7 +2,7 @@ package withdraw
 
 import (
 	"encoding/hex"
-	"fmt"
+	"path/filepath"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -20,7 +20,7 @@ type Store struct {
 // NewStore creates new instance of Store
 func NewStore() *Store {
 	return &Store{
-		ks: keystore.NewKeyStore(fmt.Sprintf("./%s", keystoreDir), keystore.StandardScryptN, keystore.StandardScryptP),
+		ks: keystore.NewKeyStore(filepath.Join(".", keystoreDir), keystore.StandardScryptN, keystore.StandardScryptP),
 	}
 }
 
