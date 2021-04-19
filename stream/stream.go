@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto"
-	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto/api"
+	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto"
+	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/api"
 	"google.golang.org/grpc"
 )
 
