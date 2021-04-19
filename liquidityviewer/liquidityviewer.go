@@ -286,17 +286,18 @@ func processEventBusData2(stream api.TradingDataService_ObserveEventBusClient) {
 			break
 		}
 
+		var redrawRequired = false
 		for _, event := range eb.Events {
 			log.Println(event)
 			switch event.Type {
 			case proto.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
 				lp = event.GetLiquidityProvision()
 				populateOrderMap()
-				drawScreen()
+				redrawRequired = true
 			case proto.BusEventType_BUS_EVENT_TYPE_ORDER:
 				// Check we are interested in this order
 				if processOrder(event.GetOrder()) {
-					drawScreen()
+					redrawRequired = true
 				}
 			case proto.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
 				account := event.GetAccount()
@@ -308,8 +309,11 @@ func processEventBusData2(stream api.TradingDataService_ObserveEventBusClient) {
 				case proto.AccountType_ACCOUNT_TYPE_MARGIN:
 					acctMargin = account.Balance
 				}
-				drawScreen()
+				redrawRequired = true
 			}
+		}
+		if redrawRequired {
+			drawScreen()
 		}
 	}
 }

@@ -46,6 +46,11 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 		}
 	}
 
+	// If we have no markets, lets quit now
+	if len(marketsResponse.Markets) == 0 {
+		return nil
+	}
+
 	// If there is only one market, pick that automatically
 	if len(marketsResponse.Markets) == 1 {
 		return marketsResponse.Markets[0]
