@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto"
+	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto"
 )
 
 func initialiseScreen() error {
