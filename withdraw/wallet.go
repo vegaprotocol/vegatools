@@ -2,12 +2,15 @@ package withdraw
 
 import (
 	"encoding/hex"
+	"path/filepath"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
+
+var keystoreDir = ".unsafe_withdraw_keystore.tmp"
 
 // Store holds information about Key Store
 type Store struct {
@@ -17,7 +20,7 @@ type Store struct {
 // NewStore creates new instance of Store
 func NewStore() *Store {
 	return &Store{
-		ks: keystore.NewKeyStore("./unsafe_withdraw_keystore", keystore.StandardScryptN, keystore.StandardScryptP),
+		ks: keystore.NewKeyStore(filepath.Join(".", keystoreDir), keystore.StandardScryptN, keystore.StandardScryptP),
 	}
 }
 

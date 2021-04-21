@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto"
-	"github.com/vegaprotocol/api/go/generated/code.vegaprotocol.io/vega/proto/api"
+	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto"
+	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/api"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
@@ -35,8 +35,8 @@ var (
 	position       *proto.Position
 )
 
-func getLiquidityProvisions(dataclient api.TradingDataServiceClient, marketId string) []*proto.LiquidityProvision {
-	lpReq := &api.LiquidityProvisionsRequest{Market: marketId}
+func getLiquidityProvisions(dataclient api.TradingDataServiceClient, marketID string) []*proto.LiquidityProvision {
+	lpReq := &api.LiquidityProvisionsRequest{Market: marketID}
 
 	response, err := dataclient.LiquidityProvisions(context.Background(), lpReq)
 	if err != nil {
@@ -158,9 +158,9 @@ func getPartyToDisplay(dataclient api.TradingDataServiceClient, marketID, partyI
 	return lps[index]
 }
 
-func getAccountDetails(dataclient api.TradingDataServiceClient, marketId, partyId, assetId string) {
-	lpReq := &api.PartyAccountsRequest{PartyId: partyId,
-		Asset: assetId}
+func getAccountDetails(dataclient api.TradingDataServiceClient, partyID, assetID string) {
+	lpReq := &api.PartyAccountsRequest{PartyId: partyID,
+		Asset: assetID}
 
 	response, err := dataclient.PartyAccounts(context.Background(), lpReq)
 	if err != nil {
@@ -375,7 +375,7 @@ func Run(gRPCAddress, marketID, partyID string) error {
 		return fmt.Errorf("failed to get the party details")
 	}
 
-	getAccountDetails(dataclient, market.Id, lp.PartyId, market.TradableInstrument.Instrument.GetFuture().GetSettlementAsset())
+	getAccountDetails(dataclient, lp.PartyId, market.TradableInstrument.Instrument.GetFuture().GetSettlementAsset())
 
 	populateOrderMap()
 
