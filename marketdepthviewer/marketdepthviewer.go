@@ -24,6 +24,7 @@ var (
 	greenStyle tcell.Style
 	whiteStyle tcell.Style
 	market     *proto.Market
+	marketData *proto.MarketData
 
 	args struct {
 		gRPCAddress string
@@ -141,6 +142,48 @@ func processMarketDepthUpdates(stream api.TradingDataService_MarketDepthUpdatesS
 	}
 }
 
+func subscribeToMarketData(dataclient api.TradingDataServiceClient) {
+	events := []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA}
+	eventBusDataReq := &api.ObserveEventBusRequest{
+		Type:     events,
+		MarketId: market.Id,
+	}
+
+	stream, err := dataclient.ObserveEventBus(context.Background())
+	if err != nil {
+		log.Panicln("Failed to subscribe to event bus data: ", err)
+	}
+
+	// Then we subscribe to the data
+	err = stream.SendMsg(eventBusDataReq)
+	if err != nil {
+		log.Panicln("Unable to send event bus request on the stream", err)
+	}
+	go handleSubscription(stream)
+}
+
+func handleSubscription(stream api.TradingDataService_ObserveEventBusClient) {
+	for {
+		eb, err := stream.Recv()
+		if err == io.EOF {
+			log.Panicln("event bus data: stream closed by server err:", err)
+			break
+		}
+		if err != nil {
+			log.Panicln("event bus data: stream closed err:", err)
+			break
+		}
+
+		for _, event := range eb.Events {
+			switch event.Type {
+			case proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
+				marketData = event.GetMarketData()
+				drawMarketState()
+			}
+		}
+	}
+}
+
 func initialiseScreen() error {
 	var e error
 	ts, e = tcell.NewScreen()
@@ -201,6 +244,13 @@ func drawHeaders() {
 	drawString((3*w/4)-8, h-1, whiteStyle, "Volume:")
 }
 
+func drawMarketState() {
+	w, h := ts.Size()
+	text := marketData.MarketTradingMode.String()
+	drawString((w-len(text))/2, h-1, whiteStyle, text)
+	ts.Show()
+}
+
 func drawTime() {
 	now := time.Now()
 	w, _ := ts.Size()
@@ -232,6 +282,7 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 		drawHeaders()
 		drawTime()
 		drawSequenceNumber(o.MarketDepth.SequenceNumber)
+		drawMarketState()
 
 		var bidVolume uint64 = 0
 		var askVolume uint64 = 0
@@ -289,6 +340,8 @@ func Run(gRPCAddress, marketID string) error {
 	}
 
 	initialiseScreen()
+
+	subscribeToMarketData(dataclient)
 
 	// Start the book displaying
 	go getMarketDepth(dataclient)
