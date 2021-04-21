@@ -248,6 +248,8 @@ func drawMarketState() {
 	w, h := ts.Size()
 	text := marketData.MarketTradingMode.String()
 	drawString((w-len(text))/2, h-1, whiteStyle, text)
+	text = fmt.Sprintf("Open Interest: %d", marketData.OpenInterest)
+	drawString(w-len(text), 1, whiteStyle, text)
 	ts.Show()
 }
 
