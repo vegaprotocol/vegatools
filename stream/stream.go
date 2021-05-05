@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto"
 	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/api"
+	eventspb "github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/events/v1"
 	"google.golang.org/grpc"
 )
 
@@ -42,7 +42,7 @@ func run(
 		MarketId:  market,
 		PartyId:   party,
 		BatchSize: int64(batchSize),
-		Type:      []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_ALL},
+		Type:      []eventspb.BusEventType{eventspb.BusEventType_BUS_EVENT_TYPE_ALL},
 	}
 
 	if err := stream.Send(req); err != nil {

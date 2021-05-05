@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto"
 	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/api"
+	eventspb "github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/events/v1"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
@@ -212,7 +212,7 @@ func Run(gRPCAddress string) error {
 	}
 
 	observerEvent := api.ObserveEventBusRequest{
-		Type: []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA},
+		Type: []eventspb.BusEventType{eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA},
 	}
 	eventStream, err := dataclient.ObserveEventBus(context.Background())
 	if err != nil {
