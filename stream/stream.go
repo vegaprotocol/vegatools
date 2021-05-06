@@ -101,9 +101,17 @@ func run(
 			if reconnect {
 				// Keep waiting and retrying until we reconnect
 				for true {
-					time.Sleep(time.Second * 5)
-					log.Printf("Attempting to reconnect to the node")
-					conn, stream, err = connect(ctx, batchSize, party, market, serverAddr)
+					select {
+					case <-ctx.Done():
+						return
+					default:
+						time.Sleep(time.Second * 5)
+						log.Printf("Attempting to reconnect to the node")
+						conn, stream, err = connect(ctx, batchSize, party, market, serverAddr)
+						if err == nil {
+							break
+						}
+					}
 					if err == nil {
 						break
 					}
