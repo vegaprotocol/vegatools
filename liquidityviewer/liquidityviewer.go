@@ -12,6 +12,7 @@ import (
 
 	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto"
 	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/api"
+	eventspb "github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/events/v1"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
@@ -26,7 +27,6 @@ var (
 	//party          string
 	mapMarketToLPs map[string][]*proto.LiquidityProvision = map[string][]*proto.LiquidityProvision{}
 	lp             *proto.LiquidityProvision
-	auction        *proto.AuctionEvent
 	acctMargin     uint64
 	acctGeneral    uint64
 	acctBond       uint64
@@ -213,7 +213,7 @@ func processPositions(stream api.TradingDataService_PositionsSubscribeClient) {
 func subscribeFeeds(dataclient api.TradingDataServiceClient) {
 	// We need to subscribe to the eventbus so that we can get hold of the
 	// LP, order and margin updates for a party
-	events := []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA}
+	events := []eventspb.BusEventType{eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA}
 
 	eventBusDataReq := &api.ObserveEventBusRequest{
 		Type:     events,
@@ -221,9 +221,9 @@ func subscribeFeeds(dataclient api.TradingDataServiceClient) {
 	}
 	subscribeEventBus(dataclient, eventBusDataReq, processEventBusData)
 
-	events2 := []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION,
-		proto.BusEventType_BUS_EVENT_TYPE_ORDER,
-		proto.BusEventType_BUS_EVENT_TYPE_ACCOUNT}
+	events2 := []eventspb.BusEventType{eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT}
 
 	eventBusDataReq2 := &api.ObserveEventBusRequest{
 		Type:    events2,
@@ -266,7 +266,7 @@ func processEventBusData(stream api.TradingDataService_ObserveEventBusClient) {
 		for _, event := range eb.Events {
 			log.Println(event)
 			switch event.Type {
-			case proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
+			case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
 				marketData = event.GetMarketData()
 				drawScreen()
 			}
@@ -290,16 +290,16 @@ func processEventBusData2(stream api.TradingDataService_ObserveEventBusClient) {
 		for _, event := range eb.Events {
 			log.Println(event)
 			switch event.Type {
-			case proto.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
+			case eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
 				lp = event.GetLiquidityProvision()
 				populateOrderMap()
 				redrawRequired = true
-			case proto.BusEventType_BUS_EVENT_TYPE_ORDER:
+			case eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:
 				// Check we are interested in this order
 				if processOrder(event.GetOrder()) {
 					redrawRequired = true
 				}
-			case proto.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
+			case eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
 				account := event.GetAccount()
 				switch account.Type {
 				case proto.AccountType_ACCOUNT_TYPE_BOND:
