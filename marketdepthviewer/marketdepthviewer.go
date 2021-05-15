@@ -285,8 +285,8 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 		drawSequenceNumber(o.MarketDepth.SequenceNumber)
 		drawMarketState()
 
-		var bidVolume uint64 = 0
-		var askVolume uint64 = 0
+		var bidVolume uint64
+		var askVolume uint64
 
 		// Print Buys
 		buyPriceLevels := o.MarketDepth.Buy
