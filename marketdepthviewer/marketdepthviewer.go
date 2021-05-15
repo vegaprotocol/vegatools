@@ -13,6 +13,7 @@ import (
 
 	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto"
 	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/api"
+	eventspb "github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/events/v1"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
@@ -143,7 +144,7 @@ func processMarketDepthUpdates(stream api.TradingDataService_MarketDepthUpdatesS
 }
 
 func subscribeToMarketData(dataclient api.TradingDataServiceClient) {
-	events := []proto.BusEventType{proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA}
+	events := []eventspb.BusEventType{eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA}
 	eventBusDataReq := &api.ObserveEventBusRequest{
 		Type:     events,
 		MarketId: market.Id,
@@ -176,7 +177,7 @@ func handleSubscription(stream api.TradingDataService_ObserveEventBusClient) {
 
 		for _, event := range eb.Events {
 			switch event.Type {
-			case proto.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
+			case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
 				marketData = event.GetMarketData()
 				drawMarketState()
 			}
@@ -284,8 +285,8 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 		drawSequenceNumber(o.MarketDepth.SequenceNumber)
 		drawMarketState()
 
-		var bidVolume uint64 = 0
-		var askVolume uint64 = 0
+		var bidVolume uint64
+		var askVolume uint64
 
 		// Print Buys
 		buyPriceLevels := o.MarketDepth.Buy

@@ -40,7 +40,9 @@ jobs:
         run: make test
 
       - name: Lint
-        run: make lint
+        run: |
+          go get golang.org/x/lint/golint@latest
+          make lint
 
       - name: Vet
         run: make vet
