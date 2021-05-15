@@ -10,7 +10,6 @@ build:
 
 .PHONY: lint
 lint:
-	@go install golang.org/x/lint/golint
 	@outputfile="$$(mktemp)" ; \
 	go list ./... | xargs golint 2>&1 | \
 		sed -e "s#^$$GOPATH/src/##" | tee "$$outputfile" ; \
