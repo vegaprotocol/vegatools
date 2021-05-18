@@ -19,9 +19,9 @@ go install code.vegaprotocol.io/vegatools@latest
 
 ## Available tools
 
-### Vega stream
+### Stream
 
-Vega stream is a simple utility used to connect to a vega validator and listen to ALL events it produce.
+Stream is a simple utility used to connect to a vega validator and listen to ALL events it produce.
 
 Here's an example of how to run it:
 ```console
@@ -32,3 +32,36 @@ This will listen to all event from this testnet node, run the following commands
 ```
 vegatools stream -h
 ```
+
+### MarketDepthViewer
+
+MarketDepthViewer is a utility that will display the market depth of a given market running on a node.
+
+The basic command to run it is:
+```console
+vegatools marketdepthviewer -a="n09.testnet.vega.xyz:3002"
+```
+
+If there are multiple markets on a node it will display a list of them at startup and allow the user to select the one they wish to view. Pressing `q` will close the app.
+
+### LiquidityViewer
+
+LiquidityViewer is a utility that displays the liquidity commitment of a user on a particular market.
+
+The basic command to run it is:
+```console
+vegatools liquidityviewer -a="n09.testnet.vega.xyz:3002"
+```
+
+If there are multiple markets on the node it will list them and allow the user to select one. If there are multiple users on that market supplying liquidity then it will also list those and allow the user to select one. Pressing `q` will closer the app.
+
+### MarketStakeViewer
+
+MarketStakeViewer is a utility that displays the current state of liquidity provision for all markets running on a node.
+
+The basic command to run it is:
+```console
+vegatools marketstateviewer -a="n09.testnet.vega.xyz:3002"
+```
+
+
