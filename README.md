@@ -61,7 +61,7 @@ MarketStakeViewer is a utility that displays the current state of liquidity prov
 
 The basic command to run it is:
 ```console
-vegatools marketstateviewer -a="n09.testnet.vega.xyz:3002"
+vegatools marketstakeviewer -a="n09.testnet.vega.xyz:3002"
 ```
 
 
