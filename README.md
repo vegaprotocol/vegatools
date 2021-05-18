@@ -8,6 +8,10 @@ VEGATOOLS
 This repo contains a suite of (sometimes) useful tools to use with the vega nodes API.
 
 ## How to install
+
+To download and build the project your local machine must have the golang tool-chain and the gcc compiler installed. For Windows users you can get the latest and easy to install version of gcc from here:
+https://nuwen.net/mingw.html. After extracting the archive, make sure the bin folder is in your PATH.
+
 You can install this program by running the following go install command:
 ```console
 go install code.vegaprotocol.io/vegatools@latest
