@@ -61,7 +61,7 @@ func drawHeaders() {
 
 	// If we have a market name, use that
 	if market != nil {
-		text := fmt.Sprintf("Market: %s", market.TradableInstrument.Instrument.Name)
+		text := fmt.Sprintf("%s", market.TradableInstrument.Instrument.Name)
 		drawString(0, 0, whiteStyle, text)
 		drawString(0, 1, whiteStyle, market.Id)
 
@@ -131,14 +131,17 @@ func drawMarketState() {
 
 	w, _ := ts.Size()
 
-	text := fmt.Sprintf("Market State: %s", marketData.MarketTradingMode.String())
+	text := fmt.Sprintf("%s", marketData.MarketTradingMode.String())
 	drawString((w-len(text))/3, 0, whiteStyle, text)
 
 	text = fmt.Sprintf("Commitment: %d", lp.CommitmentAmount)
 	drawString(((w-len(text))*2)/3, 0, whiteStyle, text)
 
-	text = fmt.Sprintf("Stake (Target:%s/Suppled:%s)", marketData.TargetStake, marketData.SuppliedStake)
+	text = fmt.Sprintf("Target Stake:%s", marketData.TargetStake)
 	drawString(w-len(text), 1, whiteStyle, text)
+
+	text = fmt.Sprintf("Supplied Stake:%s", marketData.SuppliedStake)
+	drawString(w-len(text), 2, whiteStyle, text)
 }
 
 func drawAccounts() {
