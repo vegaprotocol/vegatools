@@ -9,13 +9,20 @@ This repo contains a suite of (sometimes) useful tools to use with the vega node
 
 ## How to install
 
-To download and build the project your local machine must have the golang tool-chain and the gcc compiler installed. For Windows users you can get the latest and easy to install version of gcc from here:
-https://nuwen.net/mingw.html. After extracting the archive, make sure the bin folder is in your PATH.
-
 You can install this program by running the following go install command:
 ```console
 go install code.vegaprotocol.io/vegatools@latest
 ```
+Make sure that your CGO_ENABLED environment variable is set to 0. This can be checked using this command:
+```console
+go env
+```
+
+It can be set correctly by:
+```console
+go env -w CGO_ENABLED=0
+```
+
 
 ## Available tools
 
