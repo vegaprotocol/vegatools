@@ -75,6 +75,7 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 
 	// Convert input into an index
 	input = strings.Replace(input, "\n", "", -1)
+	input = strings.Replace(input, "\r", "", -1)
 	index, err := strconv.Atoi(input)
 	if err != nil {
 		fmt.Println("Failed to convert input into index:", err)
