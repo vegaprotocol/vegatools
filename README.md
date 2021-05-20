@@ -10,16 +10,16 @@ This repo contains a suite of (sometimes) useful tools to use with the vega node
 ## How to install
 
 You can install this program by running the following go install command:
-```bash
+```console
 go install code.vegaprotocol.io/vegatools@latest
 ```
 Make sure that your `CGO_ENABLED` environment variable is set to 0. This can be checked using this command:
-```bash
+```console
 go env
 ```
 
 It can be set correctly by:
-```bash
+```console
 go env -w CGO_ENABLED=0
 ```
 
@@ -31,12 +31,12 @@ go env -w CGO_ENABLED=0
 Stream is a simple utility used to connect to a vega validator and listen to ALL events it produce.
 
 Here's an example of how to run it:
-```bash
+```console
 vegatools stream --address=n09.testnet.vega.xyz:3002
 ```
 
 This will listen to all event from this testnet node, run the following commands for a detailed help and filtering
-```bash
+```console
 vegatools stream -h
 ```
 
@@ -45,7 +45,7 @@ vegatools stream -h
 MarketDepthViewer is a utility that will display the market depth of a given market running on a node.
 
 The basic command to run it is:
-```bash
+```console
 vegatools marketdepthviewer --address=n09.testnet.vega.xyz:3002
 ```
 
@@ -56,7 +56,7 @@ If there are multiple markets on a node it will display a list of them at startu
 LiquidityViewer is a utility that displays the liquidity commitment of a user on a particular market.
 
 The basic command to run it is:
-```bash
+```console
 vegatools liquidityviewer --address=n09.testnet.vega.xyz:3002
 ```
 
@@ -67,7 +67,7 @@ If there are multiple markets on the node it will list them and allow the user t
 MarketStakeViewer is a utility that displays the current state of liquidity provision for all markets running on a node.
 
 The basic command to run it is:
-```bash
+```console
 vegatools marketstakeviewer --address=n09.testnet.vega.xyz:3002
 ```
 
