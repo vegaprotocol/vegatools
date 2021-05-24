@@ -38,6 +38,16 @@ func initialiseScreen() error {
 	return nil
 }
 
+// Draws a string starting at the x percentage of the column
+// e.g 0% starts on the left, 50% starts half way across
+func drawStringPc(x, y int, style tcell.Style, str string) {
+	w, _ := ts.Size()
+	if x > 0 {
+		x = (w * x) / 100
+	}
+	drawString(x, y, style, str)
+}
+
 func drawString(x, y int, style tcell.Style, str string) {
 	for i, c := range str {
 		ts.SetContent(x+i, y, c, nil, style)
@@ -87,39 +97,38 @@ func getReferenceStr(ref proto.PeggedReference) string {
 
 func drawLP() {
 	w, _ := ts.Size()
-	hw := w / 2
 	buyStartRow := 3
 	buyTitle := "Buy Side Shape"
 	drawString((w/4)-(len(buyTitle)/2), buyStartRow, greenStyle, buyTitle)
-	drawString(0, buyStartRow+1, whiteStyle, "OrderID")
-	drawString(hw/4, buyStartRow+1, whiteStyle, "Reference")
-	drawString(hw/2, buyStartRow+1, whiteStyle, "Offset")
-	drawString((3*hw)/4, buyStartRow+1, whiteStyle, "Proportion")
+	drawStringPc(0, buyStartRow+1, whiteStyle, "OrderID")
+	drawStringPc(25, buyStartRow+1, whiteStyle, "Reference")
+	drawStringPc(35, buyStartRow+1, whiteStyle, "Offset")
+	drawStringPc(43, buyStartRow+1, whiteStyle, "Prop")
 	for index, lor := range lp.Buys {
 		buyRow := buyStartRow + index + 2
-		drawString(0, buyRow, whiteStyle, lor.OrderId)
-		drawString(hw/4, buyRow, whiteStyle, getReferenceStr(lor.LiquidityOrder.Reference))
+		drawStringPc(0, buyRow, whiteStyle, lor.OrderId)
+		drawStringPc(25, buyRow, whiteStyle, getReferenceStr(lor.LiquidityOrder.Reference))
 		offset := strconv.Itoa(int(lor.LiquidityOrder.Offset))
-		drawString(hw/2, buyRow, whiteStyle, offset)
+		drawStringPc(35, buyRow, whiteStyle, offset)
 		proportion := strconv.Itoa(int(lor.LiquidityOrder.Proportion))
-		drawString((3*hw)/4, buyRow, whiteStyle, proportion)
+		drawStringPc(43, buyRow, whiteStyle, proportion)
 	}
 
 	sellStartRow := 3
 	sellTitle := "Sell Side Shape"
 	drawString((3*w)/4-(len(sellTitle)/2), sellStartRow, redStyle, sellTitle)
-	drawString(hw, buyStartRow+1, whiteStyle, "OrderID")
-	drawString(hw+(hw/4), buyStartRow+1, whiteStyle, "Reference")
-	drawString(hw+(hw/2), buyStartRow+1, whiteStyle, "Offset")
-	drawString(hw+((3*hw)/4), buyStartRow+1, whiteStyle, "Proportion")
+	drawStringPc(50, buyStartRow+1, whiteStyle, "OrderID")
+	drawStringPc(75, buyStartRow+1, whiteStyle, "Reference")
+	drawStringPc(85, buyStartRow+1, whiteStyle, "Offset")
+	drawStringPc(93, buyStartRow+1, whiteStyle, "Prop")
 	for index, lor := range lp.Sells {
 		sellRow := sellStartRow + index + 2
-		drawString(hw, sellRow, whiteStyle, lor.OrderId)
-		drawString(hw+(hw/4), sellRow, whiteStyle, getReferenceStr(lor.LiquidityOrder.Reference))
+		drawStringPc(50, sellRow, whiteStyle, lor.OrderId)
+		drawStringPc(75, sellRow, whiteStyle, getReferenceStr(lor.LiquidityOrder.Reference))
 		offset := strconv.Itoa(int(lor.LiquidityOrder.Offset))
-		drawString(hw+(hw/2), sellRow, whiteStyle, offset)
+		drawStringPc(85, sellRow, whiteStyle, offset)
 		proportion := strconv.Itoa(int(lor.LiquidityOrder.Proportion))
-		drawString(hw+((hw*3)/4), sellRow, whiteStyle, proportion)
+		drawStringPc(93, sellRow, whiteStyle, proportion)
 	}
 }
 
@@ -190,21 +199,19 @@ func drawTime() {
 }
 
 func drawOrders() {
-	w, h := ts.Size()
-	hw := w / 2
-	buyStartRow := h / 2
+	_, h := ts.Size()
+	startRow := h / 2
 
 	// Buy header
-	drawString(0, buyStartRow, whiteStyle, "OrderID")
-	drawString(hw/4, buyStartRow, whiteStyle, "Price")
-	drawString(hw/2, buyStartRow, whiteStyle, "Size")
-	drawString((3*hw)/4, buyStartRow, whiteStyle, "Remaining")
+	drawStringPc(0, startRow, whiteStyle, "OrderID")
+	drawStringPc(25, startRow, whiteStyle, "Price")
+	drawStringPc(34, startRow, whiteStyle, "Size")
+	drawStringPc(42, startRow, whiteStyle, "Remain")
 
-	sellStartRow := h / 2
-	drawString(hw, sellStartRow, whiteStyle, "OrderID")
-	drawString(hw+(hw/4), sellStartRow, whiteStyle, "Price")
-	drawString(hw+(hw/2), sellStartRow, whiteStyle, "Size")
-	drawString(hw+((3*hw)/4), sellStartRow, whiteStyle, "Remaining")
+	drawStringPc(50, startRow, whiteStyle, "OrderID")
+	drawStringPc(75, startRow, whiteStyle, "Price")
+	drawStringPc(84, startRow, whiteStyle, "Size")
+	drawStringPc(92, startRow, whiteStyle, "Remain")
 
 	// Convert map into slice
 	orders := []*proto.Order{}
@@ -219,20 +226,23 @@ func drawOrders() {
 		return orders[i].Id < orders[j].Id
 	})
 
+	buyStartRow := startRow
+	sellStartRow := startRow
+
 	for _, order := range orders {
 		if order != nil {
 			if order.Side == proto.Side_SIDE_BUY {
 				buyStartRow++
-				drawString(0, buyStartRow, whiteStyle, order.Id)
-				drawString(hw/4, buyStartRow, whiteStyle, strconv.FormatUint(order.Price, 10))
-				drawString(hw/2, buyStartRow, whiteStyle, strconv.FormatUint(order.Size, 10))
-				drawString((3*hw)/4, buyStartRow, whiteStyle, strconv.FormatUint(order.Remaining, 10))
+				drawStringPc(0, buyStartRow, whiteStyle, order.Id)
+				drawStringPc(25, buyStartRow, whiteStyle, strconv.FormatUint(order.Price, 10))
+				drawStringPc(34, buyStartRow, whiteStyle, strconv.FormatUint(order.Size, 10))
+				drawStringPc(42, buyStartRow, whiteStyle, strconv.FormatUint(order.Remaining, 10))
 			} else {
 				sellStartRow++
-				drawString(hw, sellStartRow, whiteStyle, order.Id)
-				drawString(hw+(hw/4), sellStartRow, whiteStyle, strconv.FormatUint(order.Price, 10))
-				drawString(hw+(hw/2), sellStartRow, whiteStyle, strconv.FormatUint(order.Size, 10))
-				drawString(hw+((3*hw)/4), sellStartRow, whiteStyle, strconv.FormatUint(order.Remaining, 10))
+				drawStringPc(50, sellStartRow, whiteStyle, order.Id)
+				drawStringPc(75, sellStartRow, whiteStyle, strconv.FormatUint(order.Price, 10))
+				drawStringPc(84, sellStartRow, whiteStyle, strconv.FormatUint(order.Size, 10))
+				drawStringPc(92, sellStartRow, whiteStyle, strconv.FormatUint(order.Remaining, 10))
 			}
 		}
 	}

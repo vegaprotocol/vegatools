@@ -60,7 +60,7 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 
 	// Print out all the markets with their index
 	for index, market := range marketsResponse.Markets {
-		fmt.Printf("[%d]:%s (%s) [%s]\n", index, market.State.String(), market.TradableInstrument.Instrument.Name, market.Id)
+		fmt.Printf("[%d]:%s (%s) [%s]\n", index+1, market.State.String(), market.TradableInstrument.Instrument.Name, market.Id)
 	}
 
 	// Ask the user to select a market
@@ -81,6 +81,8 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 		fmt.Println("Failed to convert input into index:", err)
 		os.Exit(0)
 	}
+	// Correct the index value as we start with 0
+	index--
 
 	if index < 0 || index > len(marketsResponse.Markets)-1 {
 		fmt.Println("Invalid market selected")
