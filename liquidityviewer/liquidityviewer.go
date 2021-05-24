@@ -81,7 +81,7 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 
 	// Print out all the markets with their index
 	for index, market := range validMarkets {
-		fmt.Printf("[%d]:%s (%s) [%s]\n", index, market.State.String(), market.TradableInstrument.Instrument.Name, market.Id)
+		fmt.Printf("[%d]:%s (%s) [%s]\n", index+1, market.State.String(), market.TradableInstrument.Instrument.Name, market.Id)
 	}
 
 	// Ask the user to select a market
@@ -102,6 +102,9 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 		fmt.Println("Failed to convert input into index:", err)
 		os.Exit(0)
 	}
+
+	// Correct index as we start with 0
+	index--
 
 	if index < 0 || index > len(marketsResponse.Markets)-1 {
 		fmt.Println("Invalid market selected")
@@ -131,7 +134,7 @@ func getPartyToDisplay(dataclient api.TradingDataServiceClient, marketID, partyI
 
 	// Print out all the parties with their index
 	for index, lp := range lps {
-		fmt.Printf("[%d]:%s\n", index, lp.PartyId)
+		fmt.Printf("[%d]:%s\n", index+1, lp.PartyId)
 	}
 
 	// Ask the user to select a party
@@ -152,6 +155,9 @@ func getPartyToDisplay(dataclient api.TradingDataServiceClient, marketID, partyI
 		fmt.Println("Failed to convert input into index:", err)
 		os.Exit(0)
 	}
+
+	// Correct index as we start from 0
+	index--
 
 	if index < 0 || index > len(lps)-1 {
 		fmt.Println("Invalid party selected")
