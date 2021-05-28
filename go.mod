@@ -8,6 +8,6 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.7.0
-	github.com/vegaprotocol/api v0.37.0-pre1
+	github.com/vegaprotocol/api v0.37.0
 	google.golang.org/grpc v1.38.0
 )
