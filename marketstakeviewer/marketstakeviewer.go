@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/api"
-	eventspb "github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/protos/vega/api"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"

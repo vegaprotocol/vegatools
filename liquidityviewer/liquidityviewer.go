@@ -10,10 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto"
-	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/api"
-	eventspb "github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto/events/v1"
-
+	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/protos/vega/api"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
 )
