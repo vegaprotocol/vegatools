@@ -67,7 +67,7 @@ func generateDummy(cpF, JSONFname string) error {
 		fmt.Printf("Could not convert dummy to snapshot data to write to file: %+v\n", err)
 		return err
 	}
-	if err := generateCheckpoint(cp, cpF); err != nil {
+	if err := writeCheckpoint(cp, cpF); err != nil {
 		fmt.Printf("Error writing checkpoint data to file '%s': %+v\n", cpF, err)
 		return err
 	}
@@ -103,6 +103,24 @@ func generateCheckpoint(data []byte, outF string) error {
 	n, err := of.Write(out)
 	if err != nil {
 		fmt.Printf("Failed to write output to file: %+v\n", err)
+		return err
+	}
+	fmt.Printf("Successfully wrote %d bytes to file %s\n", n, outF)
+	return nil
+}
+
+func writeCheckpoint(data []byte, outF string) error {
+	of, err := os.Create(outF)
+	if err != nil {
+		fmt.Printf("Failed to create output file %s: %+v\n", outF, err)
+		return err
+	}
+	defer func() {
+		_ = of.Close()
+	}()
+	n, err := of.Write(data)
+	if err != nil {
+		fmt.Printf("Failed to write output to file '%s': %+v\n", outF, err)
 		return err
 	}
 	fmt.Printf("Successfully wrote %d bytes to file %s\n", n, outF)

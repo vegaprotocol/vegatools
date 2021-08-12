@@ -27,7 +27,7 @@ func init() {
 	rootCmd.AddCommand(checkpointCmd)
 	checkpointCmd.Flags().StringVarP(&cp.inPath, "file", "f", "", "input file to parse")
 	checkpointCmd.Flags().StringVarP(&cp.outPath, "out", "o", "", "output file to write to [default is STDOUT]")
-	checkpointCmd.Flags().StringVarP(&cp.format, "format", "f", "", "output format [default is JSON]")
+	checkpointCmd.Flags().StringVarP(&cp.format, "format", "F", "", "output format [default is JSON]")
 	checkpointCmd.Flags().BoolVarP(&cp.validate, "validate", "v", false, "validate contents of the checkpoint file")
 	checkpointCmd.Flags().BoolVarP(&cp.create, "generate", "g", false, "input is human readable, generate checkpoint file")
 	checkpointCmd.Flags().BoolVarP(&cp.dummy, "dummy", "d", false, "generate a dummy file [added for debugging, but could be useful]")
