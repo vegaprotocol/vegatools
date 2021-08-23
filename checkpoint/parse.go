@@ -12,10 +12,13 @@ import (
 )
 
 var (
+	// ErrCheckpointFileEmpty obviously means the checkpoint file was empty
 	ErrCheckpointFileEmpty = errors.New("given checkpoint file is empty or unreadable")
-	ErrMissingOutFile      = errors.New("output file not specified")
+	// ErrMissingOutFile no output file name argument provided
+	ErrMissingOutFile = errors.New("output file not specified")
 )
 
+// Run ... the main entry point of the command
 func Run(inFile, outFile, format string, generate, validate, dummy bool) error {
 	if generate && outFile == "" {
 		fmt.Println("No output file specified")
@@ -136,9 +139,8 @@ func printParsed(a *all, isErr bool) {
 	if isErr {
 		if _, err := os.Stderr.WriteString(string(data)); err == nil {
 			return
-		} else {
-			fmt.Printf("Could not write to stderr: %+v\n", err)
 		}
+		fmt.Printf("Could not write to stderr: %+v\n", err)
 	}
 	fmt.Printf("Output:\n%s\n", string(data))
 }

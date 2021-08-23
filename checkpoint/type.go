@@ -19,6 +19,7 @@ type all struct {
 	NetParams  *snapshot.NetParams  `json:"network_parameters,omitempty"`
 }
 
+// AsssetErr a convenience error type
 type AssetErr []error
 
 func (a all) CheckAssetsCollateral() error {
