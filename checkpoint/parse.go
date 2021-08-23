@@ -93,11 +93,12 @@ func generateCheckpoint(data []byte, outF string) error {
 	defer func() {
 		_ = of.Close()
 	}()
-	a := all{}
-	if err := a.FromJSON(data); err != nil {
+	ja := JSONCheckpoint{}
+	if err := ja.FromJSON(data); err != nil {
 		fmt.Printf("Could not unmarshal input: %+v\n", err)
 		return err
 	}
+	a := ja.ToAll()
 	out, err := a.SnapshotData()
 	if err != nil {
 		fmt.Printf("Could not generate snapshot data: %+v\n", err)
