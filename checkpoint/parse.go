@@ -1,6 +1,7 @@
 package checkpoint
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -103,16 +104,19 @@ func generateCheckpoint(data []byte, outF string) error {
 		fmt.Printf("Could not generate snapshot data: %+v\n", err)
 		return err
 	}
+	hash := hex.EncodeToString(Hash(out))
 	n, err := of.Write(out)
 	if err != nil {
 		fmt.Printf("Failed to write output to file: %+v\n", err)
 		return err
 	}
 	fmt.Printf("Successfully wrote %d bytes to file %s\n", n, outF)
+	fmt.Printf("Hash for checkpoint is %s\n", hash)
 	return nil
 }
 
 func writeCheckpoint(data []byte, outF string) error {
+	hash := hex.EncodeToString(Hash(data))
 	of, err := os.Create(outF)
 	if err != nil {
 		fmt.Printf("Failed to create output file %s: %+v\n", outF, err)
@@ -127,6 +131,7 @@ func writeCheckpoint(data []byte, outF string) error {
 		return err
 	}
 	fmt.Printf("Successfully wrote %d bytes to file %s\n", n, outF)
+	fmt.Printf("Checkpoint hash is %s\n", hash)
 	return nil
 }
 

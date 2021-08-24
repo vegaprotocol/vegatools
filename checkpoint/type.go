@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/crypto/sha3"
 )
 
 type all struct {
@@ -114,6 +115,12 @@ func (a *all) FromJSON(in []byte) error {
 		}
 	}
 	return nil
+}
+
+func Hash(data []byte) []byte {
+	h := sha3.New256()
+	_, _ = h.Write(data)
+	return h.Sum(nil)
 }
 
 func (a all) SnapshotData() ([]byte, error) {
