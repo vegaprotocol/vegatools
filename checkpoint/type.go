@@ -1,6 +1,7 @@
 package checkpoint
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -45,7 +47,32 @@ func (a all) CheckAssetsCollateral() error {
 
 func (a all) JSON() ([]byte, error) {
 	// format nicely
-	b, err := json.MarshalIndent(a, "", "   ")
+	marshaler := jsonpb.Marshaler{
+		Indent: "   ",
+	}
+	g, err := marshaler.MarshalToString(a.Governance)
+	if err != nil {
+		return nil, err
+	}
+	as, err := marshaler.MarshalToString(a.Assets)
+	if err != nil {
+		return nil, err
+	}
+	c, err := marshaler.MarshalToString(a.Collateral)
+	if err != nil {
+		return nil, err
+	}
+	n, err := marshaler.MarshalToString(a.NetParams)
+	if err != nil {
+		return nil, err
+	}
+	all := allJSON{
+		Governance: json.RawMessage(g),
+		Assets:     json.RawMessage(as),
+		Collateral: json.RawMessage(c),
+		NetParams:  json.RawMessage(n),
+	}
+	b, err := json.MarshalIndent(all, "", "   ")
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +81,37 @@ func (a all) JSON() ([]byte, error) {
 
 // FromJSON can be used in the future to load JSON input and generate a checkpoint file
 func (a *all) FromJSON(in []byte) error {
-	if err := json.Unmarshal(in, a); err != nil {
+	all := &allJSON{}
+	if err := json.Unmarshal(in, all); err != nil {
 		return err
+	}
+	if len(all.Governance) != 0 {
+		a.Governance = &snapshot.Proposals{}
+		reader := bytes.NewReader([]byte(all.Governance))
+		if err := jsonpb.Unmarshal(reader, a.Governance); err != nil {
+			return err
+		}
+	}
+	if len(all.Assets) != 0 {
+		a.Assets = &snapshot.Assets{}
+		reader := bytes.NewReader([]byte(all.Assets))
+		if err := jsonpb.Unmarshal(reader, a.Assets); err != nil {
+			return err
+		}
+	}
+	if len(all.Collateral) != 0 {
+		a.Collateral = &snapshot.Collateral{}
+		reader := bytes.NewReader([]byte(all.Collateral))
+		if err := jsonpb.Unmarshal(reader, a.Collateral); err != nil {
+			return err
+		}
+	}
+	if len(all.NetParams) != 0 {
+		a.NetParams = &snapshot.NetParams{}
+		reader := bytes.NewReader([]byte(all.NetParams))
+		if err := jsonpb.Unmarshal(reader, a.NetParams); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -217,4 +273,11 @@ func dummy() *all {
 			},
 		},
 	}
+}
+
+type allJSON struct {
+	Governance json.RawMessage `json:"governance_proposals,omitempty"`
+	Assets     json.RawMessage `json:"assets,omitempty"`
+	Collateral json.RawMessage `json:"collateral,omitempty"`
+	NetParams  json.RawMessage `json:"network_parameters,omitempty"`
 }
