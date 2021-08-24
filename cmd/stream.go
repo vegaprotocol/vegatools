@@ -32,7 +32,7 @@ func init() {
 	streamCmd.Flags().StringVarP(&streamOpts.serverAddr, "address", "a", "", "address of the grpc server")
 	streamCmd.Flags().StringVar(&streamOpts.logFormat, "log-format", "raw", "output stream data in specified format. Allowed values: raw (default), text, json")
 	streamCmd.Flags().BoolVarP(&streamOpts.reconnect, "reconnect", "r", false, "if connection dies, attempt to reconnect")
-	streamCmd.Flags().StringSliceVarP(&streamOpts.types, "type", "t", "", "one or more event types to subscribe to (default=ALL)")
+	streamCmd.Flags().StringSliceVarP(&streamOpts.types, "type", "t", nil, "one or more event types to subscribe to (default=ALL)")
 	streamCmd.MarkFlagRequired("address")
 }
 
