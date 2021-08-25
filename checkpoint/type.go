@@ -117,6 +117,7 @@ func (a *all) FromJSON(in []byte) error {
 	return nil
 }
 
+// Hash returns the hash for a checkpoint (copied form core repo - needs to be kept in sync)
 func Hash(data []byte) []byte {
 	h := sha3.New256()
 	_, _ = h.Write(data)
