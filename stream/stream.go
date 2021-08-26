@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -20,7 +21,7 @@ import (
 
 func connect(ctx context.Context,
 	batchSize uint,
-	party, market, serverAddr string) (*grpc.ClientConn, api.TradingDataService_ObserveEventBusClient, error) {
+	party, market, serverAddr string, types []string) (*grpc.ClientConn, api.TradingDataService_ObserveEventBusClient, error) {
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return nil, nil, err
@@ -37,13 +38,50 @@ func connect(ctx context.Context,
 		MarketId:  market,
 		PartyId:   party,
 		BatchSize: int64(batchSize),
-		Type:      []eventspb.BusEventType{eventspb.BusEventType_BUS_EVENT_TYPE_ALL},
+		Type:      typesToBETypes(types),
 	}
 
 	if err := stream.Send(req); err != nil {
 		return conn, stream, fmt.Errorf("error when sending initial message in stream: %w", err)
 	}
 	return conn, stream, nil
+}
+
+func typesToBETypes(types []string) []eventspb.BusEventType {
+	if len(types) == 0 {
+		return []eventspb.BusEventType{
+			eventspb.BusEventType_BUS_EVENT_TYPE_ALL,
+		}
+	}
+	dedup := map[string]struct{}{}
+	beTypes := make([]eventspb.BusEventType, 0, len(types))
+	for _, t := range types {
+		// check if t is numeric:
+		if n, err := strconv.ParseInt(t, 10, 32); err != nil && n > 0 {
+			// it was numeric, and we found the name to match
+			if ts, ok := eventspb.BusEventType_name[int32(n)]; ok {
+				t = ts
+			}
+		}
+		// deduplicate
+		if _, ok := dedup[t]; ok {
+			continue
+		}
+		dedup[t] = struct{}{}
+		// now get the constant value and add it to the slice if possible
+		if i, ok := eventspb.BusEventType_value[t]; ok {
+			bet := eventspb.BusEventType(i)
+			if bet == eventspb.BusEventType_BUS_EVENT_TYPE_ALL {
+				return typesToBETypes(nil)
+			}
+			beTypes = append(beTypes, bet)
+		}
+	}
+	if len(beTypes) == 0 {
+		// default to ALL
+		return typesToBETypes(nil)
+	}
+	return beTypes
 }
 
 func run(
@@ -54,8 +92,12 @@ func run(
 	party, market, serverAddr string,
 	printEvent func(string),
 	reconnect bool,
+	types []string,
 ) error {
-	conn, stream, err := connect(ctx, batchSize, party, market, serverAddr)
+	if len(types) == 0 || (len(types) == 1 && len(types[0]) == 0) {
+		types = nil
+	}
+	conn, stream, err := connect(ctx, batchSize, party, market, serverAddr, types)
 	if err != nil {
 		return fmt.Errorf("failed to connect to event stream: %w", err)
 	}
@@ -107,7 +149,7 @@ func run(
 					default:
 						time.Sleep(time.Second * 5)
 						log.Printf("Attempting to reconnect to the node")
-						conn, stream, err = connect(ctx, batchSize, party, market, serverAddr)
+						conn, stream, err = connect(ctx, batchSize, party, market, serverAddr, types)
 						if err == nil {
 							break
 						}
@@ -130,6 +172,7 @@ func Run(
 	batchSize uint,
 	party, market, serverAddr, logFormat string,
 	reconnect bool,
+	types []string,
 ) error {
 	flag.Parse()
 
@@ -156,7 +199,7 @@ func Run(
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := sync.WaitGroup{}
-	if err := run(ctx, cancel, &wg, batchSize, party, market, serverAddr, printEvent, reconnect); err != nil {
+	if err := run(ctx, cancel, &wg, batchSize, party, market, serverAddr, printEvent, reconnect, types); err != nil {
 		return fmt.Errorf("error when starting the stream: %v", err)
 	}
 
