@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega/api"
+	api "code.vegaprotocol.io/protos/data-node/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/gdamore/tcell/v2"
