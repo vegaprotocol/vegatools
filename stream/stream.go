@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega/api"
+	api "code.vegaprotocol.io/protos/data-node/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc"

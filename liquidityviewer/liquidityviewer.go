@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	api "code.vegaprotocol.io/protos/data-node/api/v1"
 	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/protos/vega/api"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/gdamore/tcell/v2"
