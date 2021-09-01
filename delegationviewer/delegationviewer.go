@@ -24,6 +24,7 @@ var (
 
 	args struct {
 		gRPCAddress string
+		updateDelay uint
 	}
 )
 
@@ -40,7 +41,6 @@ func getDelegationDetails(dataclient api.TradingDataServiceClient) error {
 
 func updateDelegationDetails(dataclient api.TradingDataServiceClient) {
 	for {
-		time.Sleep(time.Second * 3)
 		err := getDelegationDetails(dataclient)
 		if err != nil {
 			log.Fatalln("Failed to get node information", err)
@@ -50,6 +50,7 @@ func updateDelegationDetails(dataclient api.TradingDataServiceClient) {
 		drawTime()
 		drawNodes()
 		ts.Show()
+		time.Sleep(time.Second * time.Duration(args.updateDelay))
 	}
 }
 
@@ -101,13 +102,13 @@ func drawHeaders() {
 
 	// Draw the headings
 	drawString(0, 0, whiteStyle, args.gRPCAddress)
-	drawString((w/2)-9, 0, whiteStyle, "Delegation Details")
-	drawStringPc(0, 2, whiteStyle, "Id")
-	drawStringPc(30, 2, whiteStyle, "Location")
+	drawString((w/2)-12, 0, whiteStyle, "Delegation Details")
+	drawStringPc(0, 2, whiteStyle, "Node Id")
 
-	drawStringPc(55, 1, whiteStyle, "Staked By")
-	drawStringPc(50, 2, whiteStyle, "Operator")
-	drawStringPc(60, 2, whiteStyle, "Delegates")
+	drawStringPc(45, 1, whiteStyle, "Staked By")
+	drawStringPc(40, 2, whiteStyle, "Operator")
+	drawStringPc(50, 2, whiteStyle, "Delegates")
+	drawStringPc(60, 2, whiteStyle, "Total")
 	drawStringPc(70, 2, whiteStyle, "MaxIntended")
 	drawStringPc(80, 2, whiteStyle, "Pending")
 	drawStringPc(90, 2, whiteStyle, "Status")
@@ -133,9 +134,9 @@ func drawNodes() {
 		}
 
 		drawStringPc(0, 3+i, style, node.Id)
-		drawStringPc(30, 3+i, style, node.Location)
-		drawStringPc(50, 3+i, style, node.StakedByOperator)
-		drawStringPc(60, 3+i, style, node.StakedByDelegates)
+		drawStringPc(40, 3+i, style, node.StakedByOperator)
+		drawStringPc(50, 3+i, style, node.StakedByDelegates)
+		drawStringPc(60, 3+i, style, node.StakedTotal)
 		drawStringPc(70, 3+i, style, node.MaxIntendedStake)
 		drawStringPc(80, 3+i, style, node.PendingStake)
 
@@ -146,8 +147,10 @@ func drawNodes() {
 }
 
 // Run is the main entry point for this tool
-func Run(gRPCAddress string) error {
+func Run(gRPCAddress string, delay uint) error {
 	args.gRPCAddress = gRPCAddress
+	args.updateDelay = delay
+
 	// Create connection to vega
 	connection, err := grpc.Dial(gRPCAddress, grpc.WithInsecure())
 	if err != nil {

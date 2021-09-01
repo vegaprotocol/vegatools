@@ -7,7 +7,8 @@ import (
 
 var (
 	delegationViewerOpts struct {
-		serverAddr string
+		serverAddr  string
+		updateDelay uint
 	}
 
 	delegationViewerCmd = &cobra.Command{
@@ -20,9 +21,10 @@ var (
 func init() {
 	rootCmd.AddCommand(delegationViewerCmd)
 	delegationViewerCmd.Flags().StringVarP(&delegationViewerOpts.serverAddr, "address", "a", "", "address of the grpc server")
+	delegationViewerCmd.Flags().UintVarP(&delegationViewerOpts.updateDelay, "delay", "d", 5, "delay in seconds between updates")
 	delegationViewerCmd.MarkFlagRequired("address")
 }
 
 func runDelegationViewer(cmd *cobra.Command, args []string) error {
-	return delegationViewer.Run(delegationViewerOpts.serverAddr)
+	return delegationViewer.Run(delegationViewerOpts.serverAddr, delegationViewerOpts.updateDelay)
 }
