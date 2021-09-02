@@ -104,7 +104,12 @@ func generateCheckpoint(data []byte, outF string) error {
 		fmt.Printf("Could not generate snapshot data: %+v\n", err)
 		return err
 	}
-	hash := hex.EncodeToString(Hash(out))
+	hb, err := a.GetHashBytes()
+	if err != nil {
+		fmt.Printf("Could not get hash bytes from checkpoint data: %+v\n", err)
+		return err
+	}
+	hash := hex.EncodeToString(Hash(hb))
 	n, err := of.Write(out)
 	if err != nil {
 		fmt.Printf("Failed to write output to file: %+v\n", err)

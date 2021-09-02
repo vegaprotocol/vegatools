@@ -149,6 +149,32 @@ func (a all) SnapshotData() ([]byte, error) {
 	return ret, nil
 }
 
+func (a all) GetHashBytes() ([]byte, error) {
+	g, err := proto.Marshal(a.Governance)
+	if err != nil {
+		return nil, err
+	}
+	c, err := proto.Marshal(a.Collateral)
+	if err != nil {
+		return nil, err
+	}
+	n, err := proto.Marshal(a.NetParams)
+	if err != nil {
+		return nil, err
+	}
+	as, err := proto.Marshal(a.Assets)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]byte, 0, len(g)+len(as)+len(c)+len(n))
+	// the order in which we append is quite important
+	ret = append(ret, n...)
+	ret = append(ret, as...)
+	ret = append(ret, c...)
+	return append(ret, g...), nil
+
+}
+
 // Error outputs the mismatches in an easy to read way
 func (a AssetErr) Error() string {
 	out := make([]string, 0, len(a)+1)
