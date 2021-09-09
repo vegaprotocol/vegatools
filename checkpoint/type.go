@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
+	events "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -20,6 +21,8 @@ type all struct {
 	Assets     *snapshot.Assets     `json:"assets,omitempty"`
 	Collateral *snapshot.Collateral `json:"collateral,omitempty"`
 	NetParams  *snapshot.NetParams  `json:"network_parameters,omitempty"`
+	Delegate   *snapshot.Delegate   `json:"delegate,omitempty"`
+	Epoch      *events.EpochEvent   `json:"epoch,omitempty"`
 }
 
 // AssetErr a convenience error type
@@ -67,11 +70,21 @@ func (a all) JSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	d, err := marshaler.MarshalToString(a.Delegate)
+	if err != nil {
+		return nil, err
+	}
+	e, err := marshaler.MarshalToString(a.Epoch)
+	if err != nil {
+		return nil, err
+	}
 	all := allJSON{
 		Governance: json.RawMessage(g),
 		Assets:     json.RawMessage(as),
 		Collateral: json.RawMessage(c),
 		NetParams:  json.RawMessage(n),
+		Delegate:   json.RawMessage(d),
+		Epoch:      json.RawMessage(e),
 	}
 	b, err := json.MarshalIndent(all, "", "   ")
 	if err != nil {
@@ -114,6 +127,21 @@ func (a *all) FromJSON(in []byte) error {
 			return err
 		}
 	}
+	if len(all.Delegate) != 0 {
+		a.Delegate = &snapshot.Delegate{}
+		reader := bytes.NewReader([]byte(all.Delegate))
+		if err := jsonpb.Unmarshal(reader, a.Delegate); err != nil {
+			return err
+		}
+	}
+	if len(all.Epoch) != 0 {
+		a.Epoch = &events.EpochEvent{}
+		reader := bytes.NewReader([]byte(all.Epoch))
+		if err := jsonpb.Unmarshal(reader, a.Epoch); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -134,10 +162,23 @@ func (a all) SnapshotData() ([]byte, error) {
 		return nil, err
 	}
 	n, err := proto.Marshal(a.NetParams)
+	if err != nil {
+		return nil, err
+	}
+	d, err := proto.Marshal(a.Delegate)
+	if err != nil {
+		return nil, err
+	}
+	e, err := proto.Marshal(a.Epoch)
+	if err != nil {
+		return nil, err
+	}
 	cp := &snapshot.Checkpoint{
 		Governance:        g,
 		Collateral:        c,
 		NetworkParameters: n,
+		Delegation:        d,
+		Epoch:             e,
 	}
 	if cp.Assets, err = proto.Marshal(a.Assets); err != nil {
 		return nil, err
@@ -262,6 +303,26 @@ func dummy() *all {
 			},
 		},
 	}
+	del := &snapshot.Delegate{
+		Active: []*snapshot.DelegateEntry{
+			{
+				Party:    "deadbeef007",
+				Node:     "node0",
+				Amount:   "100",
+				EpochSeq: 0,
+			},
+		},
+		Pending: []*snapshot.DelegateEntry{
+			{
+				Party:      "deadbeef007",
+				Node:       "node0",
+				Amount:     "100",
+				Undelegate: true,
+				EpochSeq:   1,
+			},
+		},
+	}
+	t := time.Now()
 	return &all{
 		Assets: &snapshot.Assets{
 			Assets: []*snapshot.AssetEntry{ae},
@@ -280,6 +341,14 @@ func dummy() *all {
 				},
 			},
 		},
+		Delegate: del,
+		Epoch: &events.EpochEvent{
+			Seq:        0,
+			Action:     vega.EpochAction_EPOCH_ACTION_START,
+			StartTime:  t.UnixNano(),
+			ExpireTime: t.Add(24 * time.Hour).UnixNano(),
+			EndTime:    t.Add(25 * time.Hour).UnixNano(),
+		},
 	}
 }
 
@@ -288,4 +357,6 @@ type allJSON struct {
 	Assets     json.RawMessage `json:"assets,omitempty"`
 	Collateral json.RawMessage `json:"collateral,omitempty"`
 	NetParams  json.RawMessage `json:"network_parameters,omitempty"`
+	Delegate   json.RawMessage `json:"delegate,omitempty"`
+	Epoch      json.RawMessage `json:"epoch,omitempty"`
 }
