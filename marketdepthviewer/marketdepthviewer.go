@@ -304,7 +304,7 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 			}
 			text := fmt.Sprintf("%12d", pl.Volume)
 			drawString((w/4)-21, index+4, greenStyle, text)
-			text = fmt.Sprintf("%12d", pl.Price)
+			text = fmt.Sprintf("%12s", pl.Price)
 			drawString((w/4)+7, index+4, greenStyle, text)
 		}
 
@@ -315,7 +315,7 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 			if index > (h - 6) {
 				continue
 			}
-			text := fmt.Sprintf("%d", pl.Price)
+			text := fmt.Sprintf("%s", pl.Price)
 			drawString((3*w/4)-22, index+4, redStyle, text)
 			text = fmt.Sprintf("%d", pl.Volume)
 			drawString((3*w/4)+9, index+4, redStyle, text)
