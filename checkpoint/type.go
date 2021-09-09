@@ -314,10 +314,11 @@ func dummy() *all {
 		},
 		Pending: []*snapshot.DelegateEntry{
 			{
-				Party:    "deadbeef007",
-				Node:     "node0",
-				Amount:   "100",
-				EpochSeq: 1,
+				Party:      "deadbeef007",
+				Node:       "node0",
+				Amount:     "100",
+				Undelegate: true,
+				EpochSeq:   1,
 			},
 		},
 	}
