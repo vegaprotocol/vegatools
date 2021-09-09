@@ -143,7 +143,7 @@ func drawMarketState() {
 	text := fmt.Sprintf("%s", marketData.MarketTradingMode.String())
 	drawString((w-len(text))/3, 0, whiteStyle, text)
 
-	text = fmt.Sprintf("Commitment: %d", lp.CommitmentAmount)
+	text = fmt.Sprintf("Commitment: %s", lp.CommitmentAmount)
 	drawString(((w-len(text))*2)/3, 0, whiteStyle, text)
 
 	text = fmt.Sprintf("Target Stake:%s", marketData.TargetStake)
@@ -156,11 +156,11 @@ func drawMarketState() {
 func drawAccounts() {
 	w, h := ts.Size()
 
-	text := fmt.Sprintf("General Account %d", acctGeneral)
+	text := fmt.Sprintf("General Account %s", acctGeneral)
 	drawString((0*w)/3, h-1, whiteStyle, text)
-	text = fmt.Sprintf("Margin Account %d", acctMargin)
+	text = fmt.Sprintf("Margin Account %s", acctMargin)
 	drawString((w-len(text))/2, h-1, whiteStyle, text)
-	text = fmt.Sprintf("Bond Account %d", acctBond)
+	text = fmt.Sprintf("Bond Account %s", acctBond)
 	drawString(w-len(text), h-1, whiteStyle, text)
 }
 
@@ -176,15 +176,15 @@ func drawPosition() {
 	} else {
 		drawString(0, h-2, redStyle, text)
 	}
-	text = fmt.Sprintf("Realised PnL %d", position.RealisedPnl)
-	if position.RealisedPnl >= 0 {
+	text = fmt.Sprintf("Realised PnL %s", position.RealisedPnl)
+	if len(position.RealisedPnl) > 0 && position.RealisedPnl[0] == '+' {
 		drawString((w-len(text))/2, h-2, greenStyle, text)
 	} else {
 		drawString((w-len(text))/2, h-2, redStyle, text)
 	}
 
-	text = fmt.Sprintf("Unrealised PnL %d", position.UnrealisedPnl)
-	if position.UnrealisedPnl >= 0 {
+	text = fmt.Sprintf("Unrealised PnL %s", position.UnrealisedPnl)
+	if len(position.UnrealisedPnl) > 0 && position.UnrealisedPnl[0] == '+' {
 		drawString(w-len(text), h-2, greenStyle, text)
 	} else {
 		drawString(w-len(text), h-2, redStyle, text)
@@ -234,13 +234,13 @@ func drawOrders() {
 			if order.Side == proto.Side_SIDE_BUY {
 				buyStartRow++
 				drawStringPc(0, buyStartRow, whiteStyle, order.Id)
-				drawStringPc(25, buyStartRow, whiteStyle, strconv.FormatUint(order.Price, 10))
+				drawStringPc(25, buyStartRow, whiteStyle, order.Price)
 				drawStringPc(34, buyStartRow, whiteStyle, strconv.FormatUint(order.Size, 10))
 				drawStringPc(42, buyStartRow, whiteStyle, strconv.FormatUint(order.Remaining, 10))
 			} else {
 				sellStartRow++
 				drawStringPc(50, sellStartRow, whiteStyle, order.Id)
-				drawStringPc(75, sellStartRow, whiteStyle, strconv.FormatUint(order.Price, 10))
+				drawStringPc(75, sellStartRow, whiteStyle, order.Price)
 				drawStringPc(84, sellStartRow, whiteStyle, strconv.FormatUint(order.Size, 10))
 				drawStringPc(92, sellStartRow, whiteStyle, strconv.FormatUint(order.Remaining, 10))
 			}
