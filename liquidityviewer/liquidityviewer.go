@@ -27,9 +27,9 @@ var (
 	//party          string
 	mapMarketToLPs map[string][]*proto.LiquidityProvision = map[string][]*proto.LiquidityProvision{}
 	lp             *proto.LiquidityProvision
-	acctMargin     uint64
-	acctGeneral    uint64
-	acctBond       uint64
+	acctMargin     string
+	acctGeneral    string
+	acctBond       string
 	mapOrders      map[string]*proto.Order = map[string]*proto.Order{}
 	marketData     *proto.MarketData
 	position       *proto.Position

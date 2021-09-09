@@ -240,7 +240,7 @@ func dummy() *all {
 						},
 					},
 					LiquidityCommitment: &vega.NewMarketCommitment{
-						CommitmentAmount: 100,
+						CommitmentAmount: "100",
 						Fee:              ".0001",
 						Sells: []*vega.LiquidityOrder{
 							{
