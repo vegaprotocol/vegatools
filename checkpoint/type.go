@@ -79,6 +79,7 @@ func (a all) JSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	block, err := marshaler.MarshalToString(a.Block)
 	all := allJSON{
 		Governance: json.RawMessage(g),
 		Assets:     json.RawMessage(as),
@@ -86,6 +87,7 @@ func (a all) JSON() ([]byte, error) {
 		NetParams:  json.RawMessage(n),
 		Delegate:   json.RawMessage(d),
 		Epoch:      json.RawMessage(e),
+		Block:      json.RawMessage(block),
 	}
 	b, err := json.MarshalIndent(all, "", "   ")
 	if err != nil {
