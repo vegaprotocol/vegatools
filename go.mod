@@ -3,7 +3,7 @@ module code.vegaprotocol.io/vegatools
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.42.0-pre6.0.20210908152602-f1f97fbd092f
+	code.vegaprotocol.io/protos v0.42.0-pre6.0.20210910123835-b4d34701264a
 	github.com/ethereum/go-ethereum v1.10.8
 	github.com/gdamore/tcell/v2 v2.4.0
 	github.com/golang/protobuf v1.5.2

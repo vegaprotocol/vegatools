@@ -23,6 +23,7 @@ type all struct {
 	NetParams  *snapshot.NetParams  `json:"network_parameters,omitempty"`
 	Delegate   *snapshot.Delegate   `json:"delegate,omitempty"`
 	Epoch      *events.EpochEvent   `json:"epoch,omitempty"`
+	Block      *snapshot.Block      `json:"block,omitempty"`
 }
 
 // AssetErr a convenience error type
@@ -141,6 +142,13 @@ func (a *all) FromJSON(in []byte) error {
 			return err
 		}
 	}
+	if len(all.Block) != 0 {
+		a.Block = &snapshot.Block{}
+		reader := bytes.NewReader([]byte(all.Block))
+		if err := jsonpb.Unmarshal(reader, a.Block); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -173,12 +181,17 @@ func (a all) SnapshotData() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	b, err := proto.Marshal(a.Block)
+	if err != nil {
+		return nil, err
+	}
 	cp := &snapshot.Checkpoint{
 		Governance:        g,
 		Collateral:        c,
 		NetworkParameters: n,
 		Delegation:        d,
 		Epoch:             e,
+		Block:             b,
 	}
 	if cp.Assets, err = proto.Marshal(a.Assets); err != nil {
 		return nil, err
@@ -349,6 +362,9 @@ func dummy() *all {
 			ExpireTime: t.Add(24 * time.Hour).UnixNano(),
 			EndTime:    t.Add(25 * time.Hour).UnixNano(),
 		},
+		Block: &snapshot.Block{
+			Height: 1,
+		},
 	}
 }
 
@@ -359,4 +375,5 @@ type allJSON struct {
 	NetParams  json.RawMessage `json:"network_parameters,omitempty"`
 	Delegate   json.RawMessage `json:"delegate,omitempty"`
 	Epoch      json.RawMessage `json:"epoch,omitempty"`
+	Block      json.RawMessage `json:"block,omitempty"`
 }
