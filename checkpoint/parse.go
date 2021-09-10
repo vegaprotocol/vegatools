@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	events "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
 	"github.com/golang/protobuf/proto"
@@ -66,12 +67,12 @@ func Run(inFile, outFile, format string, generate, validate, dummy bool) error {
 
 func generateDummy(cpF, JSONFname string) error {
 	d := dummy()
-	cp, err := d.SnapshotData() // get the data as snapshot
+	cp, h, err := d.SnapshotData() // get the data as snapshot
 	if err != nil {
 		fmt.Printf("Could not convert dummy to snapshot data to write to file: %+v\n", err)
 		return err
 	}
-	if err := writeCheckpoint(cp, cpF); err != nil {
+	if err := writeCheckpoint(cp, h, cpF); err != nil {
 		fmt.Printf("Error writing checkpoint data to file '%s': %+v\n", cpF, err)
 		return err
 	}
@@ -99,12 +100,12 @@ func generateCheckpoint(data []byte, outF string) error {
 		fmt.Printf("Could not unmarshal input: %+v\n", err)
 		return err
 	}
-	out, err := a.SnapshotData()
+	out, h, err := a.SnapshotData()
 	if err != nil {
 		fmt.Printf("Could not generate snapshot data: %+v\n", err)
 		return err
 	}
-	hash := hex.EncodeToString(Hash(out))
+	hash := hex.EncodeToString(Hash(h))
 	n, err := of.Write(out)
 	if err != nil {
 		fmt.Printf("Failed to write output to file: %+v\n", err)
@@ -115,8 +116,8 @@ func generateCheckpoint(data []byte, outF string) error {
 	return nil
 }
 
-func writeCheckpoint(data []byte, outF string) error {
-	hash := hex.EncodeToString(Hash(data))
+func writeCheckpoint(data, h []byte, outF string) error {
+	hash := hex.EncodeToString(Hash(h))
 	of, err := os.Create(outF)
 	if err != nil {
 		fmt.Printf("Failed to create output file %s: %+v\n", outF, err)
@@ -185,6 +186,15 @@ func unmarshalAll(cp *snapshot.Checkpoint) (*all, error) {
 	if ret.NetParams, err = unmarshalNetParams(cp); err != nil {
 		return nil, err
 	}
+	if ret.Delegate, err = unmarshalDelegate(cp); err != nil {
+		return nil, err
+	}
+	if ret.Epoch, err = unmarshalEpoch(cp); err != nil {
+		return nil, err
+	}
+	if ret.Block, err = unmarshalBlock(cp); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
@@ -218,4 +228,28 @@ func unmarshalNetParams(cp *snapshot.Checkpoint) (*snapshot.NetParams, error) {
 		return nil, err
 	}
 	return n, nil
+}
+
+func unmarshalDelegate(cp *snapshot.Checkpoint) (*snapshot.Delegate, error) {
+	d := &snapshot.Delegate{}
+	if err := proto.Unmarshal(cp.Delegation, d); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+func unmarshalEpoch(cp *snapshot.Checkpoint) (*events.EpochEvent, error) {
+	e := &events.EpochEvent{}
+	if err := proto.Unmarshal(cp.Epoch, e); err != nil {
+		return nil, err
+	}
+	return e, nil
+}
+
+func unmarshalBlock(cp *snapshot.Checkpoint) (*snapshot.Block, error) {
+	b := &snapshot.Block{}
+	if err := proto.Unmarshal(cp.Block, b); err != nil {
+		return nil, err
+	}
+	return b, nil
 }
