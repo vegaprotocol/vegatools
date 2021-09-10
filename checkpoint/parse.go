@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	events "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
 	"github.com/golang/protobuf/proto"
@@ -185,6 +186,15 @@ func unmarshalAll(cp *snapshot.Checkpoint) (*all, error) {
 	if ret.NetParams, err = unmarshalNetParams(cp); err != nil {
 		return nil, err
 	}
+	if ret.Delegate, err = unmarshalDelegate(cp); err != nil {
+		return nil, err
+	}
+	if ret.Epoch, err = unmarshalEpoch(cp); err != nil {
+		return nil, err
+	}
+	if ret.Block, err = unmarshalBlock(cp); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
@@ -218,4 +228,28 @@ func unmarshalNetParams(cp *snapshot.Checkpoint) (*snapshot.NetParams, error) {
 		return nil, err
 	}
 	return n, nil
+}
+
+func unmarshalDelegate(cp *snapshot.Checkpoint) (*snapshot.Delegate, error) {
+	d := &snapshot.Delegate{}
+	if err := proto.Unmarshal(cp.Delegation, d); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+func unmarshalEpoch(cp *snapshot.Checkpoint) (*events.EpochEvent, error) {
+	e := &events.EpochEvent{}
+	if err := proto.Unmarshal(cp.Epoch, e); err != nil {
+		return nil, err
+	}
+	return e, nil
+}
+
+func unmarshalBlock(cp *snapshot.Checkpoint) (*snapshot.Block, error) {
+	b := &snapshot.Block{}
+	if err := proto.Unmarshal(cp.Block, b); err != nil {
+		return nil, err
+	}
+	return b, nil
 }
