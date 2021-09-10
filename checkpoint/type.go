@@ -162,30 +162,42 @@ func Hash(data []byte) []byte {
 	return h.Sum(nil)
 }
 
-func (a all) SnapshotData() ([]byte, error) {
+func hashBytes(cp *snapshot.Checkpoint) []byte {
+	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block))
+	// the order in which we append is quite important
+	ret = append(ret, cp.NetworkParameters...)
+	ret = append(ret, cp.Assets...)
+	ret = append(ret, cp.Collateral...)
+	ret = append(ret, cp.Delegation...)
+	ret = append(ret, cp.Epoch...)
+	ret = append(ret, cp.Block...)
+	return append(ret, cp.Governance...)
+}
+
+func (a all) SnapshotData() ([]byte, []byte, error) {
 	g, err := proto.Marshal(a.Governance)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	c, err := proto.Marshal(a.Collateral)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	n, err := proto.Marshal(a.NetParams)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	d, err := proto.Marshal(a.Delegate)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	e, err := proto.Marshal(a.Epoch)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	b, err := proto.Marshal(a.Block)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	cp := &snapshot.Checkpoint{
 		Governance:        g,
@@ -196,13 +208,14 @@ func (a all) SnapshotData() ([]byte, error) {
 		Block:             b,
 	}
 	if cp.Assets, err = proto.Marshal(a.Assets); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	ret, err := proto.Marshal(cp)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return ret, nil
+	hb := hashBytes(cp)
+	return ret, hb, nil
 }
 
 // Error outputs the mismatches in an easy to read way

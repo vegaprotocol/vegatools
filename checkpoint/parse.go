@@ -67,12 +67,12 @@ func Run(inFile, outFile, format string, generate, validate, dummy bool) error {
 
 func generateDummy(cpF, JSONFname string) error {
 	d := dummy()
-	cp, err := d.SnapshotData() // get the data as snapshot
+	cp, h, err := d.SnapshotData() // get the data as snapshot
 	if err != nil {
 		fmt.Printf("Could not convert dummy to snapshot data to write to file: %+v\n", err)
 		return err
 	}
-	if err := writeCheckpoint(cp, cpF); err != nil {
+	if err := writeCheckpoint(cp, h, cpF); err != nil {
 		fmt.Printf("Error writing checkpoint data to file '%s': %+v\n", cpF, err)
 		return err
 	}
@@ -100,12 +100,12 @@ func generateCheckpoint(data []byte, outF string) error {
 		fmt.Printf("Could not unmarshal input: %+v\n", err)
 		return err
 	}
-	out, err := a.SnapshotData()
+	out, h, err := a.SnapshotData()
 	if err != nil {
 		fmt.Printf("Could not generate snapshot data: %+v\n", err)
 		return err
 	}
-	hash := hex.EncodeToString(Hash(out))
+	hash := hex.EncodeToString(Hash(h))
 	n, err := of.Write(out)
 	if err != nil {
 		fmt.Printf("Failed to write output to file: %+v\n", err)
@@ -116,8 +116,8 @@ func generateCheckpoint(data []byte, outF string) error {
 	return nil
 }
 
-func writeCheckpoint(data []byte, outF string) error {
-	hash := hex.EncodeToString(Hash(data))
+func writeCheckpoint(data, h []byte, outF string) error {
+	hash := hex.EncodeToString(Hash(h))
 	of, err := os.Create(outF)
 	if err != nil {
 		fmt.Printf("Failed to create output file %s: %+v\n", outF, err)
