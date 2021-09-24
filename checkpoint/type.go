@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	events "code.vegaprotocol.io/protos/vega/events/v1"
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -17,13 +17,13 @@ import (
 )
 
 type all struct {
-	Governance *snapshot.Proposals  `json:"governance_proposals,omitempty"`
-	Assets     *snapshot.Assets     `json:"assets,omitempty"`
-	Collateral *snapshot.Collateral `json:"collateral,omitempty"`
-	NetParams  *snapshot.NetParams  `json:"network_parameters,omitempty"`
-	Delegate   *snapshot.Delegate   `json:"delegate,omitempty"`
-	Epoch      *events.EpochEvent   `json:"epoch,omitempty"`
-	Block      *snapshot.Block      `json:"block,omitempty"`
+	Governance *checkpoint.Proposals  `json:"governance_proposals,omitempty"`
+	Assets     *checkpoint.Assets     `json:"assets,omitempty"`
+	Collateral *checkpoint.Collateral `json:"collateral,omitempty"`
+	NetParams  *checkpoint.NetParams  `json:"network_parameters,omitempty"`
+	Delegate   *checkpoint.Delegate   `json:"delegate,omitempty"`
+	Epoch      *events.EpochEvent     `json:"epoch,omitempty"`
+	Block      *checkpoint.Block      `json:"block,omitempty"`
 }
 
 // AssetErr a convenience error type
@@ -103,35 +103,35 @@ func (a *all) FromJSON(in []byte) error {
 		return err
 	}
 	if len(all.Governance) != 0 {
-		a.Governance = &snapshot.Proposals{}
+		a.Governance = &checkpoint.Proposals{}
 		reader := bytes.NewReader([]byte(all.Governance))
 		if err := jsonpb.Unmarshal(reader, a.Governance); err != nil {
 			return err
 		}
 	}
 	if len(all.Assets) != 0 {
-		a.Assets = &snapshot.Assets{}
+		a.Assets = &checkpoint.Assets{}
 		reader := bytes.NewReader([]byte(all.Assets))
 		if err := jsonpb.Unmarshal(reader, a.Assets); err != nil {
 			return err
 		}
 	}
 	if len(all.Collateral) != 0 {
-		a.Collateral = &snapshot.Collateral{}
+		a.Collateral = &checkpoint.Collateral{}
 		reader := bytes.NewReader([]byte(all.Collateral))
 		if err := jsonpb.Unmarshal(reader, a.Collateral); err != nil {
 			return err
 		}
 	}
 	if len(all.NetParams) != 0 {
-		a.NetParams = &snapshot.NetParams{}
+		a.NetParams = &checkpoint.NetParams{}
 		reader := bytes.NewReader([]byte(all.NetParams))
 		if err := jsonpb.Unmarshal(reader, a.NetParams); err != nil {
 			return err
 		}
 	}
 	if len(all.Delegate) != 0 {
-		a.Delegate = &snapshot.Delegate{}
+		a.Delegate = &checkpoint.Delegate{}
 		reader := bytes.NewReader([]byte(all.Delegate))
 		if err := jsonpb.Unmarshal(reader, a.Delegate); err != nil {
 			return err
@@ -145,7 +145,7 @@ func (a *all) FromJSON(in []byte) error {
 		}
 	}
 	if len(all.Block) != 0 {
-		a.Block = &snapshot.Block{}
+		a.Block = &checkpoint.Block{}
 		reader := bytes.NewReader([]byte(all.Block))
 		if err := jsonpb.Unmarshal(reader, a.Block); err != nil {
 			return err
@@ -162,7 +162,7 @@ func Hash(data []byte) []byte {
 	return h.Sum(nil)
 }
 
-func hashBytes(cp *snapshot.Checkpoint) []byte {
+func hashBytes(cp *checkpoint.Checkpoint) []byte {
 	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block))
 	// the order in which we append is quite important
 	ret = append(ret, cp.NetworkParameters...)
@@ -199,7 +199,7 @@ func (a all) SnapshotData() ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	cp := &snapshot.Checkpoint{
+	cp := &checkpoint.Checkpoint{
 		Governance:        g,
 		Collateral:        c,
 		NetworkParameters: n,
@@ -229,7 +229,7 @@ func (a AssetErr) Error() string {
 }
 
 func dummy() *all {
-	ae := &snapshot.AssetEntry{
+	ae := &checkpoint.AssetEntry{
 		Id: "ETH",
 		AssetDetails: &vega.AssetDetails{
 			Name:        "ETH",
@@ -244,7 +244,7 @@ func dummy() *all {
 			},
 		},
 	}
-	bal := &snapshot.AssetBalance{
+	bal := &checkpoint.AssetBalance{
 		Party:   "deadbeef007",
 		Asset:   "ETH",
 		Balance: "1000000",
@@ -331,8 +331,8 @@ func dummy() *all {
 			},
 		},
 	}
-	del := &snapshot.Delegate{
-		Active: []*snapshot.DelegateEntry{
+	del := &checkpoint.Delegate{
+		Active: []*checkpoint.DelegateEntry{
 			{
 				Party:    "deadbeef007",
 				Node:     "node0",
@@ -340,7 +340,7 @@ func dummy() *all {
 				EpochSeq: 0,
 			},
 		},
-		Pending: []*snapshot.DelegateEntry{
+		Pending: []*checkpoint.DelegateEntry{
 			{
 				Party:      "deadbeef007",
 				Node:       "node0",
@@ -352,16 +352,16 @@ func dummy() *all {
 	}
 	t := time.Now()
 	return &all{
-		Assets: &snapshot.Assets{
-			Assets: []*snapshot.AssetEntry{ae},
+		Assets: &checkpoint.Assets{
+			Assets: []*checkpoint.AssetEntry{ae},
 		},
-		Collateral: &snapshot.Collateral{
-			Balances: []*snapshot.AssetBalance{bal},
+		Collateral: &checkpoint.Collateral{
+			Balances: []*checkpoint.AssetBalance{bal},
 		},
-		Governance: &snapshot.Proposals{
+		Governance: &checkpoint.Proposals{
 			Proposals: []*vega.Proposal{prop},
 		},
-		NetParams: &snapshot.NetParams{
+		NetParams: &checkpoint.NetParams{
 			Params: []*vega.NetworkParameter{
 				{
 					Key:   "foo",
@@ -377,7 +377,7 @@ func dummy() *all {
 			ExpireTime: t.Add(24 * time.Hour).UnixNano(),
 			EndTime:    t.Add(25 * time.Hour).UnixNano(),
 		},
-		Block: &snapshot.Block{
+		Block: &checkpoint.Block{
 			Height: 1,
 		},
 	}
