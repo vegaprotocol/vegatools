@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	events "code.vegaprotocol.io/protos/vega/events/v1"
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -40,7 +40,7 @@ func Run(inFile, outFile, format string, generate, validate, dummy bool) error {
 	if generate {
 		return generateCheckpoint(data, outFile)
 	}
-	cp := &snapshot.Checkpoint{}
+	cp := &checkpoint.Checkpoint{}
 	if err := proto.Unmarshal(data, cp); err != nil {
 		return err
 	}
@@ -67,9 +67,9 @@ func Run(inFile, outFile, format string, generate, validate, dummy bool) error {
 
 func generateDummy(cpF, JSONFname string) error {
 	d := dummy()
-	cp, h, err := d.SnapshotData() // get the data as snapshot
+	cp, h, err := d.SnapshotData() // get the data as checkpoint
 	if err != nil {
-		fmt.Printf("Could not convert dummy to snapshot data to write to file: %+v\n", err)
+		fmt.Printf("Could not convert dummy to checkpoint data to write to file: %+v\n", err)
 		return err
 	}
 	if err := writeCheckpoint(cp, h, cpF); err != nil {
@@ -102,7 +102,7 @@ func generateCheckpoint(data []byte, outF string) error {
 	}
 	out, h, err := a.SnapshotData()
 	if err != nil {
-		fmt.Printf("Could not generate snapshot data: %+v\n", err)
+		fmt.Printf("Could not generate checkpoint data: %+v\n", err)
 		return err
 	}
 	hash := hex.EncodeToString(Hash(h))
@@ -171,7 +171,7 @@ func writeOut(a *all, path string) error {
 	return nil
 }
 
-func unmarshalAll(cp *snapshot.Checkpoint) (*all, error) {
+func unmarshalAll(cp *checkpoint.Checkpoint) (*all, error) {
 	ret := &all{}
 	var err error
 	if ret.Governance, err = unmarshalGovernance(cp); err != nil {
@@ -198,47 +198,47 @@ func unmarshalAll(cp *snapshot.Checkpoint) (*all, error) {
 	return ret, nil
 }
 
-func unmarshalGovernance(cp *snapshot.Checkpoint) (*snapshot.Proposals, error) {
-	p := &snapshot.Proposals{}
+func unmarshalGovernance(cp *checkpoint.Checkpoint) (*checkpoint.Proposals, error) {
+	p := &checkpoint.Proposals{}
 	if err := proto.Unmarshal(cp.Governance, p); err != nil {
 		return nil, err
 	}
 	return p, nil
 }
 
-func unmarshalAssets(cp *snapshot.Checkpoint) (*snapshot.Assets, error) {
-	a := &snapshot.Assets{}
+func unmarshalAssets(cp *checkpoint.Checkpoint) (*checkpoint.Assets, error) {
+	a := &checkpoint.Assets{}
 	if err := proto.Unmarshal(cp.Assets, a); err != nil {
 		return nil, err
 	}
 	return a, nil
 }
 
-func unmarshalCollateral(cp *snapshot.Checkpoint) (*snapshot.Collateral, error) {
-	c := &snapshot.Collateral{}
+func unmarshalCollateral(cp *checkpoint.Checkpoint) (*checkpoint.Collateral, error) {
+	c := &checkpoint.Collateral{}
 	if err := proto.Unmarshal(cp.Collateral, c); err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-func unmarshalNetParams(cp *snapshot.Checkpoint) (*snapshot.NetParams, error) {
-	n := &snapshot.NetParams{}
+func unmarshalNetParams(cp *checkpoint.Checkpoint) (*checkpoint.NetParams, error) {
+	n := &checkpoint.NetParams{}
 	if err := proto.Unmarshal(cp.NetworkParameters, n); err != nil {
 		return nil, err
 	}
 	return n, nil
 }
 
-func unmarshalDelegate(cp *snapshot.Checkpoint) (*snapshot.Delegate, error) {
-	d := &snapshot.Delegate{}
+func unmarshalDelegate(cp *checkpoint.Checkpoint) (*checkpoint.Delegate, error) {
+	d := &checkpoint.Delegate{}
 	if err := proto.Unmarshal(cp.Delegation, d); err != nil {
 		return nil, err
 	}
 	return d, nil
 }
 
-func unmarshalEpoch(cp *snapshot.Checkpoint) (*events.EpochEvent, error) {
+func unmarshalEpoch(cp *checkpoint.Checkpoint) (*events.EpochEvent, error) {
 	e := &events.EpochEvent{}
 	if err := proto.Unmarshal(cp.Epoch, e); err != nil {
 		return nil, err
@@ -246,8 +246,8 @@ func unmarshalEpoch(cp *snapshot.Checkpoint) (*events.EpochEvent, error) {
 	return e, nil
 }
 
-func unmarshalBlock(cp *snapshot.Checkpoint) (*snapshot.Block, error) {
-	b := &snapshot.Block{}
+func unmarshalBlock(cp *checkpoint.Checkpoint) (*checkpoint.Block, error) {
+	b := &checkpoint.Block{}
 	if err := proto.Unmarshal(cp.Block, b); err != nil {
 		return nil, err
 	}
