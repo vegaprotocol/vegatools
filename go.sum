@@ -25,6 +25,8 @@ code.vegaprotocol.io/protos v0.42.1-0.20210924184228-574477978238 h1:luNIAXyAfVu
 code.vegaprotocol.io/protos v0.42.1-0.20210924184228-574477978238/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/protos v0.42.1-0.20210924193947-8f56005471eb h1:vFGWRo9vBL2WT8J+PmewTLvbbI1e5HLKJMnWJhg7xOI=
 code.vegaprotocol.io/protos v0.42.1-0.20210924193947-8f56005471eb/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+code.vegaprotocol.io/protos v0.42.1-0.20210925110737-2b214ca7c828 h1:4mEvM9dZqlPZvVoQh2zSXRYaRfeAUGLRys4kRdp5FUk=
+code.vegaprotocol.io/protos v0.42.1-0.20210925110737-2b214ca7c828/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 collectd.org v0.3.0/go.mod h1:A/8DzQBkF6abtvrT2j/AU/4tiBgJWYyh0y/oB/4MlWE=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/Azure/azure-pipeline-go v0.2.1/go.mod h1:UGSo8XybXnIGZ3epmeBw7Jdz+HiUVpqIlpz/HKHylF4=
