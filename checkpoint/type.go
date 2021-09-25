@@ -349,7 +349,7 @@ func dummy() *all {
 				EpochSeq:   1,
 			},
 		},
-		AutoDelegate: []string{
+		AutoDelegation: []string{
 			"deadbeef007",
 		},
 	}
