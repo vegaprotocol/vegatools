@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	api "code.vegaprotocol.io/protos/data-node/api/v1"
+	api "code.vegaprotocol.io/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc"
@@ -21,13 +21,12 @@ import (
 
 func connect(ctx context.Context,
 	batchSize uint,
-	party, market, serverAddr string, types []string) (*grpc.ClientConn, api.TradingDataService_ObserveEventBusClient, error) {
+	party, market, serverAddr string, types []string) (*grpc.ClientConn, api.CoreService_ObserveEventBusClient, error) {
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return nil, nil, err
 	}
-
-	client := api.NewTradingDataServiceClient(conn)
+	client := api.NewCoreServiceClient(conn)
 	stream, err := client.ObserveEventBus(ctx)
 	if err != nil {
 		conn.Close()
@@ -112,7 +111,7 @@ func run(
 		defer cancel()
 		m := jsonpb.Marshaler{}
 
-		for true {
+		for {
 			defer conn.Close()
 			defer stream.CloseSend()
 			for {
@@ -142,7 +141,7 @@ func run(
 
 			if reconnect {
 				// Keep waiting and retrying until we reconnect
-				for true {
+				for {
 					select {
 					case <-ctx.Done():
 						return
