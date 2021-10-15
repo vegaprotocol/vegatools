@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	api "code.vegaprotocol.io/protos/vega/api"
+	api "code.vegaprotocol.io/protos/data-node/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc"
@@ -21,13 +21,13 @@ import (
 
 func connect(ctx context.Context,
 	batchSize uint,
-	party, market, serverAddr string, types []string) (*grpc.ClientConn, api.TradingService_ObserveEventBusClient, error) {
+	party, market, serverAddr string, types []string) (*grpc.ClientConn, api.TradingDataService_ObserveEventBusClient, error) {
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	client := api.NewTradingServiceClient(conn)
+	client := api.NewTradingDataServiceClient(conn)
 	stream, err := client.ObserveEventBus(ctx)
 	if err != nil {
 		conn.Close()
@@ -210,7 +210,7 @@ func Run(
 }
 
 func waitSig(ctx context.Context, cancel func()) {
-	var gracefulStop = make(chan os.Signal, 1)
+	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 
