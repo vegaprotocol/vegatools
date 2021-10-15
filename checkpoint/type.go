@@ -349,6 +349,9 @@ func dummy() *all {
 				EpochSeq:   1,
 			},
 		},
+		AutoDelegation: []string{
+			"deadbeef007",
+		},
 	}
 	t := time.Now()
 	return &all{

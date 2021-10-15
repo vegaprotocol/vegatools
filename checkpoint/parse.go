@@ -67,9 +67,9 @@ func Run(inFile, outFile, format string, generate, validate, dummy bool) error {
 
 func generateDummy(cpF, JSONFname string) error {
 	d := dummy()
-	cp, h, err := d.SnapshotData() // get the data as snapshot
+	cp, h, err := d.SnapshotData() // get the data as checkpoint
 	if err != nil {
-		fmt.Printf("Could not convert dummy to snapshot data to write to file: %+v\n", err)
+		fmt.Printf("Could not convert dummy to checkpoint data to write to file: %+v\n", err)
 		return err
 	}
 	if err := writeCheckpoint(cp, h, cpF); err != nil {
@@ -102,7 +102,7 @@ func generateCheckpoint(data []byte, outF string) error {
 	}
 	out, h, err := a.SnapshotData()
 	if err != nil {
-		fmt.Printf("Could not generate snapshot data: %+v\n", err)
+		fmt.Printf("Could not generate checkpoint data: %+v\n", err)
 		return err
 	}
 	hash := hex.EncodeToString(Hash(h))
