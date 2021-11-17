@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased (`X.Y.Z`)
+*`YYYY-MM-DD`*
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vegatools/pull/) - 
