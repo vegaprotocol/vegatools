@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	code.vegaprotocol.io/protos v0.45.2-0.20211103182343-b5a906f4d6bf
-	github.com/ethereum/go-ethereum v1.10.8
+	github.com/ethereum/go-ethereum v1.10.13
 	github.com/gdamore/tcell/v2 v2.4.0
 	github.com/golang/protobuf v1.5.2
 	github.com/mwitkow/go-proto-validators v0.3.2 // indirect
