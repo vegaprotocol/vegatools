@@ -33,11 +33,16 @@ func connect(ctx context.Context,
 		return conn, stream, err
 	}
 
+	busEventTypes, err := typesToBETypes(types)
+	if err != nil {
+		return conn, stream, err
+	}
+
 	req := &api.ObserveEventBusRequest{
 		MarketId:  market,
 		PartyId:   party,
 		BatchSize: int64(batchSize),
-		Type:      typesToBETypes(types),
+		Type:      busEventTypes,
 	}
 
 	if err := stream.Send(req); err != nil {
@@ -46,11 +51,11 @@ func connect(ctx context.Context,
 	return conn, stream, nil
 }
 
-func typesToBETypes(types []string) []eventspb.BusEventType {
+func typesToBETypes(types []string) ([]eventspb.BusEventType, error) {
 	if len(types) == 0 {
 		return []eventspb.BusEventType{
 			eventspb.BusEventType_BUS_EVENT_TYPE_ALL,
-		}
+		}, nil
 	}
 	dedup := map[string]struct{}{}
 	beTypes := make([]eventspb.BusEventType, 0, len(types))
@@ -74,13 +79,17 @@ func typesToBETypes(types []string) []eventspb.BusEventType {
 				return typesToBETypes(nil)
 			}
 			beTypes = append(beTypes, bet)
+		} else {
+			// We could not match the event string to the list defined in the proto file so stop now
+			// so the user does not think everything is fine
+			return nil, fmt.Errorf("no such event %s", t)
 		}
 	}
 	if len(beTypes) == 0 {
 		// default to ALL
 		return typesToBETypes(nil)
 	}
-	return beTypes
+	return beTypes, nil
 }
 
 func run(
