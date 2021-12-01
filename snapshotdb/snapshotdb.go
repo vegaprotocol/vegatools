@@ -12,7 +12,7 @@ func Run(dbpath string, versionsOnly bool) error {
 	// Attempt to open the database
 	db, err := db.NewGoLevelDB("snapshot", dbpath)
 	if err != nil {
-		fmt.Errorf("Failed to open database located at %s\n", dbpath)
+		fmt.Errorf("failed to open database located at %s", dbpath)
 		return err
 	}
 
