@@ -195,6 +195,9 @@ func unmarshalAll(cp *checkpoint.Checkpoint) (*all, error) {
 	if ret.Block, err = unmarshalBlock(cp); err != nil {
 		return nil, err
 	}
+	if ret.Rewards, err = unmarshalRewards(cp); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
@@ -252,4 +255,12 @@ func unmarshalBlock(cp *checkpoint.Checkpoint) (*checkpoint.Block, error) {
 		return nil, err
 	}
 	return b, nil
+}
+
+func unmarshalRewards(cp *checkpoint.Checkpoint) (*checkpoint.Rewards, error) {
+	r := &checkpoint.Rewards{}
+	if err := proto.Unmarshal(cp.Rewards, r); err != nil {
+		return nil, err
+	}
+	return r, nil
 }
