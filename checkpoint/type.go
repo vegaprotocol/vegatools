@@ -24,6 +24,7 @@ type all struct {
 	Delegate   *checkpoint.Delegate   `json:"delegate,omitempty"`
 	Epoch      *events.EpochEvent     `json:"epoch,omitempty"`
 	Block      *checkpoint.Block      `json:"block,omitempty"`
+	Rewards    *checkpoint.Rewards    `json:"rewards,omitempty"`
 }
 
 // AssetErr a convenience error type
@@ -79,6 +80,10 @@ func (a all) JSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	r, err := marshaler.MarshalToString(a.Rewards)
+	if err != nil {
+		return nil, err
+	}
 	block, err := marshaler.MarshalToString(a.Block)
 	all := allJSON{
 		Governance: json.RawMessage(g),
@@ -88,6 +93,7 @@ func (a all) JSON() ([]byte, error) {
 		Delegate:   json.RawMessage(d),
 		Epoch:      json.RawMessage(e),
 		Block:      json.RawMessage(block),
+		Rewards:    json.RawMessage(r),
 	}
 	b, err := json.MarshalIndent(all, "", "   ")
 	if err != nil {
@@ -151,6 +157,13 @@ func (a *all) FromJSON(in []byte) error {
 			return err
 		}
 	}
+	if len(all.Rewards) != 0 {
+		a.Rewards = &checkpoint.Rewards{}
+		reader := bytes.NewReader([]byte(all.Rewards))
+		if err := jsonpb.Unmarshal(reader, a.Rewards); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -163,15 +176,17 @@ func Hash(data []byte) []byte {
 }
 
 func hashBytes(cp *checkpoint.Checkpoint) []byte {
-	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block))
+	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block)+len(cp.Rewards))
 	// the order in which we append is quite important
-	ret = append(ret, cp.NetworkParameters...)
 	ret = append(ret, cp.Assets...)
 	ret = append(ret, cp.Collateral...)
-	ret = append(ret, cp.Delegation...)
+	ret = append(ret, cp.NetworkParameters...)
+	ret = append(ret, cp.Governance...)
 	ret = append(ret, cp.Epoch...)
+	ret = append(ret, cp.Delegation...)
+	ret = append(ret, cp.Rewards...)
 	ret = append(ret, cp.Block...)
-	return append(ret, cp.Governance...)
+	return ret
 }
 
 func (a all) SnapshotData() ([]byte, []byte, error) {
@@ -199,6 +214,10 @@ func (a all) SnapshotData() ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	r, err := proto.Marshal(a.Rewards)
+	if err != nil {
+		return nil, nil, err
+	}
 	cp := &checkpoint.Checkpoint{
 		Governance:        g,
 		Collateral:        c,
@@ -206,6 +225,7 @@ func (a all) SnapshotData() ([]byte, []byte, error) {
 		Delegation:        d,
 		Epoch:             e,
 		Block:             b,
+		Rewards:           r,
 	}
 	if cp.Assets, err = proto.Marshal(a.Assets); err != nil {
 		return nil, nil, err
@@ -394,4 +414,5 @@ type allJSON struct {
 	Delegate   json.RawMessage `json:"delegate,omitempty"`
 	Epoch      json.RawMessage `json:"epoch,omitempty"`
 	Block      json.RawMessage `json:"block,omitempty"`
+	Rewards    json.RawMessage `json:"rewards,omitempty"`
 }
