@@ -21,6 +21,7 @@
 - [45](https://github.com/vegaprotocol/vegatools/pull/45) - Use TradingService in vegatools stream
 - [47](https://github.com/vegaprotocol/vegatools/pull/47) - Update proto version
 - [52](https://github.com/vegaprotocol/vegatools/pull/52) - Port code to use last version of protos (layout change)
+<<<<<<< HEAD
 - [61](https://github.com/vegaprotocol/vegatools/pull/61) - Update module `code.vegaprotocol.io/protos` to `v0.46.0`
 - [60](https://github.com/vegaprotocol/vegatools/pull/60) - Update `actions/checkout` action to `v2`
 - [59](https://github.com/vegaprotocol/vegatools/pull/59)Update `hattan/verify-linked-issue-action` commit hash to `70d4b06`
@@ -31,6 +32,9 @@
 - [66](https://github.com/vegaprotocol/vegatools/pull/66) - Add check for valid event names
 - [69](https://github.com/vegaprotocol/vegatools/pull/69) - Add rewards to checkout in vegatools
 - [72](https://github.com/vegaprotocol/vegatools/pull/72) - Update CHANGELOG.md since GH Action implemented and tidy repo
+=======
+- [73](https://github.com/vegaprotocol/vegatools/pull/73) - Add key rotations checkpoint
+>>>>>>> update changelog
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vegatools/pull/) - 
