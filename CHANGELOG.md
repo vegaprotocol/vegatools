@@ -30,7 +30,7 @@
 - [64](https://github.com/vegaprotocol/vegatools/pull/64) - Add hard coded list of validators to make the display more useful
 - [66](https://github.com/vegaprotocol/vegatools/pull/66) - Add check for valid event names
 - [69](https://github.com/vegaprotocol/vegatools/pull/69) - Add rewards to checkout in vegatools
-- [72](https://github.com/vegaprotocol/vegatools/pull/72) - Update CHANGELOG.md since GH Action implemented
+- [72](https://github.com/vegaprotocol/vegatools/pull/72) - Update CHANGELOG.md since GH Action implemented and tidy repo
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vegatools/pull/) - 
