@@ -1,7 +1,6 @@
 # Changelog
 
-## Unreleased (`X.Y.Z`)
-*`YYYY-MM-DD`*
+## Unreleased
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/vegatools/pull/) - 
@@ -22,6 +21,16 @@
 - [45](https://github.com/vegaprotocol/vegatools/pull/45) - Use TradingService in vegatools stream
 - [47](https://github.com/vegaprotocol/vegatools/pull/47) - Update proto version
 - [52](https://github.com/vegaprotocol/vegatools/pull/52) - Port code to use last version of protos (layout change)
+- [61](https://github.com/vegaprotocol/vegatools/pull/61) - Update module `code.vegaprotocol.io/protos` to `v0.46.0`
+- [60](https://github.com/vegaprotocol/vegatools/pull/60) - Update `actions/checkout` action to `v2`
+- [59](https://github.com/vegaprotocol/vegatools/pull/59)Update `hattan/verify-linked-issue-action` commit hash to `70d4b06`
+- [58](https://github.com/vegaprotocol/vegatools/pull/58) - Update `Zomzog/changelog-checker commit` hash to `9f2307a`
+- [55](https://github.com/vegaprotocol/vegatools/pull/55) - Update `golang.org/x/crypto` commit hash to `ae814b3`
+- [54](https://github.com/vegaprotocol/vegatools/pull/54) - Update `module github.com/ethereum/go-ethereum` to `v1.10.13`
+- [64](https://github.com/vegaprotocol/vegatools/pull/64) - Add hard coded list of validators to make the display more useful
+- [66](https://github.com/vegaprotocol/vegatools/pull/66) - Add check for valid event names
+- [69](https://github.com/vegaprotocol/vegatools/pull/69) - Add rewards to checkout in vegatools
+- [72](https://github.com/vegaprotocol/vegatools/pull/72) - Update CHANGELOG.md since GH Action implemented and tidy repo
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vegatools/pull/) - 
