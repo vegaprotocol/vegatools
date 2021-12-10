@@ -18,7 +18,7 @@ var (
 
 	checkpointCmd = &cobra.Command{
 		Use:   "checkpoint",
-		Short: "Make checkoint human-readable, or generate checkpoint from human readable format",
+		Short: "Make checkpoint human-readable, or generate checkpoint from human readable format",
 		RunE:  parseCheckpoint,
 	}
 )
