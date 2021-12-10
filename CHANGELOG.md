@@ -3,10 +3,10 @@
 ## Unreleased
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vegatools/pull/) - 
+- [](https://github.com/vegaprotocol/vegatools/pull/) -
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vegatools/pull/) - 
+- [](https://github.com/vegaprotocol/vegatools/pull/) -
 
 ### 🛠 Improvements
 - [57](https://github.com/vegaprotocol/vegatools/pull/57) - Add changelog and new project boards actions
@@ -35,8 +35,7 @@
 - [73](https://github.com/vegaprotocol/vegatools/pull/73) - Add key rotations checkpoint
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vegatools/pull/) - 
-
+- [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
 
 ## 0.41.1
 *2021-08-31*
@@ -79,5 +78,3 @@
 - [10](https://github.com/vegaprotocol/vegatools/pull/10) - Improve withdraw
 - [11](https://github.com/vegaprotocol/vegatools/pull/11) - Update Vega api version
 - [14](https://github.com/vegaprotocol/vegatools/pull/14) - Release version `v0.36.0`
-
-
