@@ -11,6 +11,7 @@ require (
 	github.com/mwitkow/go-proto-validators v0.3.2 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.7.0
+	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 	github.com/tendermint/tm-db v0.6.4
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
 	google.golang.org/genproto v0.0.0-20210611144927-798beca9d670 // indirect

@@ -22,6 +22,7 @@
 - [45](https://github.com/vegaprotocol/vegatools/pull/45) - Use TradingService in vegatools stream
 - [47](https://github.com/vegaprotocol/vegatools/pull/47) - Update proto version
 - [52](https://github.com/vegaprotocol/vegatools/pull/52) - Port code to use last version of protos (layout change)
+- [67](https://github.com/vegaprotocol/vegatools/pull/67) - Adding tool to display snapshot database information
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vegatools/pull/) - 
