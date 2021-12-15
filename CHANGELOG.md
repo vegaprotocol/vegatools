@@ -33,6 +33,7 @@
 - [69](https://github.com/vegaprotocol/vegatools/pull/69) - Add rewards to checkout in vegatools
 - [72](https://github.com/vegaprotocol/vegatools/pull/72) - Update CHANGELOG.md since GH Action implemented and tidy repo
 - [73](https://github.com/vegaprotocol/vegatools/pull/73) - Add key rotations checkpoint
+- [83](https://github.com/vegaprotocol/vegatools/pull/83) - Update instruction on how to get the real latest version
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
