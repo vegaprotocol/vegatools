@@ -11,7 +11,10 @@ This repo contains a suite of (sometimes) useful tools to use with the vega node
 
 You can install this program by running the following go install command:
 ```console
+// To get the latest stable release version
 go install code.vegaprotocol.io/vegatools@latest
+// To get the version most in line with the core develop branch
+go install code.vegaprotocol.io/vegatools@develop
 ```
 Make sure that your `CGO_ENABLED` environment variable is set to 0. This can be checked using this command:
 ```console
@@ -71,4 +74,15 @@ The basic command to run it is:
 vegatools marketstakeviewer --address=n09.testnet.vega.xyz:3002
 ```
 
+### Checkpoint
+
+Checkpoint forces the vega node to generate a checkpoint file.
+
+### DelegationViewer
+
+DelegationViewer displays the amount of stake delegated to each of the nodes in the network.
+
+### MarketStakeViewer
+
+MarketStakeViewer displays the amount of stake committed to each market in terms of liquidity provision.
 
