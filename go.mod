@@ -14,5 +14,5 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 	github.com/tendermint/tm-db v0.6.6
 	golang.org/x/crypto v0.0.0-20211209193657-4570a0811e8b
-	google.golang.org/grpc v1.42.0
+	google.golang.org/grpc v1.43.0
 )
