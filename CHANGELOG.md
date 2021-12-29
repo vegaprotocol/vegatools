@@ -34,6 +34,7 @@
 - [72](https://github.com/vegaprotocol/vegatools/pull/72) - Update CHANGELOG.md since GH Action implemented and tidy repo
 - [73](https://github.com/vegaprotocol/vegatools/pull/73) - Add key rotations checkpoint
 - [83](https://github.com/vegaprotocol/vegatools/pull/83) - Update instruction on how to get the real latest version
+- [90](https://github.com/vegaprotocol/vegatools/pull/90) - Build and publish docker image
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
