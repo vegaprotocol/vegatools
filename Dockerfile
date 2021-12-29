@@ -6,7 +6,6 @@ WORKDIR /go/src/project
 ADD . .
 RUN env CGO_ENABLED=0 go build -a -ldflags '-extldflags "-static"' -o vegatools .
 
-FROM alpine:3.14
-RUN apk add --no-cache bash ca-certificates jq
-COPY --from=builder /go/src/project/vegatools /usr/local/bin/
-ENTRYPOINT ["vegatools"]
+FROM scratch
+COPY --from=builder /go/src/project/vegatools /
+ENTRYPOINT ["/vegatools"]
