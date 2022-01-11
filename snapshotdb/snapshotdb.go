@@ -9,6 +9,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
+// SnapshotData is a representation of the information we an scrape from the avl tree
 type SnapshotData struct {
 	Version int64 `json:"version"`
 	Height  int64 `json:"height"`
