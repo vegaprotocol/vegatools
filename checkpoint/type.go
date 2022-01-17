@@ -195,14 +195,14 @@ func Hash(data []byte) []byte {
 func hashBytes(cp *checkpoint.Checkpoint) []byte {
 	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block)+len(cp.Rewards)+len(cp.KeyRotations))
 	// the order in which we append is quite important
+	ret = append(ret, cp.NetworkParameters...)
 	ret = append(ret, cp.Assets...)
 	ret = append(ret, cp.Collateral...)
-	ret = append(ret, cp.NetworkParameters...)
-	ret = append(ret, cp.Governance...)
-	ret = append(ret, cp.Epoch...)
 	ret = append(ret, cp.Delegation...)
-	ret = append(ret, cp.Rewards...)
+	ret = append(ret, cp.Epoch...)
 	ret = append(ret, cp.Block...)
+	ret = append(ret, cp.Governance...)
+	ret = append(ret, cp.Rewards...)
 	return append(ret, cp.KeyRotations...)
 }
 
