@@ -9,10 +9,10 @@ import (
 	api "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/vega"
 
-	_ "github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc"
 )
 
+// PullWithdraw ...
 func PullWithdraw(nodeAddress, outfile string) error {
 	conn, err := grpc.Dial(nodeAddress, grpc.WithInsecure())
 	if err != nil {
