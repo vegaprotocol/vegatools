@@ -201,6 +201,9 @@ func unmarshalAll(cp *checkpoint.Checkpoint) (*all, error) {
 	if ret.KeyRotations, err = unmarshalKeyRotations(cp); err != nil {
 		return nil, err
 	}
+	if ret.Banking, err = unmarshalBanking(cp); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
@@ -271,6 +274,14 @@ func unmarshalRewards(cp *checkpoint.Checkpoint) (*checkpoint.Rewards, error) {
 func unmarshalKeyRotations(cp *checkpoint.Checkpoint) (*checkpoint.KeyRotations, error) {
 	kr := &checkpoint.KeyRotations{}
 	if err := proto.Unmarshal(cp.KeyRotations, kr); err != nil {
+		return nil, err
+	}
+	return kr, nil
+}
+
+func unmarshalBanking(cp *checkpoint.Checkpoint) (*checkpoint.Banking, error) {
+	kr := &checkpoint.Banking{}
+	if err := proto.Unmarshal(cp.Banking, kr); err != nil {
 		return nil, err
 	}
 	return kr, nil
