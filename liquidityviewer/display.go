@@ -108,7 +108,7 @@ func drawLP() {
 		buyRow := buyStartRow + index + 2
 		drawStringPc(0, buyRow, whiteStyle, lor.OrderId)
 		drawStringPc(25, buyRow, whiteStyle, getReferenceStr(lor.LiquidityOrder.Reference))
-		offset := strconv.Itoa(int(lor.LiquidityOrder.Offset))
+		offset := lor.LiquidityOrder.Offset
 		drawStringPc(35, buyRow, whiteStyle, offset)
 		proportion := strconv.Itoa(int(lor.LiquidityOrder.Proportion))
 		drawStringPc(43, buyRow, whiteStyle, proportion)
@@ -125,7 +125,7 @@ func drawLP() {
 		sellRow := sellStartRow + index + 2
 		drawStringPc(50, sellRow, whiteStyle, lor.OrderId)
 		drawStringPc(75, sellRow, whiteStyle, getReferenceStr(lor.LiquidityOrder.Reference))
-		offset := strconv.Itoa(int(lor.LiquidityOrder.Offset))
+		offset := lor.LiquidityOrder.Offset
 		drawStringPc(85, sellRow, whiteStyle, offset)
 		proportion := strconv.Itoa(int(lor.LiquidityOrder.Proportion))
 		drawStringPc(93, sellRow, whiteStyle, proportion)
