@@ -26,6 +26,7 @@ type all struct {
 	Block        *checkpoint.Block        `json:"block,omitempty"`
 	Rewards      *checkpoint.Rewards      `json:"rewards,omitempty"`
 	KeyRotations *checkpoint.KeyRotations `json:"key_rotations,omitempty"`
+	Banking      *checkpoint.Banking      `json:"banking,omitempty"`
 }
 
 // AssetErr a convenience error type
@@ -93,6 +94,10 @@ func (a all) JSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	banking, err := marshaler.MarshalToString(a.Banking)
+	if err != nil {
+		return nil, err
+	}
 
 	all := allJSON{
 		Governance:   json.RawMessage(g),
@@ -104,6 +109,7 @@ func (a all) JSON() ([]byte, error) {
 		Block:        json.RawMessage(block),
 		Rewards:      json.RawMessage(r),
 		KeyRotations: json.RawMessage(kr),
+		Banking:      json.RawMessage(banking),
 	}
 	b, err := json.MarshalIndent(all, "", "   ")
 	if err != nil {
@@ -181,6 +187,13 @@ func (a *all) FromJSON(in []byte) error {
 			return err
 		}
 	}
+	if len(all.Banking) != 0 {
+		a.Banking = &checkpoint.Banking{}
+		reader := bytes.NewReader([]byte(all.Banking))
+		if err := jsonpb.Unmarshal(reader, a.Banking); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -193,7 +206,7 @@ func Hash(data []byte) []byte {
 }
 
 func hashBytes(cp *checkpoint.Checkpoint) []byte {
-	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block)+len(cp.Rewards)+len(cp.KeyRotations))
+	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block)+len(cp.Rewards)+len(cp.KeyRotations)+len(cp.Banking))
 	// the order in which we append is quite important
 	ret = append(ret, cp.NetworkParameters...)
 	ret = append(ret, cp.Assets...)
@@ -203,6 +216,7 @@ func hashBytes(cp *checkpoint.Checkpoint) []byte {
 	ret = append(ret, cp.Block...)
 	ret = append(ret, cp.Governance...)
 	ret = append(ret, cp.Rewards...)
+	ret = append(ret, cp.Banking...)
 	return append(ret, cp.KeyRotations...)
 }
 
@@ -239,6 +253,10 @@ func (a all) SnapshotData() ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	banking, err := proto.Marshal(a.Banking)
+	if err != nil {
+		return nil, nil, err
+	}
 	cp := &checkpoint.Checkpoint{
 		Governance:        g,
 		Collateral:        c,
@@ -248,6 +266,7 @@ func (a all) SnapshotData() ([]byte, []byte, error) {
 		Block:             b,
 		Rewards:           r,
 		KeyRotations:      kr,
+		Banking:           banking,
 	}
 	if cp.Assets, err = proto.Marshal(a.Assets); err != nil {
 		return nil, nil, err
@@ -357,14 +376,14 @@ func dummy() *all {
 							{
 								Reference:  vega.PeggedReference_PEGGED_REFERENCE_BEST_BID,
 								Proportion: 10,
-								Offset:     -5,
+								Offset:     "5",
 							},
 						},
 						Buys: []*vega.LiquidityOrder{
 							{
 								Reference:  vega.PeggedReference_PEGGED_REFERENCE_MID,
 								Proportion: 10,
-								Offset:     5,
+								Offset:     "5",
 							},
 						},
 						Reference: "dummy-LP",
@@ -438,4 +457,5 @@ type allJSON struct {
 	Block        json.RawMessage `json:"block,omitempty"`
 	Rewards      json.RawMessage `json:"rewards,omitempty"`
 	KeyRotations json.RawMessage `json:"key_rotations,omitempty"`
+	Banking      json.RawMessage `json:"banking,omitempty"`
 }
