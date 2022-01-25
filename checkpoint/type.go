@@ -444,6 +444,32 @@ func dummy() *all {
 		Block: &checkpoint.Block{
 			Height: 1,
 		},
+		Banking: &checkpoint.Banking{
+			RecurringTransfers: &checkpoint.RecurringTransfers{
+				RecurringTransfers: []*events.Transfer{
+					{
+						Id:              "someid",
+						From:            "somefrom",
+						FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+						To:              "someto",
+						ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
+						Asset:           "someasset",
+						Amount:          "100",
+						Reference:       "someref",
+						Status:          events.Transfer_STATUS_PENDING,
+						Kind: &events.Transfer_Recurring{
+							Recurring: &events.RecurringTransfer{
+								StartEpoch: 10,
+								EndEpoch: &vega.Uint64Value{
+									Value: 100,
+								},
+								Factor: "1",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
