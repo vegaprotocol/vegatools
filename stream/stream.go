@@ -92,13 +92,13 @@ func typesToBETypes(types []string) ([]eventspb.BusEventType, error) {
 	return beTypes, nil
 }
 
-func run(
+func ReadEvents(
 	ctx context.Context,
 	cancel context.CancelFunc,
 	wg *sync.WaitGroup,
 	batchSize uint,
 	party, market, serverAddr string,
-	printEvent func(string),
+	handleEvent func(event *eventspb.BusEvent),
 	reconnect bool,
 	types []string,
 ) error {
@@ -118,7 +118,6 @@ func run(
 	go func() {
 		defer wg.Done()
 		defer cancel()
-		m := jsonpb.Marshaler{}
 
 		for {
 			defer conn.Close()
@@ -134,11 +133,7 @@ func run(
 					break
 				}
 				for _, e := range o.Events {
-					estr, err := m.MarshalToString(e)
-					if err != nil {
-						log.Printf("unable to marshal event err=%v", err)
-					}
-					printEvent(estr)
+					handleEvent(e)
 				}
 				if batchSize > 0 {
 					if err := stream.SendMsg(poll); err != nil {
@@ -188,6 +183,25 @@ func Run(
 		return fmt.Errorf("error: missing grpc server address")
 	}
 
+	handleEvent, err := NewLogEventToConsoleFn(logFormat)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	wg := sync.WaitGroup{}
+	if err := ReadEvents(ctx, cancel, &wg, batchSize, party, market, serverAddr, handleEvent, reconnect, types); err != nil {
+		return fmt.Errorf("error when starting the stream: %v", err)
+	}
+
+	WaitSig(ctx, cancel)
+	wg.Wait()
+
+	return nil
+}
+
+func NewLogEventToConsoleFn(logFormat string) (func(e *eventspb.BusEvent), error) {
 	var printEvent func(string)
 	switch logFormat {
 	case "raw":
@@ -201,23 +215,21 @@ func Run(
 			fmt.Printf("{\"time\":\"%v\",%v\n", time.Now().UTC().Format(time.RFC3339Nano), event[1:])
 		}
 	default:
-		return fmt.Errorf("error: unknown log-format: \"%v\". Allowed values: raw, text, json", logFormat)
+		return nil, fmt.Errorf("error: unknown log-format: \"%v\". Allowed values: raw, text, json", logFormat)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	wg := sync.WaitGroup{}
-	if err := run(ctx, cancel, &wg, batchSize, party, market, serverAddr, printEvent, reconnect, types); err != nil {
-		return fmt.Errorf("error when starting the stream: %v", err)
+	m := jsonpb.Marshaler{}
+	handleEvent := func(e *eventspb.BusEvent) {
+		estr, err := m.MarshalToString(e)
+		if err != nil {
+			log.Printf("unable to marshal event err=%v", err)
+		}
+		printEvent(estr)
 	}
-
-	waitSig(ctx, cancel)
-	wg.Wait()
-
-	return nil
+	return handleEvent, nil
 }
 
-func waitSig(ctx context.Context, cancel func()) {
+func WaitSig(ctx context.Context, cancel func()) {
 	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)

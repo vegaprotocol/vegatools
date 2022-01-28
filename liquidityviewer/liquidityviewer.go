@@ -24,7 +24,7 @@ var (
 	greenStyle tcell.Style
 	whiteStyle tcell.Style
 	market     *proto.Market
-	//party          string
+	// party          string
 	mapMarketToLPs map[string][]*proto.LiquidityProvision = map[string][]*proto.LiquidityProvision{}
 	lp             *proto.LiquidityProvision
 	acctMargin     string
@@ -167,8 +167,10 @@ func getPartyToDisplay(dataclient api.TradingDataServiceClient, marketID, partyI
 }
 
 func getAccountDetails(dataclient api.TradingDataServiceClient, partyID, assetID string) {
-	lpReq := &api.PartyAccountsRequest{PartyId: partyID,
-		Asset: assetID}
+	lpReq := &api.PartyAccountsRequest{
+		PartyId: partyID,
+		Asset:   assetID,
+	}
 
 	response, err := dataclient.PartyAccounts(context.Background(), lpReq)
 	if err != nil {
@@ -229,9 +231,11 @@ func subscribeFeeds(dataclient api.TradingDataServiceClient) {
 	}
 	subscribeEventBus(dataclient, eventBusDataReq, processEventBusData)
 
-	events2 := []eventspb.BusEventType{eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION,
+	events2 := []eventspb.BusEventType{
+		eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT}
+		eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT,
+	}
 
 	eventBusDataReq2 := &api.ObserveEventBusRequest{
 		Type:    events2,
@@ -294,7 +298,7 @@ func processEventBusData2(stream api.TradingDataService_ObserveEventBusClient) {
 			break
 		}
 
-		var redrawRequired = false
+		redrawRequired := false
 		for _, event := range eb.Events {
 			log.Println(event)
 			switch event.Type {
@@ -355,7 +359,7 @@ func populateOrderMap() {
 
 // Run is the main entry point for this tool
 func Run(gRPCAddress, marketID, partyID string) error {
-	f, err := os.OpenFile("liquidity.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile("liquidity.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0o666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}

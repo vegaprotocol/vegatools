@@ -47,5 +47,4 @@ func (s *Store) Import(privKey, passphrase string) (string, error) {
 		return "", err
 	}
 	return account.Address.Hex(), nil
-
 }
