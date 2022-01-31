@@ -29,13 +29,13 @@ func Run(
 		return fmt.Errorf("error: missing grpc server address")
 	}
 
-	fi, err := os.Create(file)
-	defer fi.Close()
-
 	filePath, err := filepath.Abs(file)
 	if err != nil {
 		return fmt.Errorf("unable to determine absolute path of file %s: %w", file, err)
 	}
+
+	fi, err := os.Create(file)
+	defer fi.Close()
 
 	if err != nil {
 		return fmt.Errorf("unable to create file %s: %w", filePath, err)
