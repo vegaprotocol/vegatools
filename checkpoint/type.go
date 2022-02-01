@@ -297,6 +297,7 @@ func dummy() *all {
 			Symbol:      "ETH",
 			TotalSupply: "100000000000",
 			Decimals:    5,
+			Quantum:     "",
 			Source: &vega.AssetDetails_BuiltinAsset{
 				BuiltinAsset: &vega.BuiltinAsset{
 					MaxFaucetAmountMint: "100000000000",
