@@ -35,20 +35,20 @@ const (
 	pathBlock = "/block"
 )
 
-type Result struct {
-	Block Block `json:"block"`
+type result struct {
+	Block block `json:"block"`
 }
 
-type Block struct {
-	Data BlockData `json:"data"`
+type block struct {
+	Data blockData `json:"data"`
 }
 
-type BlockData struct {
+type blockData struct {
 	Txs [][]byte `json:"txs"`
 }
 
-type BlockResponse struct {
-	Result Result `json:"result"`
+type blockResponse struct {
+	Result result `json:"result"`
 }
 
 func getTxsAtBlockHeight(nodeAddress string, height uint64) {
@@ -76,7 +76,7 @@ func getTxsAtBlockHeight(nodeAddress string, height uint64) {
 		panic(err)
 	}
 
-	blockResp := BlockResponse{}
+	blockResp := blockResponse{}
 	err = json.Unmarshal(body, &blockResp)
 	if err != nil {
 		panic(err)
@@ -123,6 +123,7 @@ func unpackSignedTx(rawtx []byte) {
 
 }
 
+// Start ...
 func Start(from, to uint64, address string) error {
 	all = map[string]map[string]struct{}{}
 	for i := from; i < to; i++ {
