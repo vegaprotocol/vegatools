@@ -92,7 +92,7 @@ func typesToBETypes(types []string) ([]eventspb.BusEventType, error) {
 	return beTypes, nil
 }
 
-func ReadEvents(
+func readEvents(
 	ctx context.Context,
 	cancel context.CancelFunc,
 	wg *sync.WaitGroup,
@@ -191,16 +191,17 @@ func Run(
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := sync.WaitGroup{}
-	if err := ReadEvents(ctx, cancel, &wg, batchSize, party, market, serverAddr, handleEvent, reconnect, types); err != nil {
+	if err := readEvents(ctx, cancel, &wg, batchSize, party, market, serverAddr, handleEvent, reconnect, types); err != nil {
 		return fmt.Errorf("error when starting the stream: %v", err)
 	}
 
-	WaitSig(ctx, cancel)
+	waitSig(ctx, cancel)
 	wg.Wait()
 
 	return nil
 }
 
+// NewLogEventToConsoleFn returns a common logging function for use across tools that deal with events
 func NewLogEventToConsoleFn(logFormat string) (func(e *eventspb.BusEvent), error) {
 	var printEvent func(string)
 	switch logFormat {
@@ -229,7 +230,7 @@ func NewLogEventToConsoleFn(logFormat string) (func(e *eventspb.BusEvent), error
 	return handleEvent, nil
 }
 
-func WaitSig(ctx context.Context, cancel func()) {
+func waitSig(ctx context.Context, cancel func()) {
 	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
