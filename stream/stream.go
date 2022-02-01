@@ -92,7 +92,8 @@ func typesToBETypes(types []string) ([]eventspb.BusEventType, error) {
 	return beTypes, nil
 }
 
-func readEvents(
+// ReadEvents reads all the events from the server
+func ReadEvents(
 	ctx context.Context,
 	cancel context.CancelFunc,
 	wg *sync.WaitGroup,
@@ -191,11 +192,11 @@ func Run(
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := sync.WaitGroup{}
-	if err := readEvents(ctx, cancel, &wg, batchSize, party, market, serverAddr, handleEvent, reconnect, types); err != nil {
+	if err := ReadEvents(ctx, cancel, &wg, batchSize, party, market, serverAddr, handleEvent, reconnect, types); err != nil {
 		return fmt.Errorf("error when starting the stream: %v", err)
 	}
 
-	waitSig(ctx, cancel)
+	WaitSig(ctx, cancel)
 	wg.Wait()
 
 	return nil
@@ -230,7 +231,8 @@ func NewLogEventToConsoleFn(logFormat string) (func(e *eventspb.BusEvent), error
 	return handleEvent, nil
 }
 
-func waitSig(ctx context.Context, cancel func()) {
+// WaitSig waits until Terminate or interrupt event is received
+func WaitSig(ctx context.Context, cancel func()) {
 	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)

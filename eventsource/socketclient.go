@@ -65,7 +65,7 @@ func (s *socketClient) connect() error {
 
 func (s *socketClient) close() {
 	if err := s.sock.Close(); err != nil {
-		fmt.Errorf("failed to close socket:%s", err)
+		fmt.Printf("failed to close socket:%s", err)
 	}
 }
 

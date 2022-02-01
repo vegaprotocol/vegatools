@@ -65,11 +65,11 @@ func Run(
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := sync.WaitGroup{}
-	if err := stream.readEvents(ctx, cancel, &wg, batchSize, party, market, serverAddr, handleEvent, reconnect, types); err != nil {
+	if err := stream.ReadEvents(ctx, cancel, &wg, batchSize, party, market, serverAddr, handleEvent, reconnect, types); err != nil {
 		return fmt.Errorf("error reading events: %v", err)
 	}
 
-	stream.waitSig(ctx, cancel)
+	stream.WaitSig(ctx, cancel)
 	wg.Wait()
 
 	return nil
