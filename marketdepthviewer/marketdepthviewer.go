@@ -114,7 +114,6 @@ func getMarketDepth(dataclient api.TradingDataServiceClient) {
 }
 
 func getMarketDepthUpdates(dataclient api.TradingDataServiceClient) {
-
 	req := &api.MarketDepthUpdatesSubscribeRequest{
 		MarketId: market.Id,
 	}
