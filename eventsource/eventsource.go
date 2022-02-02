@@ -51,6 +51,7 @@ func sendAllEvents(sendEvents func([]*eventspb.BusEvent) error, evtFile *os.File
 
 		if event.Block != currentBlock {
 			err = sendBatch(sendEvents, batch)
+			batch = batch[:0]
 			if err != nil {
 				return err
 			}
@@ -64,6 +65,7 @@ func sendAllEvents(sendEvents func([]*eventspb.BusEvent) error, evtFile *os.File
 
 		if len(batch) >= batchSize {
 			err = sendBatch(sendEvents, batch)
+			batch = batch[:0]
 			if err != nil {
 				return err
 			}
@@ -78,7 +80,5 @@ func sendBatch(sendEvents func([]*eventspb.BusEvent) error, batch []*eventspb.Bu
 			return fmt.Errorf("failed to send batch: %w", err)
 		}
 	}
-	batch = batch[:0]
-
 	return nil
 }
