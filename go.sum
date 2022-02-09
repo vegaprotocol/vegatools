@@ -863,6 +863,8 @@ go.etcd.io/etcd/client/pkg/v3 v3.5.1/go.mod h1:IJHfcCEKxYu1Os13ZdwCwIUTUVGYTSAM3
 go.etcd.io/etcd/client/v2 v2.305.1/go.mod h1:pMEacxZW7o8pg4CrFE7pquyCJJzZvkvdD2RibOCCCGs=
 go.nanomsg.org/mangos/v3 v3.2.1 h1:/7pG6tUJO5ZGznG+waoMy6WrurArODDRJu18848oQnw=
 go.nanomsg.org/mangos/v3 v3.2.1/go.mod h1:RxVwsn46YtfJ74mF8MeVo+MFjg545KCI50NuZrFXmzc=
+go.nanomsg.org/mangos/v3 v3.3.0 h1:j4gtHWAyLqbwEZF070CuQj1+84d5A7xwCPUpUDnDxcA=
+go.nanomsg.org/mangos/v3 v3.3.0/go.mod h1:S7SZSlzVaw9d39mn/a3fEbTUVVQu93QSk39co3Nly/4=
 go.opencensus.io v0.20.1/go.mod h1:6WKK9ahsWS3RSO+PY9ZHZUfv2irvY6gN279GOPZjmmk=
 go.opencensus.io v0.20.2/go.mod h1:6WKK9ahsWS3RSO+PY9ZHZUfv2irvY6gN279GOPZjmmk=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
