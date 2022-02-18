@@ -74,6 +74,9 @@ func drawHeaders() {
 	text := fmt.Sprintf("Market: %s", market.Id)
 	drawString((w-len(text))/2, h-1, whiteStyle, text)
 
+	text = marketData.MarketTradingMode.String()
+	drawString((w-len(text))/2, 0, whiteStyle, text)
+
 	// Last update time
 	drawString(w-26, 0, whiteStyle, "Last Update Time:")
 

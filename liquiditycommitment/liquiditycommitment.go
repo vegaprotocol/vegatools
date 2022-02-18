@@ -39,7 +39,6 @@ func getLiquidityProvisions(dataclient api.TradingDataServiceClient, marketID st
 }
 
 func getMarketData(dataclient api.TradingDataServiceClient, marketID string) *proto.MarketData {
-	fmt.Println("marketID=", marketID)
 	marketDataRequest := &api.MarketDataByIDRequest{
 		MarketId: marketID,
 	}
@@ -118,8 +117,6 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 		fmt.Println("Invalid market selected")
 		os.Exit(0)
 	}
-
-	fmt.Println("Using market:", index)
 
 	return validMarkets[index]
 }
