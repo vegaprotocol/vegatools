@@ -36,6 +36,7 @@
 - [83](https://github.com/vegaprotocol/vegatools/pull/83) - Update instruction on how to get the real latest version
 - [90](https://github.com/vegaprotocol/vegatools/pull/90) - Build and publish docker image
 - [96](https://github.com/vegaprotocol/vegatools/pull/96) - Add a tool to save all withdrawals
+- [110](https://github.com/vegaprotocol/vegatools/pull/110) - Liquidity commitment viewer
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
