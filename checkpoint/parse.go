@@ -67,7 +67,7 @@ func Run(inFile, outFile, format string, generate, validate, dummy bool) error {
 
 func generateDummy(cpF, JSONFname string) error {
 	d := dummy()
-	cp, h, err := d.SnapshotData() // get the data as checkpoint
+	cp, h, err := d.CheckpointData() // get the data as checkpoint
 	if err != nil {
 		fmt.Printf("Could not convert dummy to checkpoint data to write to file: %+v\n", err)
 		return err
@@ -100,7 +100,7 @@ func generateCheckpoint(data []byte, outF string) error {
 		fmt.Printf("Could not unmarshal input: %+v\n", err)
 		return err
 	}
-	out, h, err := a.SnapshotData()
+	out, h, err := a.CheckpointData()
 	if err != nil {
 		fmt.Printf("Could not generate checkpoint data: %+v\n", err)
 		return err
@@ -198,10 +198,10 @@ func unmarshalAll(cp *checkpoint.Checkpoint) (*all, error) {
 	if ret.Rewards, err = unmarshalRewards(cp); err != nil {
 		return nil, err
 	}
-	if ret.KeyRotations, err = unmarshalKeyRotations(cp); err != nil {
+	if ret.Banking, err = unmarshalBanking(cp); err != nil {
 		return nil, err
 	}
-	if ret.Banking, err = unmarshalBanking(cp); err != nil {
+	if ret.Validators, err = unmarshalValidators(cp); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -271,17 +271,17 @@ func unmarshalRewards(cp *checkpoint.Checkpoint) (*checkpoint.Rewards, error) {
 	return r, nil
 }
 
-func unmarshalKeyRotations(cp *checkpoint.Checkpoint) (*checkpoint.KeyRotations, error) {
-	kr := &checkpoint.KeyRotations{}
-	if err := proto.Unmarshal(cp.KeyRotations, kr); err != nil {
+func unmarshalBanking(cp *checkpoint.Checkpoint) (*checkpoint.Banking, error) {
+	kr := &checkpoint.Banking{}
+	if err := proto.Unmarshal(cp.Banking, kr); err != nil {
 		return nil, err
 	}
 	return kr, nil
 }
 
-func unmarshalBanking(cp *checkpoint.Checkpoint) (*checkpoint.Banking, error) {
-	kr := &checkpoint.Banking{}
-	if err := proto.Unmarshal(cp.Banking, kr); err != nil {
+func unmarshalValidators(cp *checkpoint.Checkpoint) (*checkpoint.Validators, error) {
+	kr := &checkpoint.Validators{}
+	if err := proto.Unmarshal(cp.Validators, kr); err != nil {
 		return nil, err
 	}
 	return kr, nil
