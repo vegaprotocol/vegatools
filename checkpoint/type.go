@@ -17,16 +17,16 @@ import (
 )
 
 type all struct {
-	Governance   *checkpoint.Proposals    `json:"governance_proposals,omitempty"`
-	Assets       *checkpoint.Assets       `json:"assets,omitempty"`
-	Collateral   *checkpoint.Collateral   `json:"collateral,omitempty"`
-	NetParams    *checkpoint.NetParams    `json:"network_parameters,omitempty"`
-	Delegate     *checkpoint.Delegate     `json:"delegate,omitempty"`
-	Epoch        *events.EpochEvent       `json:"epoch,omitempty"`
-	Block        *checkpoint.Block        `json:"block,omitempty"`
-	Rewards      *checkpoint.Rewards      `json:"rewards,omitempty"`
-	KeyRotations *checkpoint.KeyRotations `json:"key_rotations,omitempty"`
-	Banking      *checkpoint.Banking      `json:"banking,omitempty"`
+	Governance *checkpoint.Proposals  `json:"governance_proposals,omitempty"`
+	Assets     *checkpoint.Assets     `json:"assets,omitempty"`
+	Collateral *checkpoint.Collateral `json:"collateral,omitempty"`
+	NetParams  *checkpoint.NetParams  `json:"network_parameters,omitempty"`
+	Delegate   *checkpoint.Delegate   `json:"delegate,omitempty"`
+	Epoch      *events.EpochEvent     `json:"epoch,omitempty"`
+	Block      *checkpoint.Block      `json:"block,omitempty"`
+	Rewards    *checkpoint.Rewards    `json:"rewards,omitempty"`
+	Banking    *checkpoint.Banking    `json:"banking,omitempty"`
+	Validators *checkpoint.Validators `json:"validators,omitempty"`
 }
 
 // AssetErr a convenience error type
@@ -86,10 +86,7 @@ func (a all) JSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	kr, err := marshaler.MarshalToString(a.KeyRotations)
-	if err != nil {
-		return nil, err
-	}
+
 	block, err := marshaler.MarshalToString(a.Block)
 	if err != nil {
 		return nil, err
@@ -99,17 +96,22 @@ func (a all) JSON() ([]byte, error) {
 		return nil, err
 	}
 
+	validators, err := marshaler.MarshalToString(a.Validators)
+	if err != nil {
+		return nil, err
+	}
+
 	all := allJSON{
-		Governance:   json.RawMessage(g),
-		Assets:       json.RawMessage(as),
-		Collateral:   json.RawMessage(c),
-		NetParams:    json.RawMessage(n),
-		Delegate:     json.RawMessage(d),
-		Epoch:        json.RawMessage(e),
-		Block:        json.RawMessage(block),
-		Rewards:      json.RawMessage(r),
-		KeyRotations: json.RawMessage(kr),
-		Banking:      json.RawMessage(banking),
+		Governance: json.RawMessage(g),
+		Assets:     json.RawMessage(as),
+		Collateral: json.RawMessage(c),
+		NetParams:  json.RawMessage(n),
+		Delegate:   json.RawMessage(d),
+		Epoch:      json.RawMessage(e),
+		Block:      json.RawMessage(block),
+		Rewards:    json.RawMessage(r),
+		Banking:    json.RawMessage(banking),
+		Validators: json.RawMessage(validators),
 	}
 	b, err := json.MarshalIndent(all, "", "   ")
 	if err != nil {
@@ -180,17 +182,19 @@ func (a *all) FromJSON(in []byte) error {
 			return err
 		}
 	}
-	if len(all.KeyRotations) != 0 {
-		a.KeyRotations = &checkpoint.KeyRotations{}
-		reader := bytes.NewReader([]byte(all.KeyRotations))
-		if err := jsonpb.Unmarshal(reader, a.KeyRotations); err != nil {
-			return err
-		}
-	}
+
 	if len(all.Banking) != 0 {
 		a.Banking = &checkpoint.Banking{}
 		reader := bytes.NewReader([]byte(all.Banking))
 		if err := jsonpb.Unmarshal(reader, a.Banking); err != nil {
+			return err
+		}
+	}
+
+	if len(all.Validators) != 0 {
+		a.Validators = &checkpoint.Validators{}
+		reader := bytes.NewReader([]byte(all.Validators))
+		if err := jsonpb.Unmarshal(reader, a.Validators); err != nil {
 			return err
 		}
 	}
@@ -206,7 +210,7 @@ func Hash(data []byte) []byte {
 }
 
 func hashBytes(cp *checkpoint.Checkpoint) []byte {
-	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block)+len(cp.Rewards)+len(cp.KeyRotations)+len(cp.Banking))
+	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block)+len(cp.Rewards)+len(cp.Banking)+len(cp.Validators))
 	// the order in which we append is quite important
 	ret = append(ret, cp.NetworkParameters...)
 	ret = append(ret, cp.Assets...)
@@ -217,10 +221,10 @@ func hashBytes(cp *checkpoint.Checkpoint) []byte {
 	ret = append(ret, cp.Governance...)
 	ret = append(ret, cp.Rewards...)
 	ret = append(ret, cp.Banking...)
-	return append(ret, cp.KeyRotations...)
+	return append(ret, cp.Validators...)
 }
 
-func (a all) SnapshotData() ([]byte, []byte, error) {
+func (a all) CheckpointData() ([]byte, []byte, error) {
 	g, err := proto.Marshal(a.Governance)
 	if err != nil {
 		return nil, nil, err
@@ -249,11 +253,11 @@ func (a all) SnapshotData() ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	kr, err := proto.Marshal(a.KeyRotations)
+	banking, err := proto.Marshal(a.Banking)
 	if err != nil {
 		return nil, nil, err
 	}
-	banking, err := proto.Marshal(a.Banking)
+	validators, err := proto.Marshal(a.Validators)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -265,8 +269,8 @@ func (a all) SnapshotData() ([]byte, []byte, error) {
 		Epoch:             e,
 		Block:             b,
 		Rewards:           r,
-		KeyRotations:      kr,
 		Banking:           banking,
+		Validators:        validators,
 	}
 	if cp.Assets, err = proto.Marshal(a.Assets); err != nil {
 		return nil, nil, err
@@ -328,7 +332,6 @@ func dummy() *all {
 							Code: "bar",
 							Product: &vega.InstrumentConfiguration_Future{
 								Future: &vega.FutureProduct{ // omitted oracle spec for now
-									Maturity:        time.Now().Add(48 * time.Hour).Format(time.RFC3339),
 									SettlementAsset: "ETH",
 									QuoteName:       "ETH",
 								},
@@ -361,11 +364,6 @@ func dummy() *all {
 									R:     0.3,
 									Sigma: 0.3,
 								},
-							},
-						},
-						TradingMode: &vega.NewMarketConfiguration_Continuous{
-							Continuous: &vega.ContinuousTrading{
-								TickSize: "1",
 							},
 						},
 					},
@@ -484,4 +482,5 @@ type allJSON struct {
 	Rewards      json.RawMessage `json:"rewards,omitempty"`
 	KeyRotations json.RawMessage `json:"key_rotations,omitempty"`
 	Banking      json.RawMessage `json:"banking,omitempty"`
+	Validators   json.RawMessage `json:"validators,omitempty"`
 }
