@@ -342,7 +342,7 @@ func dummy() *all {
 							Triggers: []*vega.PriceMonitoringTrigger{
 								{
 									Horizon:          10,
-									Probability:      .95,
+									Probability:      ".95",
 									AuctionExtension: 10,
 								},
 							},
