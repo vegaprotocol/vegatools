@@ -20,13 +20,14 @@ var (
 
 func init() {
 	rootCmd.AddCommand(inspectTxCmd)
-	inspectTxCmd.Flags().BytesBase64VarP(&rawTransaction, "tx", "t", []byte(""), "Base64 encoding of the raw Vega transaction to decode")
+	inspectTxCmd.Flags().BytesBase64VarP(&rawTransaction, "tx", "t", []byte(""), "Base64 encoding of the raw Vega to decode")
 	inspectTxCmd.MarkFlagRequired("tx")
 }
 
 func runInspectTx(cmd *cobra.Command, args []string) error {
 	var tx = &commandspb.Transaction{}
-	marshaler := jsonpb.Marshaler{
+	var input_data = &commandspb.InputData{}
+	jsonMarshaler := jsonpb.Marshaler{
 		Indent: "   ",
 	}
 
@@ -34,11 +35,21 @@ func runInspectTx(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Couldn't unmarshal transaction: %w", err)
 	}
 
-	g, err := marshaler.MarshalToString(tx)
-	if err != nil {
-		return fmt.Errorf("Couldn't unmarshal transaction: %w", err)
+	if err := proto.Unmarshal(tx.GetInputData(), input_data); err != nil {
+		return fmt.Errorf("Couldn't unmarshal input_data: %w", err)
 	}
 
-	fmt.Println(g)
+	json, err := jsonMarshaler.MarshalToString(tx)
+	if err != nil {
+		return fmt.Errorf("Couldn't serialise transaction: %w", err)
+	}
+
+	json2, err := jsonMarshaler.MarshalToString(input_data)
+	if err != nil {
+		return fmt.Errorf("Couldn't serialise input_data: %w", err)
+	}
+
+	fmt.Println(json)
+	fmt.Println(json2)
 	return nil
 }
