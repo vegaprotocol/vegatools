@@ -12,7 +12,7 @@ require (
 	github.com/spf13/cobra v1.3.0
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-	github.com/tendermint/tm-db v0.6.6
+	github.com/tendermint/tm-db v0.6.7
 	go.nanomsg.org/mangos/v3 v3.3.0
 	golang.org/x/crypto v0.0.0-20220307211146-efcb8507fb70
 	google.golang.org/grpc v1.44.0
