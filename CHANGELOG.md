@@ -38,6 +38,7 @@
 - [96](https://github.com/vegaprotocol/vegatools/pull/96) - Add a tool to save all withdrawals
 - [110](https://github.com/vegaprotocol/vegatools/pull/110) - Liquidity commitment viewer
 - [113](https://github.com/vegaprotocol/vegatools/pull/113) - Update checkpoint utility to match current state of vega
+- [122](https://github.com/vegaprotocol/vegatools/pull/122) - Update protos for new position state message
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
