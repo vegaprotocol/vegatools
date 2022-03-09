@@ -1,12 +1,17 @@
 package snapshotdb
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"os"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"github.com/cosmos/iavl"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	db "github.com/tendermint/tm-db"
+	"google.golang.org/protobuf/proto"
 )
 
 // SnapshotData is a representation of the information we an scrape from the avl tree
@@ -42,6 +47,34 @@ func displaySnapshotData(tree *iavl.MutableTree, versions []int) error {
 	return nil
 }
 
+func writeSnapshotAsJSON(tree *iavl.MutableTree, outputPath string) {
+	// traverse the tree and get the payloads
+
+	payloads := []*snapshot.Payload{}
+	tree.Iterate(func(key []byte, val []byte) (stop bool) {
+		p := &snapshot.Payload{}
+		err := proto.Unmarshal(val, p)
+		if err != nil {
+			return true
+		}
+		payloads = append(payloads, p)
+		return false
+	})
+
+	f, _ := os.Create(outputPath)
+	defer f.Close()
+
+	w := bufio.NewWriter(f)
+	m := jsonpb.Marshaler{Indent: "    "}
+
+	for _, p := range payloads {
+		s, _ := m.MarshalToString(p)
+		w.WriteString(s)
+	}
+
+	w.Flush()
+}
+
 func displayNumberOfVersions(versions int) error {
 	j := struct {
 		Versions int64 `json:"n_versions"`
@@ -58,7 +91,7 @@ func displayNumberOfVersions(versions int) error {
 }
 
 // Run is the main entry point for this tool
-func Run(dbpath string, versionsOnly bool) error {
+func Run(dbpath string, versionsOnly bool, outputPath string, versionToOutput int64) error {
 	// Attempt to open the database
 	options := &opt.Options{
 		ErrorIfMissing: true,
@@ -78,6 +111,15 @@ func Run(dbpath string, versionsOnly bool) error {
 		return err
 	}
 	versions := tree.AvailableVersions()
+
+	if versionToOutput != 0 && len(outputPath) != 0 {
+
+		_, err := tree.LazyLoadVersion(versionToOutput)
+		if err != nil {
+			return err
+		}
+		writeSnapshotAsJSON(tree, outputPath)
+	}
 
 	if versionsOnly {
 		return displayNumberOfVersions(len(versions))
