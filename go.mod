@@ -3,7 +3,7 @@ module code.vegaprotocol.io/vegatools
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.49.2-0.20220308174837-078cb0d6b54b
+	code.vegaprotocol.io/protos v0.49.2-0.20220309134139-6f3e3a37dd5a
 	github.com/cosmos/iavl v0.17.3
 	github.com/ethereum/go-ethereum v1.10.16
 	github.com/gdamore/tcell/v2 v2.4.0
