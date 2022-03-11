@@ -17,16 +17,18 @@ import (
 )
 
 type all struct {
-	Governance *checkpoint.Proposals  `json:"governance_proposals,omitempty"`
-	Assets     *checkpoint.Assets     `json:"assets,omitempty"`
-	Collateral *checkpoint.Collateral `json:"collateral,omitempty"`
-	NetParams  *checkpoint.NetParams  `json:"network_parameters,omitempty"`
-	Delegate   *checkpoint.Delegate   `json:"delegate,omitempty"`
-	Epoch      *events.EpochEvent     `json:"epoch,omitempty"`
-	Block      *checkpoint.Block      `json:"block,omitempty"`
-	Rewards    *checkpoint.Rewards    `json:"rewards,omitempty"`
-	Banking    *checkpoint.Banking    `json:"banking,omitempty"`
-	Validators *checkpoint.Validators `json:"validators,omitempty"`
+	Governance      *checkpoint.Proposals       `json:"governance_proposals,omitempty"`
+	Assets          *checkpoint.Assets          `json:"assets,omitempty"`
+	Collateral      *checkpoint.Collateral      `json:"collateral,omitempty"`
+	NetParams       *checkpoint.NetParams       `json:"network_parameters,omitempty"`
+	Delegate        *checkpoint.Delegate        `json:"delegate,omitempty"`
+	Epoch           *events.EpochEvent          `json:"epoch,omitempty"`
+	Block           *checkpoint.Block           `json:"block,omitempty"`
+	Rewards         *checkpoint.Rewards         `json:"rewards,omitempty"`
+	Banking         *checkpoint.Banking         `json:"banking,omitempty"`
+	Validators      *checkpoint.Validators      `json:"validators,omitempty"`
+	Staking         *checkpoint.Staking         `json:"staking,omitempty"`
+	MultisigControl *checkpoint.MultisigControl `json:"multisig_control,omitempty"`
 }
 
 // AssetErr a convenience error type
@@ -101,18 +103,31 @@ func (a all) JSON() ([]byte, error) {
 		return nil, err
 	}
 
-	all := allJSON{
-		Governance: json.RawMessage(g),
-		Assets:     json.RawMessage(as),
-		Collateral: json.RawMessage(c),
-		NetParams:  json.RawMessage(n),
-		Delegate:   json.RawMessage(d),
-		Epoch:      json.RawMessage(e),
-		Block:      json.RawMessage(block),
-		Rewards:    json.RawMessage(r),
-		Banking:    json.RawMessage(banking),
-		Validators: json.RawMessage(validators),
+	staking, err := marshaler.MarshalToString(a.Staking)
+	if err != nil {
+		return nil, err
 	}
+
+	multisig, err := marshaler.MarshalToString(a.MultisigControl)
+	if err != nil {
+		return nil, err
+	}
+
+	all := allJSON{
+		Governance:      json.RawMessage(g),
+		Assets:          json.RawMessage(as),
+		Collateral:      json.RawMessage(c),
+		NetParams:       json.RawMessage(n),
+		Delegate:        json.RawMessage(d),
+		Epoch:           json.RawMessage(e),
+		Block:           json.RawMessage(block),
+		Rewards:         json.RawMessage(r),
+		Banking:         json.RawMessage(banking),
+		Validators:      json.RawMessage(validators),
+		Staking:         json.RawMessage(staking),
+		MultisigControl: json.RawMessage(multisig),
+	}
+
 	b, err := json.MarshalIndent(all, "", "   ")
 	if err != nil {
 		return nil, err
@@ -199,6 +214,21 @@ func (a *all) FromJSON(in []byte) error {
 		}
 	}
 
+	if len(all.Staking) != 0 {
+		a.Staking = &checkpoint.Staking{}
+		reader := bytes.NewReader([]byte(all.Staking))
+		if err := jsonpb.Unmarshal(reader, a.Staking); err != nil {
+			return err
+		}
+	}
+	if len(all.MultisigControl) != 0 {
+		a.MultisigControl = &checkpoint.MultisigControl{}
+		reader := bytes.NewReader([]byte(all.MultisigControl))
+		if err := jsonpb.Unmarshal(reader, a.MultisigControl); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -210,7 +240,7 @@ func Hash(data []byte) []byte {
 }
 
 func hashBytes(cp *checkpoint.Checkpoint) []byte {
-	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block)+len(cp.Rewards)+len(cp.Banking)+len(cp.Validators))
+	ret := make([]byte, 0, len(cp.Governance)+len(cp.Assets)+len(cp.Collateral)+len(cp.NetworkParameters)+len(cp.Delegation)+len(cp.Epoch)+len(cp.Block)+len(cp.Rewards)+len(cp.Banking)+len(cp.Validators)+len(cp.Staking)+len(cp.MultisigControl))
 	// the order in which we append is quite important
 	ret = append(ret, cp.NetworkParameters...)
 	ret = append(ret, cp.Assets...)
@@ -221,7 +251,9 @@ func hashBytes(cp *checkpoint.Checkpoint) []byte {
 	ret = append(ret, cp.Governance...)
 	ret = append(ret, cp.Rewards...)
 	ret = append(ret, cp.Banking...)
-	return append(ret, cp.Validators...)
+	ret = append(ret, cp.Validators...)
+	ret = append(ret, cp.Staking...)
+	return append(ret, cp.MultisigControl...)
 }
 
 func (a all) CheckpointData() ([]byte, []byte, error) {
@@ -472,15 +504,17 @@ func dummy() *all {
 }
 
 type allJSON struct {
-	Governance   json.RawMessage `json:"governance_proposals,omitempty"`
-	Assets       json.RawMessage `json:"assets,omitempty"`
-	Collateral   json.RawMessage `json:"collateral,omitempty"`
-	NetParams    json.RawMessage `json:"network_parameters,omitempty"`
-	Delegate     json.RawMessage `json:"delegate,omitempty"`
-	Epoch        json.RawMessage `json:"epoch,omitempty"`
-	Block        json.RawMessage `json:"block,omitempty"`
-	Rewards      json.RawMessage `json:"rewards,omitempty"`
-	KeyRotations json.RawMessage `json:"key_rotations,omitempty"`
-	Banking      json.RawMessage `json:"banking,omitempty"`
-	Validators   json.RawMessage `json:"validators,omitempty"`
+	Governance      json.RawMessage `json:"governance_proposals,omitempty"`
+	Assets          json.RawMessage `json:"assets,omitempty"`
+	Collateral      json.RawMessage `json:"collateral,omitempty"`
+	NetParams       json.RawMessage `json:"network_parameters,omitempty"`
+	Delegate        json.RawMessage `json:"delegate,omitempty"`
+	Epoch           json.RawMessage `json:"epoch,omitempty"`
+	Block           json.RawMessage `json:"block,omitempty"`
+	Rewards         json.RawMessage `json:"rewards,omitempty"`
+	KeyRotations    json.RawMessage `json:"key_rotations,omitempty"`
+	Banking         json.RawMessage `json:"banking,omitempty"`
+	Validators      json.RawMessage `json:"validators,omitempty"`
+	Staking         json.RawMessage `json:"staking,omitempty"`
+	MultisigControl json.RawMessage `json:"multisig_control,omitempty"`
 }

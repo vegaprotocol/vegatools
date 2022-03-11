@@ -204,7 +204,29 @@ func unmarshalAll(cp *checkpoint.Checkpoint) (*all, error) {
 	if ret.Validators, err = unmarshalValidators(cp); err != nil {
 		return nil, err
 	}
+	if ret.Staking, err = unmarshalStaking(cp); err != nil {
+		return nil, err
+	}
+	if ret.MultisigControl, err = unmarshalMultisigControl(cp); err != nil {
+		return nil, err
+	}
 	return ret, nil
+}
+
+func unmarshalStaking(cp *checkpoint.Checkpoint) (*checkpoint.Staking, error) {
+	p := &checkpoint.Staking{}
+	if err := proto.Unmarshal(cp.Staking, p); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func unmarshalMultisigControl(cp *checkpoint.Checkpoint) (*checkpoint.MultisigControl, error) {
+	p := &checkpoint.MultisigControl{}
+	if err := proto.Unmarshal(cp.MultisigControl, p); err != nil {
+		return nil, err
+	}
+	return p, nil
 }
 
 func unmarshalGovernance(cp *checkpoint.Checkpoint) (*checkpoint.Proposals, error) {
