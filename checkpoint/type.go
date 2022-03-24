@@ -293,6 +293,14 @@ func (a all) CheckpointData() ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	staking, err := proto.Marshal(a.Staking)
+	if err != nil {
+		return nil, nil, err
+	}
+	multi, err := proto.Marshal(a.MultisigControl)
+	if err != nil {
+		return nil, nil, err
+	}
 	cp := &checkpoint.Checkpoint{
 		Governance:        g,
 		Collateral:        c,
@@ -303,6 +311,8 @@ func (a all) CheckpointData() ([]byte, []byte, error) {
 		Rewards:           r,
 		Banking:           banking,
 		Validators:        validators,
+		Staking:           staking,
+		MultisigControl:   multi,
 	}
 	if cp.Assets, err = proto.Marshal(a.Assets); err != nil {
 		return nil, nil, err
