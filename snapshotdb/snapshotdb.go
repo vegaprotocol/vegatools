@@ -16,9 +16,9 @@ import (
 
 // SnapshotData is a representation of the information we an scrape from the avl tree
 type SnapshotData struct {
-	Version int64 `json:"version"`
-	Height  int64 `json:"height"`
-	Size    int64 `json:"size"`
+	Version int64  `json:"version"`
+	Height  uint64 `json:"height"`
+	Size    int64  `json:"size"`
 }
 
 func displaySnapshotData(tree *iavl.MutableTree, versions []int) error {
@@ -32,9 +32,11 @@ func displaySnapshotData(tree *iavl.MutableTree, versions []int) error {
 		if err != nil {
 			return err
 		}
+
+		_, blockHeight, _ := getAllPayloads(tree)
 		j.Snapshots = append(j.Snapshots, SnapshotData{
 			Version: v,
-			Height:  int64(tree.Height()),
+			Height:  blockHeight,
 			Size:    tree.Size(),
 		})
 	}
@@ -47,19 +49,37 @@ func displaySnapshotData(tree *iavl.MutableTree, versions []int) error {
 	return nil
 }
 
-func writeSnapshotAsJSON(tree *iavl.MutableTree, outputPath string) {
-	// traverse the tree and get the payloads
-
+func getAllPayloads(tree *iavl.MutableTree) ([]*snapshot.Payload, uint64, error) {
 	payloads := []*snapshot.Payload{}
+	var err error
+	var blockHeight uint64
 	tree.Iterate(func(key []byte, val []byte) (stop bool) {
 		p := &snapshot.Payload{}
-		err := proto.Unmarshal(val, p)
+		err = proto.Unmarshal(val, p)
 		if err != nil {
 			return true
 		}
+
+		// grab block-height while we're here
+		switch dt := p.Data.(type) {
+		case *snapshot.Payload_AppState:
+			blockHeight = dt.AppState.Height
+		}
+
 		payloads = append(payloads, p)
 		return false
 	})
+
+	return payloads, blockHeight, err
+}
+
+func writeSnapshotAsJSON(tree *iavl.MutableTree, outputPath string) error {
+	// traverse the tree and get the payloads
+
+	payloads, _, err := getAllPayloads(tree)
+	if err != nil {
+		return err
+	}
 
 	f, _ := os.Create(outputPath)
 	defer f.Close()
@@ -73,6 +93,8 @@ func writeSnapshotAsJSON(tree *iavl.MutableTree, outputPath string) {
 	}
 
 	w.Flush()
+	fmt.Println("snapshot payloads written to:", outputPath)
+	return nil
 }
 
 func displayNumberOfVersions(versions int) error {
@@ -91,7 +113,7 @@ func displayNumberOfVersions(versions int) error {
 }
 
 // Run is the main entry point for this tool
-func Run(dbpath string, versionsOnly bool, outputPath string, versionToOutput int64) error {
+func Run(dbpath string, versionsOnly bool, outputPath string, heightToOutput int64) error {
 	// Attempt to open the database
 	options := &opt.Options{
 		ErrorIfMissing: true,
@@ -112,17 +134,33 @@ func Run(dbpath string, versionsOnly bool, outputPath string, versionToOutput in
 	}
 	versions := tree.AvailableVersions()
 
-	if versionToOutput != 0 && len(outputPath) != 0 {
+	switch {
+	case len(outputPath) != 0:
 
-		_, err := tree.LazyLoadVersion(versionToOutput)
-		if err != nil {
-			return err
+		// find the tree version for the heigh
+
+		for i := len(versions) - 1; i > -1; i-- {
+			version := versions[i]
+
+			_, err := tree.LazyLoadVersion(int64(version))
+			if err != nil {
+				return err
+			}
+
+			_, blockHeight, _ := getAllPayloads(tree)
+
+			// either a height wasn't specified so we take the latest
+			if heightToOutput == 0 || blockHeight == uint64(heightToOutput) {
+				fmt.Println("found snapshot for block-height", blockHeight)
+				return writeSnapshotAsJSON(tree, outputPath)
+			}
+
 		}
-		writeSnapshotAsJSON(tree, outputPath)
-	}
+		return fmt.Errorf("could not find snapshot for height %d", heightToOutput)
 
-	if versionsOnly {
+	case versionsOnly:
 		return displayNumberOfVersions(len(versions))
+	default:
+		return displaySnapshotData(tree, versions)
 	}
-	return displaySnapshotData(tree, versions)
 }
