@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -88,6 +89,7 @@ func drawHeaders() {
 
 	// LP header
 	drawString(0, 3, whiteStyle, "PartyID")
+	drawStringPc(45, 3, whiteStyle, "Status")
 	drawStringPc(55, 3, whiteStyle, "Created")
 	drawStringPc(70, 3, whiteStyle, "Modified")
 	drawStringPc(85, 3, whiteStyle, "Fee")
@@ -108,12 +110,17 @@ func drawLP() {
 	})
 
 	row := 4
-	for _, lp := range lps {
+	for count, lp := range lps {
 		style := greyStyle
 		if row%2 == 0 {
 			style = whiteStyle
 		}
+
+		status := lp.Status.String()
+		status = strings.Replace(status, "STATUS_", "", 1)
+
 		drawString(0, row, style, lp.PartyId)
+		drawStringPc(45, row, style, status)
 		drawStringPc(55, row, style, tsToDate(lp.CreatedAt))
 		drawStringPc(70, row, style, tsToDate(lp.UpdatedAt))
 		drawStringPc(85, row, style, lp.Fee)
@@ -121,6 +128,9 @@ func drawLP() {
 		row++
 
 		if row == h-2 {
+			if count+1 != len(lps) {
+				drawString((w/2)-1, row, whiteStyle, "...")
+			}
 			break
 		}
 	}
