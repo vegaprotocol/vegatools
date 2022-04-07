@@ -40,6 +40,7 @@
 - [113](https://github.com/vegaprotocol/vegatools/pull/113) - Update checkpoint utility to match current state of vega
 - [122](https://github.com/vegaprotocol/vegatools/pull/122) - Update protos for new position state message
 - [121](https://github.com/vegaprotocol/vegatools/pull/121) - Add option to `snapshotdb` to print a snapshot to a file as JSON
+- [140](https://github.com/vegaprotocol/vegatools/issue/140) - Add status column to liquidity commitment viewer
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency

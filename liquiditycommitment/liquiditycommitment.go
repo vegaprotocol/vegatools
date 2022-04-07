@@ -35,7 +35,14 @@ func getLiquidityProvisions(dataclient api.TradingDataServiceClient, marketID st
 	if err != nil {
 		log.Println(err)
 	}
-	return response.LiquidityProvisions
+	// Only return the orders currently ACTIVE
+	lps := make([]*proto.LiquidityProvision, 0)
+	for _, lp := range response.LiquidityProvisions {
+		if lp.Status != proto.LiquidityProvision_STATUS_CANCELLED {
+			lps = append(lps, lp)
+		}
+	}
+	return lps
 }
 
 func getMarketData(dataclient api.TradingDataServiceClient, marketID string) *proto.MarketData {
@@ -166,13 +173,16 @@ func processEventBusData(stream api.TradingDataService_ObserveEventBusClient) {
 
 		redrawRequired := false
 		for _, event := range eb.Events {
-			log.Println(event)
 			switch event.Type {
 			case eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
 				eventLp := event.GetLiquidityProvision()
 				if lp, ok := partyToLps[eventLp.Id]; ok {
-					// Check if anything changed
-					if lp.UpdatedAt != eventLp.UpdatedAt {
+					// If we are closed, remove the LP
+					if eventLp.Status == proto.LiquidityProvision_STATUS_CANCELLED {
+						delete(partyToLps, eventLp.Id)
+						redrawRequired = true
+					} else if lp.UpdatedAt != eventLp.UpdatedAt ||
+						lp.Status != eventLp.Status {
 						partyToLps[eventLp.Id] = eventLp
 						redrawRequired = true
 					}
