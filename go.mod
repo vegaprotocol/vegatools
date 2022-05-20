@@ -3,7 +3,7 @@ module code.vegaprotocol.io/vegatools
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.49.3
+	code.vegaprotocol.io/protos v0.51.1-0.20220519135557-5d79ac9f0614
 	github.com/cosmos/iavl v0.17.3
 	github.com/ethereum/go-ethereum v1.10.17
 	github.com/gdamore/tcell/v2 v2.5.0
@@ -13,8 +13,10 @@ require (
 	github.com/stretchr/testify v1.7.1
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 	github.com/tendermint/tm-db v0.6.7
+	github.com/ugorji/go v1.1.4 // indirect
 	go.nanomsg.org/mangos/v3 v3.4.1
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
+	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.28.0
 )
