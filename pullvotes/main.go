@@ -1,7 +1,6 @@
 package pullvotes
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -87,7 +86,7 @@ func getTxsAtBlockHeight(nodeAddress string, height uint64) {
 	}
 }
 
-func getCommand(inputData *commandspb.InputData) {
+func getCommand(inputData *commandspb.InputData, pubKey string) {
 	switch cmd := inputData.Command.(type) {
 	case *commandspb.InputData_NodeVote:
 		m, ok := all[cmd.NodeVote.Reference]
@@ -96,7 +95,7 @@ func getCommand(inputData *commandspb.InputData) {
 			all[cmd.NodeVote.Reference] = m
 
 		}
-		m[hex.EncodeToString(cmd.NodeVote.PubKey)] = struct{}{}
+		m[pubKey] = struct{}{}
 		all[cmd.NodeVote.Reference] = m
 
 		fmt.Printf("%v -> %d\n", cmd.NodeVote.Reference, len(m))
@@ -119,7 +118,7 @@ func unpackSignedTx(rawtx []byte) {
 		panic(err)
 	}
 
-	getCommand(&inputData)
+	getCommand(&inputData, tx.GetPubKey())
 
 }
 
