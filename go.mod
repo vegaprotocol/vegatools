@@ -6,7 +6,7 @@ require (
 	code.vegaprotocol.io/protos v0.51.1-0.20220519135557-5d79ac9f0614
 	github.com/cosmos/iavl v0.17.3
 	github.com/ethereum/go-ethereum v1.10.17
-	github.com/gdamore/tcell/v2 v2.5.0
+	github.com/gdamore/tcell/v2 v2.5.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.2
 	github.com/spf13/cobra v1.3.0
