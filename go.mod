@@ -15,7 +15,7 @@ require (
 	github.com/tendermint/tm-db v0.6.7
 	github.com/ugorji/go v1.1.4 // indirect
 	go.nanomsg.org/mangos/v3 v3.4.1
-	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	google.golang.org/grpc v1.47.0
 	google.golang.org/protobuf v1.28.0
 )
