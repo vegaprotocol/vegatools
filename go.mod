@@ -16,6 +16,6 @@ require (
 	github.com/ugorji/go v1.1.4 // indirect
 	go.nanomsg.org/mangos/v3 v3.4.1
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
-	google.golang.org/grpc v1.47.0
+	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.0
 )
