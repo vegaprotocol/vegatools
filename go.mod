@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	code.vegaprotocol.io/protos v0.52.0
+	code.vegaprotocol.io/shared v0.0.0-20220704150014-7c22d12ccb72 // indirect
 	github.com/cosmos/iavl v0.17.3
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/gdamore/tcell/v2 v2.5.1
