@@ -28,40 +28,25 @@ type token interface {
 }
 
 func mintTokenAndShowBalances(client *ethereum.Client, token token, address common.Address, amount *big.Int) error {
-	fmt.Println("---- Minting new token")
-
-	balance, err := token.BalanceOf(address)
+	_, err := token.BalanceOf(address)
 	if err != nil {
 		return fmt.Errorf("failed to get balance for %s: %s", address.String(), err)
 	}
-	fmt.Printf("Initial balance of %s is %s \n", address, balance)
-
-	fmt.Printf("Minting token %s amount %s for %s \n", token.Address(), amount, address)
 	if _, err := token.MintSync(address, amount); err != nil {
 		return fmt.Errorf("failed to call Mint contract: %s", err)
 	}
 
-	balance, err = token.BalanceOf(address)
+	_, err = token.BalanceOf(address)
 	if err != nil {
 		return fmt.Errorf("failed to get balance for %s: %s", address.String(), err)
 	}
-
-	fmt.Printf("Balance of %s after mint is %s \n", address, balance)
-
-	fmt.Println("---- Token minted")
-
 	return nil
 }
 
 func approveAndDepositToken(token token, bridge *ethereum.ERC20BridgeSession, amount *big.Int, vegaPubKey string) error {
-	fmt.Println("---- Deposit token")
-
-	fmt.Printf("Approving token %s amount %s for %s \n", token.Address(), amount, bridge.Address())
 	if _, err := token.ApproveSync(bridge.Address(), amount); err != nil {
 		return fmt.Errorf("failed to approve token: %w", err)
 	}
-
-	fmt.Printf("Depositing asset %s amount %s Vega pub key %s \n", token.Address(), amount, vegaPubKey)
 
 	vegaPubKeyByte32, err := ethereum.HexStringToByte32Array(vegaPubKey)
 	if err != nil {
@@ -71,16 +56,10 @@ func approveAndDepositToken(token token, bridge *ethereum.ERC20BridgeSession, am
 	if _, err := bridge.DepositAssetSync(token.Address(), amount, vegaPubKeyByte32); err != nil {
 		return fmt.Errorf("failed to deposit asset: %w", err)
 	}
-
-	fmt.Println("---- Token deposited")
-
 	return nil
 }
 
 func approveAndStakeToken(token token, bridge *ethereum.StakingBridgeSession, amount *big.Int, vegaPubKey string) error {
-	fmt.Println("---- Stake token")
-
-	fmt.Printf("Approving token %s amount %s for %s \n", token.Address(), amount, bridge.Address())
 	if _, err := token.ApproveSync(bridge.Address(), amount); err != nil {
 		return fmt.Errorf("failed to approve token: %w", err)
 	}
@@ -90,13 +69,9 @@ func approveAndStakeToken(token token, bridge *ethereum.StakingBridgeSession, am
 		return err
 	}
 
-	fmt.Printf("Staking asset %s amount %s Vega pub key %s \n", token.Address(), amount, vegaPubKey)
 	if _, err := bridge.Stake(amount, vegaPubKeyByte32); err != nil {
 		return fmt.Errorf("failed to stake asset: %w", err)
 	}
-
-	fmt.Println("---- Token staked")
-
 	return nil
 }
 func sendVegaTokens(vegaPubKey string) error {
@@ -105,12 +80,12 @@ func sendVegaTokens(vegaPubKey string) error {
 	// Create a connection to ganache
 	client, err := ethereum.NewClient(ctx, "http://localhost:8545", 1440)
 	if err != nil {
-		fmt.Println("Failed to get ethereum: ", err)
+		return err
 	}
 
 	stakingBridge, err := client.NewStakingBridgeSession(ctx, contractOwnerPrivateKey, stakingBridgeAddress, nil)
 	if err != nil {
-		fmt.Println("Failed to create staking bridge: ", err)
+		return err
 	}
 
 	/*	erc20Bridge, err := client.NewERC20BridgeSession(ctx, contractOwnerPrivateKey, erc20BridgeAddress, nil)
@@ -120,7 +95,7 @@ func sendVegaTokens(vegaPubKey string) error {
 
 	vegaToken, err := client.NewBaseTokenSession(ctx, contractOwnerPrivateKey, vegaTokenAddress, nil)
 	if err != nil {
-		fmt.Println("Failed to create vega token: ", err)
+		return err
 	}
 
 	/*	tUSDCToken, err := client.NewBaseTokenSession(ctx, contractOwnerPrivateKey, tUSDCTokenAddress, nil)
@@ -142,7 +117,7 @@ func sendVegaTokens(vegaPubKey string) error {
 	}*/
 
 	if err := approveAndStakeToken(vegaToken, stakingBridge, big.NewInt(1000000000000000000), vegaPubKey); err != nil {
-		fmt.Println("Failed to approve and stake token on staking bridge: ", err)
+		return err
 	}
 	return nil
 }

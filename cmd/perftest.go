@@ -12,6 +12,7 @@ var (
 		faucetURL         string
 		commandsPerSecond int
 		runtimeSeconds    int
+		userCount         int
 	}
 
 	perfTestCmd = &cobra.Command{
@@ -26,7 +27,12 @@ func init() {
 	perfTestCmd.Flags().StringVarP(&perfTestOpts.dataNodeAddr, "address", "a", "", "address of the data node server")
 	perfTestCmd.Flags().StringVarP(&perfTestOpts.walletURL, "wallet", "w", "", "address of the wallet server")
 	perfTestCmd.Flags().StringVarP(&perfTestOpts.faucetURL, "faucet", "f", "", "address of the faucet server")
+	perfTestCmd.Flags().IntVarP(&perfTestOpts.commandsPerSecond, "cps", "c", 100, "commands per second")
+	perfTestCmd.Flags().IntVarP(&perfTestOpts.runtimeSeconds, "runtime", "r", 60, "runtime in seconds")
+	perfTestCmd.Flags().IntVarP(&perfTestOpts.userCount, "users", "u", 10, "number of users to send commands with")
 	perfTestCmd.MarkFlagRequired("address")
+	perfTestCmd.MarkFlagRequired("wallet")
+	perfTestCmd.MarkFlagRequired("faucet")
 }
 
 func runPerfTest(cmd *cobra.Command, args []string) error {
@@ -34,5 +40,6 @@ func runPerfTest(cmd *cobra.Command, args []string) error {
 		perfTestOpts.walletURL,
 		perfTestOpts.faucetURL,
 		perfTestOpts.commandsPerSecond,
-		perfTestOpts.runtimeSeconds)
+		perfTestOpts.runtimeSeconds,
+		perfTestOpts.userCount)
 }
