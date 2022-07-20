@@ -36,12 +36,15 @@ func connectToDataNode(dataNodeAddr string) error {
 	dataNode = datanode.NewTradingDataServiceClient(connection)
 
 	// load in all the assets
-	for len(assets) == 0 {
+	for {
 		err = getAssets()
 		if err != nil {
 			return err
 		}
-		time.Sleep(time.Second * 3)
+		if len(assets) != 0 {
+			return nil
+		}
+		time.Sleep(time.Second * 1)
 	}
 
 	return nil
@@ -72,7 +75,6 @@ func depositTokens(newKeys int, faucetURL string) error {
 func proposeAndEnactMarket() (string, error) {
 	markets := getMarkets()
 	if len(markets) == 0 {
-		fmt.Println("Creating market")
 		sendNewMarketProposal(0)
 		time.Sleep(time.Second * 2)
 		propID, err := getPendingProposalID()
@@ -98,16 +100,19 @@ func proposeAndEnactMarket() (string, error) {
 	return markets[0], nil
 }
 
-func sendTradingLoad(marketId string, users, ops, runTime int) error {
+func sendTradingLoad(marketId string, users, ops, runTimeSeconds int) error {
 	// Start load testing by sending off lots of orders at a given rate
 	userCount := users - 2
 	now := time.Now()
 	count := 0
 	delays := 0
 	ordersPerSecond := ops
-	minutesToRun := runTime
+	opsScale := 1.0
+	if ordersPerSecond > 1 {
+		opsScale = float64(ordersPerSecond - 1)
+	}
 	// Work out how many orders we need for 10 minute run
-	numberOfTransactions := minutesToRun * 60 * ordersPerSecond
+	numberOfTransactions := runTimeSeconds * ordersPerSecond
 	for i := 0; i < numberOfTransactions; i++ {
 		user := rand.Intn(userCount) + 2
 		choice := rand.Intn(100)
@@ -136,7 +141,7 @@ func sendTradingLoad(marketId string, users, ops, runTime int) error {
 
 		newNow := time.Now()
 		actualDiffSeconds := newNow.Sub(now).Seconds()
-		wantedDiffSeconds := float64(count) / float64(ordersPerSecond)
+		wantedDiffSeconds := float64(count) / opsScale
 
 		// See if we are sending quicker than we should
 		if actualDiffSeconds < wantedDiffSeconds {
@@ -151,12 +156,13 @@ func sendTradingLoad(marketId string, users, ops, runTime int) error {
 		}
 
 		if actualDiffSeconds >= 1 {
-			fmt.Printf("\rSending load transactions...[%d/%d] %dcps", i, numberOfTransactions, count)
+			fmt.Printf("\rSending load transactions...[%d/%d] %dcps  ", i, numberOfTransactions, count)
 			count = 0
 			delays = 0
 			now = newNow
 		}
 	}
+	fmt.Printf("\rSending load transactions...")
 	return nil
 }
 
@@ -214,7 +220,7 @@ func Run(dataNodeAddr, walletURL, faucetURL string, commandsPerSecond, runtimeSe
 		fmt.Println("FAILED")
 		return err
 	}
-	fmt.Println("Complete")
+	fmt.Println("Complete                      ")
 
 	return nil
 }
