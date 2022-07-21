@@ -252,7 +252,7 @@ func sendOrder(marketId string, user int, price, size int64,
       $PRICE
       "size": "$SIZE",
       "side": "$SIDE",
-			"timeInForce": "$TIME_IN_FORCE",
+      "timeInForce": "$TIME_IN_FORCE",
       $EXPIRES_AT
       "type": "$TYPE",
       "reference": "order_ref"
@@ -409,8 +409,8 @@ func sendCancelAll(user int, marketId string) {
 	cmd := `{	"orderCancellation" :{
               "marketId": "$MARKET_ID"
             },
-						"pubKey": "$PUBKEY",
-						"propagate": true						
+            "pubKey": "$PUBKEY",
+            "propagate": true						
           }`
 
 	cmd = strings.Replace(cmd, "$MARKET_ID", marketId, 1)

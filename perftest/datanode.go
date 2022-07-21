@@ -86,12 +86,12 @@ func voteOnProposal(propID string) error {
 
 func sendVote(user int, proposalId string, vote bool) error {
 	cmd := `{ "voteSubmission": {
-							"proposal_id": "$PROPOSAL_ID",
-							"value": "$VOTE"
-						},
-						"pubKey": "$PUBKEY",
+              "proposal_id": "$PROPOSAL_ID",
+              "value": "$VOTE"
+            },
+            "pubKey": "$PUBKEY",
             "propagate" : true
-					}`
+          }`
 
 	cmd = strings.Replace(cmd, "$PROPOSAL_ID", proposalId, 1)
 	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
