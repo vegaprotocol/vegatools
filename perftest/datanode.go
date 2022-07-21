@@ -68,10 +68,9 @@ func getPendingProposalID() (string, error) {
 	for _, proposal := range response.GetData() {
 		if proposal.Proposal.State == proto.Proposal_STATE_OPEN {
 			return proposal.Proposal.Id, nil
-			log.Println("Response:", proposal)
 		}
 	}
-	return "", fmt.Errorf("No pending proposals found")
+	return "", fmt.Errorf("no pending proposals found")
 }
 
 func voteOnProposal(propID string) error {

@@ -165,7 +165,7 @@ func listKeys(walletURL, token string) ([]string, error) {
 	json.Unmarshal([]byte(sb), &result)
 	keys := result["keys"].([]interface{})
 	if len(keys) == 0 {
-		return nil, fmt.Errorf("No keys found")
+		return nil, fmt.Errorf("no keys found")
 	}
 
 	pubKeys := []string{}
@@ -188,7 +188,7 @@ func createOrLoadWallets(walletURL string, number int) (int, error) {
 		if err != nil {
 			token, err = createWallet(walletURL, userName, "p3rfb0t")
 			if err != nil {
-				return 0, fmt.Errorf("Unable to create a new wallet: %w", err)
+				return 0, fmt.Errorf("unable to create a new wallet: %w", err)
 			}
 		}
 		keys, _ := listKeys(walletURL, token)
@@ -273,7 +273,7 @@ func sendOrder(marketId string, user int, price, size int64,
 	}
 
 	if expiresAt > 0 {
-		cmd = strings.Replace(cmd, "$EXPIRES_AT", fmt.Sprintf("\"expiresAt\": %d,"), 1)
+		cmd = strings.Replace(cmd, "$EXPIRES_AT", fmt.Sprintf("\"expiresAt\": %d,", expiresAt), 1)
 	} else {
 		cmd = strings.Replace(cmd, "$EXPIRES_AT", "", 1)
 	}

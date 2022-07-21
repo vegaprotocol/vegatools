@@ -30,7 +30,7 @@ func connectToDataNode(dataNodeAddr string) error {
 	connection, err := grpc.Dial(dataNodeAddr, grpc.WithInsecure())
 	if err != nil {
 		// Something went wrong
-		return fmt.Errorf("Failed to connect to the datanode gRPC port: ", err)
+		return fmt.Errorf("failed to connect to the datanode gRPC port: %w ", err)
 	}
 
 	dataNode = datanode.NewTradingDataServiceClient(connection)
@@ -46,8 +46,6 @@ func connectToDataNode(dataNodeAddr string) error {
 		}
 		time.Sleep(time.Second * 1)
 	}
-
-	return nil
 }
 
 func depositTokens(newKeys int, faucetURL string) error {
@@ -93,7 +91,7 @@ func proposeAndEnactMarket() (string, error) {
 		sendOrder(markets[0], 0, 10000, +5, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
 		sendOrder(markets[0], 1, 10000, -5, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
 	} else {
-		return "", fmt.Errorf("Failed to get open market")
+		return "", fmt.Errorf("failed to get open market")
 	}
 	time.Sleep(time.Second * 5)
 

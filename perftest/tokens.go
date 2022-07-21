@@ -11,11 +11,8 @@ import (
 )
 
 var (
-	erc20BridgeAddress      = common.HexToAddress("0x9708FF7510D4A7B9541e1699d15b53Ecb1AFDc54")
 	stakingBridgeAddress    = common.HexToAddress("0x9135f5afd6F055e731bca2348429482eE614CFfA")
-	tUSDCTokenAddress       = common.HexToAddress("0x1b8a1B6CBE5c93609b46D1829Cc7f3Cb8eeE23a0")
 	vegaTokenAddress        = common.HexToAddress("0x67175Da1D5e966e40D11c4B2519392B2058373de")
-	contractOwnerAddress    = common.HexToAddress("0xEe7D375bcB50C26d52E1A4a472D8822A2A22d94F")
 	contractOwnerPrivateKey = "a37f4c2a678aefb5037bf415a826df1540b330b7e471aa54184877ba901b9ef0"
 )
 
@@ -25,38 +22,6 @@ type token interface {
 	BalanceOf(account common.Address) (*big.Int, error)
 	ApproveSync(spender common.Address, value *big.Int) (*types.Transaction, error)
 	Address() common.Address
-}
-
-func mintTokenAndShowBalances(client *ethereum.Client, token token, address common.Address, amount *big.Int) error {
-	_, err := token.BalanceOf(address)
-	if err != nil {
-		return fmt.Errorf("failed to get balance for %s: %s", address.String(), err)
-	}
-	if _, err := token.MintSync(address, amount); err != nil {
-		return fmt.Errorf("failed to call Mint contract: %s", err)
-	}
-
-	_, err = token.BalanceOf(address)
-	if err != nil {
-		return fmt.Errorf("failed to get balance for %s: %s", address.String(), err)
-	}
-	return nil
-}
-
-func approveAndDepositToken(token token, bridge *ethereum.ERC20BridgeSession, amount *big.Int, vegaPubKey string) error {
-	if _, err := token.ApproveSync(bridge.Address(), amount); err != nil {
-		return fmt.Errorf("failed to approve token: %w", err)
-	}
-
-	vegaPubKeyByte32, err := ethereum.HexStringToByte32Array(vegaPubKey)
-	if err != nil {
-		return err
-	}
-
-	if _, err := bridge.DepositAssetSync(token.Address(), amount, vegaPubKeyByte32); err != nil {
-		return fmt.Errorf("failed to deposit asset: %w", err)
-	}
-	return nil
 }
 
 func approveAndStakeToken(token token, bridge *ethereum.StakingBridgeSession, amount *big.Int, vegaPubKey string) error {
