@@ -98,7 +98,7 @@ func proposeAndEnactMarket() (string, error) {
 	return markets[0], nil
 }
 
-func sendTradingLoad(marketId string, users, ops, runTimeSeconds int) error {
+func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 	// Start load testing by sending off lots of orders at a given rate
 	userCount := users - 2
 	now := time.Now()
@@ -116,23 +116,23 @@ func sendTradingLoad(marketId string, users, ops, runTimeSeconds int) error {
 		choice := rand.Intn(100)
 		if choice < 2 {
 			// Perform a cancel all
-			sendCancelAll(user, marketId)
+			sendCancelAll(user, marketID)
 		} else if choice < 7 {
 			// Perform a market order to generate some trades
 			if choice%2 == 1 {
-				sendOrder(marketId, user, 0, 3, "MARKET", proto.Order_TIME_IN_FORCE_IOC, 0)
+				sendOrder(marketID, user, 0, 3, "MARKET", proto.Order_TIME_IN_FORCE_IOC, 0)
 			} else {
-				sendOrder(marketId, user, 0, -3, "MARKET", proto.Order_TIME_IN_FORCE_IOC, 0)
+				sendOrder(marketID, user, 0, -3, "MARKET", proto.Order_TIME_IN_FORCE_IOC, 0)
 			}
 		} else {
 			// Insert a new order to fill up the book
 			priceOffset := rand.Int63n(12) - 6
 			if priceOffset > 0 {
 				// Send a sell
-				sendOrder(marketId, user, int64(10000+user), -1, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
+				sendOrder(marketID, user, int64(10000+user), -1, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
 			} else {
 				// Send a buy
-				sendOrder(marketId, user, int64(9999-user), 1, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
+				sendOrder(marketID, user, int64(9999-user), 1, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
 			}
 		}
 		count++
@@ -204,7 +204,7 @@ func Run(dataNodeAddr, walletURL, faucetURL string, commandsPerSecond, runtimeSe
 
 	// Send in a proposal to create a new market and vote to get it through
 	fmt.Print("Proposing and voting in new market...")
-	marketId, err := proposeAndEnactMarket()
+	marketID, err := proposeAndEnactMarket()
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -213,7 +213,7 @@ func Run(dataNodeAddr, walletURL, faucetURL string, commandsPerSecond, runtimeSe
 
 	// Send off a controlled amount of orders and cancels
 	fmt.Print("Sending load transactions...")
-	err = sendTradingLoad(marketId, userCount, commandsPerSecond, runtimeSeconds)
+	err = sendTradingLoad(marketID, userCount, commandsPerSecond, runtimeSeconds)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err

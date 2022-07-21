@@ -13,6 +13,7 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
+// UserDetails Holds wallet information for each user
 type UserDetails struct {
 	userName string
 	token    string
@@ -245,7 +246,7 @@ func sendCommand(submission []byte, token string) error {
 	return nil
 }
 
-func sendOrder(marketId string, user int, price, size int64,
+func sendOrder(marketID string, user int, price, size int64,
 	orderType string, tif proto.Order_TimeInForce, expiresAt int64) {
 	cmd := `{ "orderSubmission": {
       "marketId": "$MARKETID",
@@ -261,7 +262,7 @@ func sendOrder(marketId string, user int, price, size int64,
     "propagate": true
   }`
 
-	cmd = strings.Replace(cmd, "$MARKETID", marketId, 1)
+	cmd = strings.Replace(cmd, "$MARKETID", marketID, 1)
 	cmd = strings.Replace(cmd, "$SIZE", fmt.Sprintf("%d", abs(size)), 1)
 
 	if orderType == "LIMIT" {
@@ -405,7 +406,7 @@ func sendNewMarketProposal(user int) {
 	}
 }
 
-func sendCancelAll(user int, marketId string) {
+func sendCancelAll(user int, marketID string) {
 	cmd := `{	"orderCancellation" :{
               "marketId": "$MARKET_ID"
             },
@@ -413,7 +414,7 @@ func sendCancelAll(user int, marketId string) {
             "propagate": true						
           }`
 
-	cmd = strings.Replace(cmd, "$MARKET_ID", marketId, 1)
+	cmd = strings.Replace(cmd, "$MARKET_ID", marketID, 1)
 	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
 
 	err := signSubmitTx(user, cmd)

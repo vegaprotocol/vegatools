@@ -83,7 +83,7 @@ func voteOnProposal(propID string) error {
 	return nil
 }
 
-func sendVote(user int, proposalId string, vote bool) error {
+func sendVote(user int, proposalID string, vote bool) error {
 	cmd := `{ "voteSubmission": {
               "proposal_id": "$PROPOSAL_ID",
               "value": "$VOTE"
@@ -92,7 +92,7 @@ func sendVote(user int, proposalId string, vote bool) error {
             "propagate" : true
           }`
 
-	cmd = strings.Replace(cmd, "$PROPOSAL_ID", proposalId, 1)
+	cmd = strings.Replace(cmd, "$PROPOSAL_ID", proposalID, 1)
 	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
 	if vote {
 		cmd = strings.Replace(cmd, "$VOTE", "VALUE_YES", 1)
