@@ -205,8 +205,8 @@ jobs:
       - name: 'Add exclusion labeled PR to the project'
         id: pr-to-project
         if: |
-          env.BOT_PR == true || steps.issue-to-project.outcome == 'skipped' &&
-           contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) == true
+          (env.BOT_PR == true || (steps.issue-to-project.outcome == 'skipped' &&
+           contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) == true))
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
