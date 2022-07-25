@@ -202,11 +202,11 @@ jobs:
               }
             }' -f project=$PROJECT_ID -f issue=$LINKED_ISSUE_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
           echo 'BOARD_ITEM_ID='$issue_item_id >> $GITHUB_ENV
-      - name: 'Add exclusion labeled PR to the project'
+      - name: 'Add BOT or exclusion labeled PR to the project'
         id: pr-to-project
         if: |
-          env.BOT_PR == true || steps.issue-to-project.outcome == 'skipped' &&
-           contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) == true
+          (env.BOT_PR == true || (steps.issue-to-project.outcome == 'skipped' &&
+           contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) == true))
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
