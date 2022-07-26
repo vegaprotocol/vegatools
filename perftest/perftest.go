@@ -48,15 +48,13 @@ func connectToDataNode(dataNodeAddr string) error {
 	}
 }
 
-func depositTokens(newKeys int, faucetURL string) error {
-	if newKeys > 0 {
-		for index, user := range users {
-			if index > 3 {
-				break
-			}
-			sendVegaTokens(user.pubKey)
-			time.Sleep(time.Second * 1)
+func depositTokens(newKeys int, faucetURL, ganacheURL string) error {
+	for index, user := range users {
+		if index > 3 {
+			break
 		}
+		sendVegaTokens(user.pubKey, ganacheURL)
+		time.Sleep(time.Second * 1)
 	}
 
 	for _, user := range users {
@@ -74,7 +72,7 @@ func proposeAndEnactMarket() (string, error) {
 	markets := getMarkets()
 	if len(markets) == 0 {
 		sendNewMarketProposal(0)
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 5)
 		propID, err := getPendingProposalID()
 		if err != nil {
 			return "", err
@@ -165,7 +163,7 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 }
 
 // Run is the main function of `perftest` package
-func Run(dataNodeAddr, walletURL, faucetURL string, commandsPerSecond, runtimeSeconds, userCount int) error {
+func Run(dataNodeAddr, walletURL, faucetURL, ganacheURL string, commandsPerSecond, runtimeSeconds, userCount int) error {
 	flag.Parse()
 
 	savedWalletURL = walletURL
@@ -195,7 +193,7 @@ func Run(dataNodeAddr, walletURL, faucetURL string, commandsPerSecond, runtimeSe
 
 	// Send some tokens to any newly created users
 	fmt.Print("Depositing tokens and assets...")
-	err = depositTokens(newKeys, faucetURL)
+	err = depositTokens(newKeys, faucetURL, ganacheURL)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err

@@ -39,11 +39,13 @@ func approveAndStakeToken(token token, bridge *ethereum.StakingBridgeSession, am
 	}
 	return nil
 }
-func sendVegaTokens(vegaPubKey string) error {
+func sendVegaTokens(vegaPubKey, ganacheURL string) error {
 	ctx := context.Background()
 
+	url := "http://" + ganacheURL
+
 	// Create a connection to ganache
-	client, err := ethereum.NewClient(ctx, "http://localhost:8545", 1440)
+	client, err := ethereum.NewClient(ctx, url, 1440)
 	if err != nil {
 		return err
 	}

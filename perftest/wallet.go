@@ -396,8 +396,8 @@ func sendNewMarketProposal(user int) {
 
 	cmd = strings.Replace(cmd, "$UNIQUEREF", refStr, 1)
 	cmd = strings.Replace(cmd, "$VALIDATIONTS", fmt.Sprintf("%d", SecondsFromNowInSecs(1)), 1)
-	cmd = strings.Replace(cmd, "$CLOSINGTS", fmt.Sprintf("%d", SecondsFromNowInSecs(10)), 1)
-	cmd = strings.Replace(cmd, "$ENACTMENTTS", fmt.Sprintf("%d", SecondsFromNowInSecs(15)), 1)
+	cmd = strings.Replace(cmd, "$CLOSINGTS", fmt.Sprintf("%d", SecondsFromNowInSecs(15)), 1)
+	cmd = strings.Replace(cmd, "$ENACTMENTTS", fmt.Sprintf("%d", SecondsFromNowInSecs(20)), 1)
 	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
 
 	err := signSubmitTx(user, cmd)
