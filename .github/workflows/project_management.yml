@@ -348,6 +348,7 @@ jobs:
               -f iteration_value=${{ env.CURRENT_ITERATION }}
   verify-changelog-updated:
     name: Verify CHANGELOG Updated
+    needs: project-board-automation
     runs-on: ubuntu-latest
     env:
       IS_BOT: ${{needs.bot-pr.outputs.is-bot}}
