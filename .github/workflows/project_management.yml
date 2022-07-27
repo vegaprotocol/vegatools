@@ -200,7 +200,7 @@ jobs:
               }
             }' -f project=$PROJECT_ID -f issue=$LINKED_ISSUE_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
           echo 'BOARD_ITEM_ID='$issue_item_id >> $GITHUB_ENV
-      - name: 'Add BOT or exclusion labeled PR to the project'
+      - name: 'Add exclusion labeled PR to the project'
         id: pr-to-project
         if: |
           steps.issue-to-project.outcome == 'skipped' &&
@@ -216,7 +216,7 @@ jobs:
             }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
       - name: 'Add BOT PR to the project'
-        id: pr-to-project
+        id: bot-pr-to-project
         if: env.BOT_PR == 'true'
         run: |
           pr_item_id="$( gh api graphql -f query='
