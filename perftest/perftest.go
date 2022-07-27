@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	//	coreService api.CoreServiceClient
+	// coreService api.CoreServiceClient
 	dataNode datanode.TradingDataServiceClient
 
 	// Information about all the users we can use to send orders

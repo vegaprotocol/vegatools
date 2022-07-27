@@ -55,33 +55,10 @@ func sendVegaTokens(vegaPubKey, ganacheURL string) error {
 		return err
 	}
 
-	/*	erc20Bridge, err := client.NewERC20BridgeSession(ctx, contractOwnerPrivateKey, erc20BridgeAddress, nil)
-		if err != nil {
-		  fmt.Errorf("Failed to create ethereum bridge: %w", err)
-		}*/
-
 	vegaToken, err := client.NewBaseTokenSession(ctx, contractOwnerPrivateKey, vegaTokenAddress, nil)
 	if err != nil {
 		return err
 	}
-
-	/*	tUSDCToken, err := client.NewBaseTokenSession(ctx, contractOwnerPrivateKey, tUSDCTokenAddress, nil)
-		if err != nil {
-		  fmt.Errorf("Failed to create tUSDC token: %w", err)
-		}*/
-
-	// mint some tokens
-	/*	if err := mintTokenAndShowBalances(client, vegaToken, contractOwnerAddress, big.NewInt(1000000000000000000)); err != nil {
-	  fmt.Errorf("Failed to mint and show balances for vegaToken: %w", err)
-	}*/
-
-	/*	if err := mintTokenAndShowBalances(client, tUSDCToken, contractOwnerAddress, big.NewInt(1000000000000000000)); err != nil {
-	  fmt.Errorf("Failed to mint and show balances for tUSDCToken: %w", err)
-	}*/
-
-	/*	if err := approveAndDepositToken(tUSDCToken, erc20Bridge, big.NewInt(1000000000000000000), vegaPubKey); err != nil {
-	  fmt.Errorf("Failed to approve and deposit token on ethereum bridge: %w", err)
-	}*/
 
 	if err := approveAndStakeToken(vegaToken, stakingBridge, big.NewInt(1000000000000000000), vegaPubKey); err != nil {
 		return err
