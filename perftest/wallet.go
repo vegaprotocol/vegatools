@@ -81,7 +81,7 @@ func createWallet(walletURL, userName, password string) (string, error) {
 		return "", err
 	}
 	sb := string(body)
-	if strings.Contains(sb, "error") {
+	if strings.Contains(sb, "\"error\"") {
 		return "", fmt.Errorf(sb)
 	}
 

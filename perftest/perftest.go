@@ -184,7 +184,7 @@ func Run(dataNodeAddr, walletURL, faucetURL, ganacheURL string, commandsPerSecon
 
 	// Create a set of users
 	fmt.Print("Creating users...")
-	newKeys, err := createOrLoadWallets(walletURL, 10)
+	newKeys, err := createOrLoadWallets(walletURL, userCount)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
