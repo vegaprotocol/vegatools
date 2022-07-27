@@ -347,13 +347,13 @@ jobs:
               -f iteration_field=$ITERATION_FIELD_ID \
               -f iteration_value=${{ env.CURRENT_ITERATION }}
   verify-changelog-updated:
-    if: |
-      env.IS_BOT == true || github.event.pull_request.draft != true
-       && contains(github.event.pull_request.labels.*.name, 'no-changelog') != true
     name: Verify CHANGELOG Updated
     runs-on: ubuntu-latest
     env:
       IS_BOT: ${{needs.bot-pr.outputs.is-bot}}
+    if: |
+      env.IS_BOT == true || github.event.pull_request.draft != true
+       && contains(github.event.pull_request.labels.*.name, 'no-changelog') != true
     steps:
       - name: Checkout
         uses: actions/checkout@v3
