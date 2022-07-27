@@ -32,6 +32,8 @@ jobs:
     name: 'Linked Issues & Project Board Automation'
     runs-on: ubuntu-latest
     permissions: write-all
+    outputs:
+      bot_pr: ${{ steps.bot-pr.outputs.is-bot }}
     steps:
       #######
       ## Gather data, reopen closed issues and ensure work item is on the board
@@ -57,15 +59,11 @@ jobs:
           echo 'LINKED_ISSUE_ID='$(jq '.data.resource.closingIssuesReferences.nodes[] | .id' data.json) >> $GITHUB_ENV
       - name: 'Check if PR raised by bot'
         id: bot-pr
-        if: startsWith(github.head_ref, 'renovate/') == true || startsWith(github.head_ref, 'dependabot/') == true
-        uses: actions/github-script@v6.1.0
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: console.log("Bot created PR!");
-      - name: 'Set bot PR to true'
-        id: set-bot
-        if: steps.bot-pr.outcome == 'success'
+        if: |
+          startsWith(github.head_ref, 'renovate/') == true || startsWith(github.head_ref, 'dependabot/') == true
+           || github.actor == 'dependabot[bot]' || github.actor != 'renovate[bot]'
         run: echo 'BOT_PR=true' >> $GITHUB_ENV
+             echo "::set-output name=is-bot::true" 
       - name: 'Check for linked issue'
         id: linked
         if: |
@@ -205,8 +203,21 @@ jobs:
       - name: 'Add BOT or exclusion labeled PR to the project'
         id: pr-to-project
         if: |
-          (env.BOT_PR == true || (steps.issue-to-project.outcome == 'skipped' &&
-           contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) == true))
+          steps.issue-to-project.outcome == 'skipped' &&
+           contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) == true
+        run: |
+          pr_item_id="$( gh api graphql -f query='
+            mutation($project:ID!, $pr:ID!) {
+              addProjectNextItem(input: {projectId: $project, contentId: $pr}) {
+                projectNextItem {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
+          echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
+      - name: 'Add BOT PR to the project'
+        id: pr-to-project
+        if: env.BOT_PR == 'true'
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
@@ -336,8 +347,10 @@ jobs:
               -f iteration_field=$ITERATION_FIELD_ID \
               -f iteration_value=${{ env.CURRENT_ITERATION }}
   verify-changelog-updated:
+    env:
+      IS_BOT: ${{needs.bot-pr.outputs.is-bot}}
     if: |
-      startsWith(github.head_ref, 'renovate/') != true && github.event.pull_request.draft != true
+      env.IS_BOT == true || github.event.pull_request.draft != true
        && contains(github.event.pull_request.labels.*.name, 'no-changelog') != true
     name: Verify CHANGELOG Updated
     runs-on: ubuntu-latest
