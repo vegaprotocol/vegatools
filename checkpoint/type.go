@@ -520,10 +520,8 @@ func dummy() *all {
 						Kind: &events.Transfer_Recurring{
 							Recurring: &events.RecurringTransfer{
 								StartEpoch: 10,
-								EndEpoch: &vega.Uint64Value{
-									Value: 100,
-								},
-								Factor: "1",
+								EndEpoch:   toPtr(uint64(100)),
+								Factor:     "1",
 							},
 						},
 					},
@@ -549,3 +547,5 @@ type allJSON struct {
 	MultisigControl json.RawMessage `json:"multisig_control,omitempty"`
 	MarketTracker   json.RawMessage `json:"market_tracker,omitempty"`
 }
+
+func toPtr[T any](t T) *T { return &t }
