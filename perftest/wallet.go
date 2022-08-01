@@ -13,6 +13,10 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
+type WalletWrapper struct {
+	walletURL string
+}
+
 // UserDetails Holds wallet information for each user
 type UserDetails struct {
 	userName string
@@ -20,7 +24,35 @@ type UserDetails struct {
 	pubKey   string
 }
 
-func abs(value int64) int64 {
+type OrderDetails struct {
+	marketID  string
+	user      int
+	price     int64
+	size      int64
+	orderType proto.Order_Type
+	tif       proto.Order_TimeInForce
+	expiresAt int64
+}
+
+func (od *OrderDetails) getTIFString() string {
+	switch od.tif {
+	case proto.Order_TIME_IN_FORCE_GTT:
+		return "TIME_IN_FORCE_GTT"
+	case proto.Order_TIME_IN_FORCE_GFA:
+		return "TIME_IN_FORCE_GFA"
+	case proto.Order_TIME_IN_FORCE_GFN:
+		return "TIME_IN_FORCE_GFN"
+	case proto.Order_TIME_IN_FORCE_GTC:
+		return "TIME_IN_FORCE_GTC"
+	case proto.Order_TIME_IN_FORCE_IOC:
+		return "TIME_IN_FORCE_IOC"
+	case proto.Order_TIME_IN_FORCE_FOK:
+		return "TIME_IN_FORCE_FOK"
+	}
+	return ""
+}
+
+func Abs(value int64) int64 {
 	if value < 0 {
 		return -value
 	}
@@ -28,18 +60,18 @@ func abs(value int64) int64 {
 }
 
 // SecondsFromNowInSecs : Creates a timestamp relative to the current time in seconds
-func SecondsFromNowInSecs(seconds int64) int64 {
+func (w WalletWrapper) SecondsFromNowInSecs(seconds int64) int64 {
 	return time.Now().Unix() + seconds
 }
 
-func loginWallet(walletURL, userName, password string) (string, error) {
+func (w WalletWrapper) LoginWallet(username, password string) (string, error) {
 	postBody, _ := json.Marshal(map[string]string{
-		"wallet":     userName,
+		"wallet":     username,
 		"passphrase": password,
 	})
 	responseBody := bytes.NewBuffer(postBody)
 
-	URL := "http://" + walletURL + "/api/v1/auth/token"
+	URL := "http://" + w.walletURL + "/api/v1/auth/token"
 
 	resp, err := http.Post(URL, "application/json", responseBody)
 	if err != nil {
@@ -62,14 +94,14 @@ func loginWallet(walletURL, userName, password string) (string, error) {
 	return result["token"].(string), nil
 }
 
-func createWallet(walletURL, userName, password string) (string, error) {
+func (w WalletWrapper) CreateWallet(username, password string) (string, error) {
 	postBody, _ := json.Marshal(map[string]string{
-		"wallet":     userName,
+		"wallet":     username,
 		"passphrase": password,
 	})
 	responseBody := bytes.NewBuffer(postBody)
 
-	URL := "http://" + walletURL + "/api/v1/wallets"
+	URL := "http://" + w.walletURL + "/api/v1/wallets"
 
 	resp, err := http.Post(URL, "application/json", responseBody)
 	if err != nil {
@@ -92,13 +124,13 @@ func createWallet(walletURL, userName, password string) (string, error) {
 	return result["token"].(string), nil
 }
 
-func createKey(walletURL, userName, password, token string) (string, error) {
+func (w WalletWrapper) CreateKey(password, token string) (string, error) {
 	postBody, _ := json.Marshal(map[string]string{
 		"passphrase": password,
 	})
 	postBuffer := bytes.NewBuffer(postBody)
 
-	URL := "http://" + walletURL + "/api/v1/keys"
+	URL := "http://" + w.walletURL + "/api/v1/keys"
 
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodPost, URL, postBuffer)
@@ -132,8 +164,8 @@ func createKey(walletURL, userName, password, token string) (string, error) {
 	return keys["pub"].(string), nil
 }
 
-func listKeys(walletURL, token string) ([]string, error) {
-	URL := "http://" + walletURL + "/api/v1/keys"
+func (w WalletWrapper) ListKeys(token string) ([]string, error) {
+	URL := "http://" + w.walletURL + "/api/v1/keys"
 
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodGet, URL, nil)
@@ -177,7 +209,7 @@ func listKeys(walletURL, token string) ([]string, error) {
 	return pubKeys, nil
 }
 
-func createOrLoadWallets(walletURL string, number int) (int, error) {
+func (w *WalletWrapper) CreateOrLoadWallets(number int) error {
 	// We want to make or load a set of wallets, do it in a loop here
 	var key string
 	var newKeys = 0
@@ -185,16 +217,16 @@ func createOrLoadWallets(walletURL string, number int) (int, error) {
 		userName := fmt.Sprintf("User%04d", i)
 
 		// Attempt to log in with that username
-		token, err := loginWallet(walletURL, userName, "p3rfb0t")
+		token, err := w.LoginWallet(userName, "p3rfb0t")
 		if err != nil {
-			token, err = createWallet(walletURL, userName, "p3rfb0t")
+			token, err = w.CreateWallet(userName, "p3rfb0t")
 			if err != nil {
-				return 0, fmt.Errorf("unable to create a new wallet: %w", err)
+				return fmt.Errorf("unable to create a new wallet: %w", err)
 			}
 		}
-		keys, _ := listKeys(walletURL, token)
+		keys, _ := w.ListKeys(token)
 		if len(keys) == 0 {
-			key, _ = createKey(walletURL, userName, "p3rfb0t", token)
+			key, _ = w.CreateKey("p3rfb0t", token)
 			newKeys++
 		} else {
 			key = keys[0]
@@ -206,18 +238,18 @@ func createOrLoadWallets(walletURL string, number int) (int, error) {
 			pubKey:   key,
 		})
 	}
-	return newKeys, nil
+	return nil
 }
 
-func signSubmitTx(user int, command string) error {
-	err := sendCommand([]byte(command), users[user].token)
+func (w *WalletWrapper) SignSubmitTx(user int, command string) error {
+	err := w.SendCommand([]byte(command), users[user].token)
 	return err
 }
 
-func sendCommand(submission []byte, token string) error {
+func (w *WalletWrapper) SendCommand(submission []byte, token string) error {
 	postBuffer := bytes.NewBuffer(submission)
 
-	URL := "http://" + savedWalletURL + "/api/v1/command"
+	URL := "http://" + w.walletURL + "/api/v1/command"
 
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodPost, URL, postBuffer)
@@ -246,8 +278,7 @@ func sendCommand(submission []byte, token string) error {
 	return nil
 }
 
-func sendOrder(marketID string, user int, price, size int64,
-	orderType string, tif proto.Order_TimeInForce, expiresAt int64) {
+func (w *WalletWrapper) SendOrder(od OrderDetails) error {
 	cmd := `{ "orderSubmission": {
       "marketId": "$MARKETID",
       $PRICE
@@ -262,57 +293,37 @@ func sendOrder(marketID string, user int, price, size int64,
     "propagate": true
   }`
 
-	cmd = strings.Replace(cmd, "$MARKETID", marketID, 1)
-	cmd = strings.Replace(cmd, "$SIZE", fmt.Sprintf("%d", abs(size)), 1)
+	cmd = strings.Replace(cmd, "$MARKETID", od.marketID, 1)
+	cmd = strings.Replace(cmd, "$SIZE", fmt.Sprintf("%d", Abs(od.size)), 1)
 
-	if orderType == "LIMIT" {
-		cmd = strings.Replace(cmd, "$PRICE", fmt.Sprintf("\"price\": \"%d\",", price), 1)
+	if od.orderType == proto.Order_TYPE_LIMIT {
+		cmd = strings.Replace(cmd, "$PRICE", fmt.Sprintf("\"price\": \"%d\",", od.price), 1)
 		cmd = strings.Replace(cmd, "$TYPE", "TYPE_LIMIT", 1)
 	} else {
 		cmd = strings.Replace(cmd, "$PRICE", "", 1)
 		cmd = strings.Replace(cmd, "$TYPE", "TYPE_MARKET", 1)
 	}
 
-	if expiresAt > 0 {
-		cmd = strings.Replace(cmd, "$EXPIRES_AT", fmt.Sprintf("\"expiresAt\": %d,", expiresAt), 1)
+	if od.expiresAt > 0 {
+		cmd = strings.Replace(cmd, "$EXPIRES_AT", fmt.Sprintf("\"expiresAt\": %d,", od.expiresAt), 1)
 	} else {
 		cmd = strings.Replace(cmd, "$EXPIRES_AT", "", 1)
 	}
 
-	if size > 0 {
+	if od.size > 0 {
 		cmd = strings.Replace(cmd, "$SIDE", "SIDE_BUY", 1)
 	} else {
 		cmd = strings.Replace(cmd, "$SIDE", "SIDE_SELL", 1)
 	}
 
-	switch tif {
-	case proto.Order_TIME_IN_FORCE_GTT:
-		cmd = strings.Replace(cmd, "$TIME_IN_FORCE", "TIME_IN_FORCE_GTT", 1)
-	case proto.Order_TIME_IN_FORCE_GFA:
-		cmd = strings.Replace(cmd, "$TIME_IN_FORCE", "TIME_IN_FORCE_GFA", 1)
-	case proto.Order_TIME_IN_FORCE_GFN:
-		cmd = strings.Replace(cmd, "$TIME_IN_FORCE", "TIME_IN_FORCE_GFN", 1)
-	case proto.Order_TIME_IN_FORCE_GTC:
-		cmd = strings.Replace(cmd, "$TIME_IN_FORCE", "TIME_IN_FORCE_GTC", 1)
-	case proto.Order_TIME_IN_FORCE_IOC:
-		cmd = strings.Replace(cmd, "$TIME_IN_FORCE", "TIME_IN_FORCE_IOC", 1)
-	case proto.Order_TIME_IN_FORCE_FOK:
-		cmd = strings.Replace(cmd, "$TIME_IN_FORCE", "TIME_IN_FORCE_FOK", 1)
-	}
-	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
-	cmd = strings.Replace(cmd, "$EXPIRESAT", fmt.Sprintf("%d", expiresAt), 1)
+	cmd = strings.Replace(cmd, "$TIME_IN_FORCE", od.getTIFString(), 1)
+	cmd = strings.Replace(cmd, "$PUBKEY", users[od.user].pubKey, 1)
 
-	/*	if orderType == LIMIT {
-	  cmd.OrderSubmission.Price = strconv.FormatInt(price, 10)
-	}*/
-
-	err := signSubmitTx(user, cmd)
-	if err != nil {
-		fmt.Println("failed to submit Order Submission: %w", err)
-	}
+	err := w.SignSubmitTx(od.user, cmd)
+	return err
 }
 
-func sendNewMarketProposal(user int) {
+func (w *WalletWrapper) SendNewMarketProposal(user int) {
 	refStr := "PerfBotProposalRef"
 
 	cmd := `{"proposalSubmission": {
@@ -395,18 +406,18 @@ func sendNewMarketProposal(user int) {
 	*/
 
 	cmd = strings.Replace(cmd, "$UNIQUEREF", refStr, 1)
-	cmd = strings.Replace(cmd, "$VALIDATIONTS", fmt.Sprintf("%d", SecondsFromNowInSecs(1)), 1)
-	cmd = strings.Replace(cmd, "$CLOSINGTS", fmt.Sprintf("%d", SecondsFromNowInSecs(15)), 1)
-	cmd = strings.Replace(cmd, "$ENACTMENTTS", fmt.Sprintf("%d", SecondsFromNowInSecs(20)), 1)
+	cmd = strings.Replace(cmd, "$VALIDATIONTS", fmt.Sprintf("%d", w.SecondsFromNowInSecs(1)), 1)
+	cmd = strings.Replace(cmd, "$CLOSINGTS", fmt.Sprintf("%d", w.SecondsFromNowInSecs(15)), 1)
+	cmd = strings.Replace(cmd, "$ENACTMENTTS", fmt.Sprintf("%d", w.SecondsFromNowInSecs(20)), 1)
 	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
 
-	err := signSubmitTx(user, cmd)
+	err := w.SignSubmitTx(user, cmd)
 	if err != nil {
 		log.Fatal("failed to submit NewMarketProposal: %w", err)
 	}
 }
 
-func sendCancelAll(user int, marketID string) {
+func (w *WalletWrapper) SendCancelAll(user int, marketID string) {
 	cmd := `{	"orderCancellation" :{
               "marketId": "$MARKET_ID"
             },
@@ -417,9 +428,33 @@ func sendCancelAll(user int, marketID string) {
 	cmd = strings.Replace(cmd, "$MARKET_ID", marketID, 1)
 	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
 
-	err := signSubmitTx(user, cmd)
+	err := w.SignSubmitTx(user, cmd)
 	if err != nil {
 		fmt.Println(cmd)
 		log.Fatal("failed to submit Vote Submission: %w", err)
 	}
+}
+
+func (w *WalletWrapper) SendVote(user int, proposalID string, vote bool) error {
+	cmd := `{ "voteSubmission": {
+              "proposal_id": "$PROPOSAL_ID",
+              "value": "$VOTE"
+            },
+            "pubKey": "$PUBKEY",
+            "propagate" : true
+          }`
+
+	cmd = strings.Replace(cmd, "$PROPOSAL_ID", proposalID, 1)
+	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
+	if vote {
+		cmd = strings.Replace(cmd, "$VOTE", "VALUE_YES", 1)
+	} else {
+		cmd = strings.Replace(cmd, "$VOTE", "VALUE_NO", 1)
+	}
+
+	err := w.SignSubmitTx(user, cmd)
+	if err != nil {
+		return err
+	}
+	return nil
 }

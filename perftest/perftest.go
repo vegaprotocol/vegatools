@@ -12,43 +12,50 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
+type PerfTestOpts struct {
+	DataNodeAddr      string
+	WalletURL         string
+	FaucetURL         string
+	GanacheURL        string
+	CommandsPerSecond int
+	RuntimeSeconds    int
+	UserCount         int
+}
+
 var (
-	// coreService api.CoreServiceClient
-	dataNode datanode.TradingDataServiceClient
+	dataNode dnWrapper
+	wallet WalletWrapper
 
 	// Information about all the users we can use to send orders
 	users []UserDetails
-
-	// All the assets knows in the network
-	assets map[string]string = map[string]string{}
-
-	// Store the wallet URL for use later
-	savedWalletURL string
 )
 
-func connectToDataNode(dataNodeAddr string) error {
+func connectToDataNode(dataNodeAddr string) (map[string]string, error) {
 	connection, err := grpc.Dial(dataNodeAddr, grpc.WithInsecure())
 	if err != nil {
 		// Something went wrong
-		return fmt.Errorf("failed to connect to the datanode gRPC port: %w ", err)
+		return nil, fmt.Errorf("failed to connect to the datanode gRPC port: %w ", err)
 	}
 
-	dataNode = datanode.NewTradingDataServiceClient(connection)
+	dn := datanode.NewTradingDataServiceClient(connection)
+
+	dataNode = dnWrapper{dataNode: dn,
+		wallet: wallet}
 
 	// load in all the assets
 	for {
-		err = getAssets()
+		assets, err := dataNode.getAssets()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if len(assets) != 0 {
-			return nil
+			return assets, nil
 		}
 		time.Sleep(time.Second * 1)
 	}
 }
 
-func depositTokens(newKeys int, faucetURL, ganacheURL string) error {
+func depositTokens(assets map[string]string, faucetURL, ganacheURL string) error {
 	for index, user := range users {
 		if index > 3 {
 			break
@@ -59,35 +66,35 @@ func depositTokens(newKeys int, faucetURL, ganacheURL string) error {
 
 	for _, user := range users {
 		asset := assets["fUSDC"]
-		for amount, _ := getAssetsPerUser(user.pubKey, asset); amount <= 100000000; {
+		for amount, _ := dataNode.getAssetsPerUser(user.pubKey, asset); amount <= 100000000; {
 			topUpAsset(faucetURL, user.pubKey, asset, 100000000)
 			time.Sleep(time.Second * 1)
-			amount, _ = getAssetsPerUser(user.pubKey, asset)
+			amount, _ = dataNode.getAssetsPerUser(user.pubKey, asset)
 		}
 	}
 	return nil
 }
 
 func proposeAndEnactMarket() (string, error) {
-	markets := getMarkets()
+	markets := dataNode.getMarkets()
 	if len(markets) == 0 {
-		sendNewMarketProposal(0)
+		wallet.SendNewMarketProposal(0)
 		time.Sleep(time.Second * 5)
-		propID, err := getPendingProposalID()
+		propID, err := dataNode.getPendingProposalID()
 		if err != nil {
 			return "", err
 		}
-		voteOnProposal(propID)
+		dataNode.VoteOnProposal(propID)
 		time.Sleep(time.Second * 10)
 	}
 
 	// Move all markets out of auction
-	markets = getMarkets()
+	markets = dataNode.getMarkets()
 	if len(markets) > 0 {
-		sendOrder(markets[0], 0, 10010, -100, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
-		sendOrder(markets[0], 1, 9900, +100, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
-		sendOrder(markets[0], 0, 10000, +5, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
-		sendOrder(markets[0], 1, 10000, -5, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
+		wallet.SendOrder(OrderDetails{markets[0], 0, 10010, -100, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
+		wallet.SendOrder(OrderDetails{markets[0], 1, 9900, +100, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
+		wallet.SendOrder(OrderDetails{markets[0], 0, 10000, +5, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
+		wallet.SendOrder(OrderDetails{markets[0], 1, 10000, -5, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
 	} else {
 		return "", fmt.Errorf("failed to get open market")
 	}
@@ -114,23 +121,23 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 		choice := rand.Intn(100)
 		if choice < 2 {
 			// Perform a cancel all
-			sendCancelAll(user, marketID)
+			wallet.SendCancelAll(user, marketID)
 		} else if choice < 7 {
 			// Perform a market order to generate some trades
 			if choice%2 == 1 {
-				sendOrder(marketID, user, 0, 3, "MARKET", proto.Order_TIME_IN_FORCE_IOC, 0)
+				wallet.SendOrder(OrderDetails{ marketID, user, 0, 3, proto.Order_TYPE_MARKET, proto.Order_TIME_IN_FORCE_IOC, 0})
 			} else {
-				sendOrder(marketID, user, 0, -3, "MARKET", proto.Order_TIME_IN_FORCE_IOC, 0)
+				wallet.SendOrder(OrderDetails{ marketID, user, 0, -3, proto.Order_TYPE_MARKET, proto.Order_TIME_IN_FORCE_IOC, 0})
 			}
 		} else {
 			// Insert a new order to fill up the book
 			priceOffset := rand.Int63n(12) - 6
 			if priceOffset > 0 {
 				// Send a sell
-				sendOrder(marketID, user, int64(10000+user), -1, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
+				wallet.SendOrder(OrderDetails{ marketID, user, int64(10000+user), -1, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
 			} else {
 				// Send a buy
-				sendOrder(marketID, user, int64(9999-user), 1, "LIMIT", proto.Order_TIME_IN_FORCE_GTC, 0)
+				wallet.SendOrder(OrderDetails{ marketID, user, int64(9999-user), 1, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
 			}
 		}
 		count++
@@ -163,19 +170,19 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 }
 
 // Run is the main function of `perftest` package
-func Run(dataNodeAddr, walletURL, faucetURL, ganacheURL string, commandsPerSecond, runtimeSeconds, userCount int) error {
+func Run(opts PerfTestOpts) error {
 	flag.Parse()
 
-	savedWalletURL = walletURL
+	wallet = WalletWrapper{walletURL: opts.WalletURL}
 
 	fmt.Print("Connecting to data node...")
-	if len(dataNodeAddr) <= 0 {
+	if len(opts.DataNodeAddr) <= 0 {
 		fmt.Println("FAILED")
 		return fmt.Errorf("error: missing datanode grpc server address")
 	}
 
 	// Connect to data node and check it's working
-	err := connectToDataNode(dataNodeAddr)
+	assets, err := connectToDataNode(opts.DataNodeAddr)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -184,7 +191,7 @@ func Run(dataNodeAddr, walletURL, faucetURL, ganacheURL string, commandsPerSecon
 
 	// Create a set of users
 	fmt.Print("Creating users...")
-	newKeys, err := createOrLoadWallets(walletURL, userCount)
+	err = wallet.CreateOrLoadWallets(opts.UserCount)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -193,7 +200,7 @@ func Run(dataNodeAddr, walletURL, faucetURL, ganacheURL string, commandsPerSecon
 
 	// Send some tokens to any newly created users
 	fmt.Print("Depositing tokens and assets...")
-	err = depositTokens(newKeys, faucetURL, ganacheURL)
+	err = depositTokens(assets, opts.FaucetURL, opts.GanacheURL)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -211,7 +218,7 @@ func Run(dataNodeAddr, walletURL, faucetURL, ganacheURL string, commandsPerSecon
 
 	// Send off a controlled amount of orders and cancels
 	fmt.Print("Sending load transactions...")
-	err = sendTradingLoad(marketID, userCount, commandsPerSecond, runtimeSeconds)
+	err = sendTradingLoad(marketID, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
