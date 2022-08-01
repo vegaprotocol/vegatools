@@ -500,10 +500,8 @@ func dummy() *all {
 						Kind: &events.Transfer_Recurring{
 							Recurring: &events.RecurringTransfer{
 								StartEpoch: 10,
-								EndEpoch: &vega.Uint64Value{
-									Value: 100,
-								},
-								Factor: "1",
+								EndEpoch:   nil,
+								Factor:     "1",
 							},
 						},
 					},
