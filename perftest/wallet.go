@@ -13,6 +13,7 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
+// WalletWrapper holds details about the wallet
 type WalletWrapper struct {
 	walletURL string
 }
@@ -24,6 +25,7 @@ type UserDetails struct {
 	pubKey   string
 }
 
+// OrderDetails contains the fields required to place a new order
 type OrderDetails struct {
 	marketID  string
 	user      int
@@ -52,6 +54,7 @@ func (od *OrderDetails) getTIFString() string {
 	return ""
 }
 
+// Abs helper function
 func Abs(value int64) int64 {
 	if value < 0 {
 		return -value
@@ -64,6 +67,7 @@ func (w WalletWrapper) SecondsFromNowInSecs(seconds int64) int64 {
 	return time.Now().Unix() + seconds
 }
 
+// LoginWallet opens a wallet and logs into it using the supplied username and password
 func (w WalletWrapper) LoginWallet(username, password string) (string, error) {
 	postBody, _ := json.Marshal(map[string]string{
 		"wallet":     username,
@@ -94,6 +98,7 @@ func (w WalletWrapper) LoginWallet(username, password string) (string, error) {
 	return result["token"].(string), nil
 }
 
+// CreateWallet will create a new wallet if one does not already exist
 func (w WalletWrapper) CreateWallet(username, password string) (string, error) {
 	postBody, _ := json.Marshal(map[string]string{
 		"wallet":     username,
@@ -124,6 +129,7 @@ func (w WalletWrapper) CreateWallet(username, password string) (string, error) {
 	return result["token"].(string), nil
 }
 
+// CreateKey will create a new key pair in the open wallet
 func (w WalletWrapper) CreateKey(password, token string) (string, error) {
 	postBody, _ := json.Marshal(map[string]string{
 		"passphrase": password,
@@ -164,6 +170,7 @@ func (w WalletWrapper) CreateKey(password, token string) (string, error) {
 	return keys["pub"].(string), nil
 }
 
+// ListKeys shows all the keys associated with the open wallet.
 func (w WalletWrapper) ListKeys(token string) ([]string, error) {
 	URL := "http://" + w.walletURL + "/api/v1/keys"
 
@@ -209,6 +216,8 @@ func (w WalletWrapper) ListKeys(token string) ([]string, error) {
 	return pubKeys, nil
 }
 
+// CreateOrLoadWallets will first attempt to open a wallet but if that does not
+// exist it will create one and create a key ready for use
 func (w *WalletWrapper) CreateOrLoadWallets(number int) error {
 	// We want to make or load a set of wallets, do it in a loop here
 	var key string
@@ -241,11 +250,13 @@ func (w *WalletWrapper) CreateOrLoadWallets(number int) error {
 	return nil
 }
 
+// SignSubmitTx will sign and then submit a transaction
 func (w *WalletWrapper) SignSubmitTx(user int, command string) error {
 	err := w.SendCommand([]byte(command), users[user].token)
 	return err
 }
 
+// SendCommand will send a signed command to the wallet
 func (w *WalletWrapper) SendCommand(submission []byte, token string) error {
 	postBuffer := bytes.NewBuffer(submission)
 
@@ -278,6 +289,7 @@ func (w *WalletWrapper) SendCommand(submission []byte, token string) error {
 	return nil
 }
 
+// SendOrder sends a new order command to the wallet
 func (w *WalletWrapper) SendOrder(od OrderDetails) error {
 	cmd := `{ "orderSubmission": {
       "marketId": "$MARKETID",
@@ -323,6 +335,7 @@ func (w *WalletWrapper) SendOrder(od OrderDetails) error {
 	return err
 }
 
+// SendNewMarketProposal will build and send a new market proposal to the wallet
 func (w *WalletWrapper) SendNewMarketProposal(user int) {
 	refStr := "PerfBotProposalRef"
 
@@ -417,6 +430,7 @@ func (w *WalletWrapper) SendNewMarketProposal(user int) {
 	}
 }
 
+// SendCancelAll will build and send a cancel all command to the wallet
 func (w *WalletWrapper) SendCancelAll(user int, marketID string) {
 	cmd := `{	"orderCancellation" :{
               "marketId": "$MARKET_ID"
@@ -435,6 +449,7 @@ func (w *WalletWrapper) SendCancelAll(user int, marketID string) {
 	}
 }
 
+// SendVote will build and send a vote command to the wallet
 func (w *WalletWrapper) SendVote(user int, proposalID string, vote bool) error {
 	cmd := `{ "voteSubmission": {
               "proposal_id": "$PROPOSAL_ID",

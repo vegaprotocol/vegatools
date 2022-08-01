@@ -12,7 +12,7 @@ var (
 		RunE:  runPerfTest,
 	}
 
-	opts perftest.PerfTestOpts
+	opts perftest.Opts
 )
 
 func init() {

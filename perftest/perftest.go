@@ -12,7 +12,8 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 )
 
-type PerfTestOpts struct {
+// Opts hold the command line values
+type Opts struct {
 	DataNodeAddr      string
 	WalletURL         string
 	FaucetURL         string
@@ -170,7 +171,7 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 }
 
 // Run is the main function of `perftest` package
-func Run(opts PerfTestOpts) error {
+func Run(opts Opts) error {
 	flag.Parse()
 
 	wallet = WalletWrapper{walletURL: opts.WalletURL}
