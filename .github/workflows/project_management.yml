@@ -217,7 +217,7 @@ jobs:
           echo 'BOARD_ITEM_ID='$pr_item_id >> $GITHUB_ENV
       - name: 'Add BOT PR to the project'
         id: bot-pr-to-project
-        if: env.BOT_PR == 'true'
+        if: steps.bot-pr.outcome == 'success'
         run: |
           pr_item_id="$( gh api graphql -f query='
             mutation($project:ID!, $pr:ID!) {
