@@ -89,3 +89,7 @@ MarketStakeViewer displays the amount of stake committed to each market in terms
 ### LiquidityCommitment
 
 LiquidityCommitment displays all of the liquidity providers for a given market including the fee and commitment amount.
+
+### PerfTest
+
+This creates a market and a set of users and then generates a consistent flow of transactions to the market over a given length of time to allow for performance testing and statistics recording.
