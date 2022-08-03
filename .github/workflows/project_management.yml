@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     outputs:
-      bot-pr: ${{ steps.bot-pr.outputs.is-bot }}
+      bot-pr-output: ${{ steps.bot-pr.outputs.is-bot }}
     steps:
       #######
       ## Gather data, reopen closed issues and ensure work item is on the board
@@ -351,12 +351,12 @@ jobs:
     needs: project-board-automation
     runs-on: ubuntu-latest
     env:
-      IS_BOT: ${{needs.bot-pr.outputs.is-bot}}
+      IS_BOT: ${{needs.project-board-automation.outputs.bot-pr-output}}
     steps:
       - name: Checkout
         id: checkout
         if: |
-          env.IS_BOT != true || github.event.pull_request.draft != true
+          env.IS_BOT != 'true' || github.event.pull_request.draft != true
            || contains(github.event.pull_request.labels.*.name, 'no-changelog') != true
         uses: actions/checkout@v3
       # yamllint enable rule:line-length
