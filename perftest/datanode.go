@@ -83,7 +83,7 @@ func (d *dnWrapper) getPendingProposalID() (string, error) {
 
 func (d *dnWrapper) VoteOnProposal(propID string) error {
 	for i := 0; i < 3; i++ {
-		err := d.wallet.SendVote(i, v1.VoteSubmission{ProposalId: propID, Value: proto.Vote_VALUE_YES})
+		err := d.wallet.SendVote(i, &v1.VoteSubmission{ProposalId: propID, Value: proto.Vote_VALUE_YES})
 		if err != nil {
 			return err
 		}

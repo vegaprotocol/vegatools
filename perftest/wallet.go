@@ -258,14 +258,14 @@ func (w *WalletWrapper) SendCommand(submission []byte, token string) error {
 }
 
 // SendOrder sends a new order command to the wallet
-func (w *WalletWrapper) SendOrder(user int, os commandspb.OrderSubmission) error {
+func (w *WalletWrapper) SendOrder(user int, os *commandspb.OrderSubmission) error {
 	m := jsonpb.Marshaler{}
 
 	submitTxReq := &walletpb.SubmitTransactionRequest{
 		PubKey:    users[user].pubKey,
 		Propagate: true,
 		Command: &walletpb.SubmitTransactionRequest_OrderSubmission{
-			OrderSubmission: &os,
+			OrderSubmission: os,
 		},
 	}
 
@@ -396,14 +396,14 @@ func (w *WalletWrapper) SendCancelAll(user int, marketID string) error {
 }
 
 // SendVote will build and send a vote command to the wallet
-func (w WalletWrapper) SendVote(user int, vote commandspb.VoteSubmission) error {
+func (w WalletWrapper) SendVote(user int, vote *commandspb.VoteSubmission) error {
 	m := jsonpb.Marshaler{}
 
 	submitTxReq := &walletpb.SubmitTransactionRequest{
 		PubKey:    users[user].pubKey,
 		Propagate: true,
 		Command: &walletpb.SubmitTransactionRequest_VoteSubmission{
-			VoteSubmission: &vote,
+			VoteSubmission: vote,
 		},
 	}
 	cmd, err := m.MarshalToString(submitTxReq)

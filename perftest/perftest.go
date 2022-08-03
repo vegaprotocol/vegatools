@@ -97,25 +97,25 @@ func proposeAndEnactMarket() (string, error) {
 	// Move all markets out of auction
 	markets = dataNode.getMarkets()
 	if len(markets) > 0 {
-		wallet.SendOrder(0, commandspb.OrderSubmission{MarketId: markets[0],
+		wallet.SendOrder(0, &commandspb.OrderSubmission{MarketId: markets[0],
 			Price:       "10010",
 			Size:        100,
 			Side:        proto.Side_SIDE_SELL,
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		wallet.SendOrder(1, commandspb.OrderSubmission{MarketId: markets[0],
+		wallet.SendOrder(1, &commandspb.OrderSubmission{MarketId: markets[0],
 			Price:       "9900",
 			Size:        100,
 			Side:        proto.Side_SIDE_BUY,
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		wallet.SendOrder(0, commandspb.OrderSubmission{MarketId: markets[0],
+		wallet.SendOrder(0, &commandspb.OrderSubmission{MarketId: markets[0],
 			Price:       "10000",
 			Size:        5,
 			Side:        proto.Side_SIDE_BUY,
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		wallet.SendOrder(1, commandspb.OrderSubmission{MarketId: markets[0],
+		wallet.SendOrder(1, &commandspb.OrderSubmission{MarketId: markets[0],
 			Price:       "10000",
 			Size:        5,
 			Side:        proto.Side_SIDE_SELL,
@@ -154,7 +154,7 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 		} else if choice < 7 {
 			// Perform a market order to generate some trades
 			if choice%2 == 1 {
-				err := wallet.SendOrder(user, commandspb.OrderSubmission{MarketId: marketID,
+				err := wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
 					Size:        3,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_MARKET,
@@ -163,7 +163,7 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 					log.Println("Failed to send market buy order", err)
 				}
 			} else {
-				err := wallet.SendOrder(user, commandspb.OrderSubmission{MarketId: marketID,
+				err := wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
 					Size:        3,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_MARKET,
@@ -177,7 +177,7 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 			priceOffset := rand.Int63n(12) - 6
 			if priceOffset > 0 {
 				// Send a sell
-				err := wallet.SendOrder(user, commandspb.OrderSubmission{MarketId: marketID,
+				err := wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
 					Price:       fmt.Sprint(10000 + user),
 					Size:        1,
 					Side:        proto.Side_SIDE_SELL,
@@ -188,7 +188,7 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 				}
 			} else {
 				// Send a buy
-				err := wallet.SendOrder(user, commandspb.OrderSubmission{MarketId: marketID,
+				err := wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
 					Price:       fmt.Sprint(9999 - user),
 					Size:        1,
 					Side:        proto.Side_SIDE_BUY,
