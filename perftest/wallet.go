@@ -10,7 +10,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/jsonpb"
+
 	proto "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 )
 
 // WalletWrapper holds details about the wallet
@@ -23,43 +28,6 @@ type UserDetails struct {
 	userName string
 	token    string
 	pubKey   string
-}
-
-// OrderDetails contains the fields required to place a new order
-type OrderDetails struct {
-	marketID  string
-	user      int
-	price     int64
-	size      int64
-	orderType proto.Order_Type
-	tif       proto.Order_TimeInForce
-	expiresAt int64
-}
-
-func (od *OrderDetails) getTIFString() string {
-	switch od.tif {
-	case proto.Order_TIME_IN_FORCE_GTT:
-		return "TIME_IN_FORCE_GTT"
-	case proto.Order_TIME_IN_FORCE_GFA:
-		return "TIME_IN_FORCE_GFA"
-	case proto.Order_TIME_IN_FORCE_GFN:
-		return "TIME_IN_FORCE_GFN"
-	case proto.Order_TIME_IN_FORCE_GTC:
-		return "TIME_IN_FORCE_GTC"
-	case proto.Order_TIME_IN_FORCE_IOC:
-		return "TIME_IN_FORCE_IOC"
-	case proto.Order_TIME_IN_FORCE_FOK:
-		return "TIME_IN_FORCE_FOK"
-	}
-	return ""
-}
-
-// Abs helper function
-func Abs(value int64) int64 {
-	if value < 0 {
-		return -value
-	}
-	return value
 }
 
 // SecondsFromNowInSecs : Creates a timestamp relative to the current time in seconds
@@ -290,184 +258,157 @@ func (w *WalletWrapper) SendCommand(submission []byte, token string) error {
 }
 
 // SendOrder sends a new order command to the wallet
-func (w *WalletWrapper) SendOrder(od OrderDetails) error {
-	cmd := `{ "orderSubmission": {
-      "marketId": "$MARKETID",
-      $PRICE
-      "size": "$SIZE",
-      "side": "$SIDE",
-      "timeInForce": "$TIME_IN_FORCE",
-      $EXPIRES_AT
-      "type": "$TYPE",
-      "reference": "order_ref"
-    },
-    "pubKey": "$PUBKEY",
-    "propagate": true
-  }`
+func (w *WalletWrapper) SendOrder(user int, os commandspb.OrderSubmission) error {
+	m := jsonpb.Marshaler{}
 
-	cmd = strings.Replace(cmd, "$MARKETID", od.marketID, 1)
-	cmd = strings.Replace(cmd, "$SIZE", fmt.Sprintf("%d", Abs(od.size)), 1)
-
-	if od.orderType == proto.Order_TYPE_LIMIT {
-		cmd = strings.Replace(cmd, "$PRICE", fmt.Sprintf("\"price\": \"%d\",", od.price), 1)
-		cmd = strings.Replace(cmd, "$TYPE", "TYPE_LIMIT", 1)
-	} else {
-		cmd = strings.Replace(cmd, "$PRICE", "", 1)
-		cmd = strings.Replace(cmd, "$TYPE", "TYPE_MARKET", 1)
+	submitTxReq := &walletpb.SubmitTransactionRequest{
+		PubKey:    users[user].pubKey,
+		Propagate: true,
+		Command: &walletpb.SubmitTransactionRequest_OrderSubmission{
+			OrderSubmission: &os,
+		},
 	}
 
-	if od.expiresAt > 0 {
-		cmd = strings.Replace(cmd, "$EXPIRES_AT", fmt.Sprintf("\"expiresAt\": %d,", od.expiresAt), 1)
-	} else {
-		cmd = strings.Replace(cmd, "$EXPIRES_AT", "", 1)
+	cmd, err := m.MarshalToString(submitTxReq)
+	if err != nil {
+		return err
 	}
-
-	if od.size > 0 {
-		cmd = strings.Replace(cmd, "$SIDE", "SIDE_BUY", 1)
-	} else {
-		cmd = strings.Replace(cmd, "$SIDE", "SIDE_SELL", 1)
-	}
-
-	cmd = strings.Replace(cmd, "$TIME_IN_FORCE", od.getTIFString(), 1)
-	cmd = strings.Replace(cmd, "$PUBKEY", users[od.user].pubKey, 1)
-
-	err := w.SignSubmitTx(od.user, cmd)
-	return err
+	return w.SignSubmitTx(user, cmd)
 }
 
 // SendNewMarketProposal will build and send a new market proposal to the wallet
-func (w *WalletWrapper) SendNewMarketProposal(user int) {
-	refStr := "PerfBotProposalRef"
+func (w *WalletWrapper) SendNewMarketProposal(user int) error {
 
-	cmd := `{"proposalSubmission": {
-              "reference": "$UNIQUEREF",
-               "rationale": {
-                "description": "some description"
-              },
-              "terms": {
-                "validationTimestamp": $VALIDATIONTS,
-                "closingTimestamp": $CLOSINGTS,
-                "enactmentTimestamp": $ENACTMENTTS,
-                "newMarket":{
-                  "changes":  {
-                    "decimalPlaces": 5,
-                    "instrument": {
-                      "code": "CRYPTO:BTCUSD/NOV22",
-                      "name": "NOV 2022 BTC vs USD future",
-                      "future": {
-                        "settlementAsset": "fUSDC",
-                        "quoteName":"BTCUSD",
-                        "oracleSpecBinding": {
-                          "settlementPriceProperty": "trading.settled",
-                          "tradingTerminationProperty": "trading.termination"
-                        },
-                        "oracleSpecForTradingTermination": {
-                          "pubKeys": ["0xDEADBEEF"],
-                          "filters": [{
-                            "key": {
-                              "name": "trading.termination",
-                              "type": "TYPE_BOOLEAN"
-                            }
-                          }]
-                        },
-                        "oracleSpecForSettlementPrice": {
-                          "pubKeys": ["0xDEADBEEF"],
-                          "filters": [{
-                            "key": {
-                              "name": "trading.settled",
-                              "type": "TYPE_INTEGER"
-                            }
-                          }]
-                        }
-                      }
-                    },
-                    "simple" : {
-                      "factorLong":           0.15,
-                      "factorShort":          0.25,
-                      "maxMoveUp":            10,
-                      "minMoveDown":          -5,
-                      "probabilityOfTrading": 0.1
-                    }
-                  },
-                  "liquidityCommitment": {
-                    "fee":              "0.01",
-                    "commitmentAmount": "50000000",
-                    "buys":             [{
-                                          "reference" : "PEGGED_REFERENCE_BEST_BID",
-                                          "proportion" : 10,
-                                          "offset" : "2000"	
-                    }],
-                    "sells":            [{
-                                          "reference" : "PEGGED_REFERENCE_BEST_ASK",
-                                          "proportion" : 10,
-                                          "offset" : "2000"
-                    }]
-                  }
-                }
-              }
-            },
-            "pubKey": "$PUBKEY",
-            "propagate" : true
-          }
-        }
-      }
-    }
-  }`
+	m := jsonpb.Marshaler{}
 
-	/*
-	   "metadata":      [{"base:BTC", "quote:USD", "class:fx/crypto", "monthly", "sector:crypto"}],
-	*/
-
-	cmd = strings.Replace(cmd, "$UNIQUEREF", refStr, 1)
-	cmd = strings.Replace(cmd, "$VALIDATIONTS", fmt.Sprintf("%d", w.SecondsFromNowInSecs(1)), 1)
-	cmd = strings.Replace(cmd, "$CLOSINGTS", fmt.Sprintf("%d", w.SecondsFromNowInSecs(15)), 1)
-	cmd = strings.Replace(cmd, "$ENACTMENTTS", fmt.Sprintf("%d", w.SecondsFromNowInSecs(20)), 1)
-	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
-
-	err := w.SignSubmitTx(user, cmd)
-	if err != nil {
-		log.Fatal("failed to submit NewMarketProposal: %w", err)
+	submitTxReq := &walletpb.SubmitTransactionRequest{
+		PubKey:    users[user].pubKey,
+		Propagate: true,
+		Command: &walletpb.SubmitTransactionRequest_ProposalSubmission{
+			ProposalSubmission: &commandspb.ProposalSubmission{
+				Reference: "PerfBotProposalRef",
+				Rationale: &proto.ProposalRationale{
+					Description: "PerfBotRational",
+				},
+				Terms: &proto.ProposalTerms{
+					ValidationTimestamp: w.SecondsFromNowInSecs(1),
+					ClosingTimestamp:    w.SecondsFromNowInSecs(15),
+					EnactmentTimestamp:  w.SecondsFromNowInSecs(20),
+					Change: &proto.ProposalTerms_NewMarket{
+						NewMarket: &proto.NewMarket{
+							Changes: &proto.NewMarketConfiguration{
+								DecimalPlaces: 5,
+								Instrument: &proto.InstrumentConfiguration{
+									Code: "CRYPTO:BTCUSD/NOV22",
+									Name: "NOV 2022 BTC vs USD future",
+									Product: &proto.InstrumentConfiguration_Future{
+										Future: &proto.FutureProduct{
+											SettlementAsset: "fUSDC",
+											QuoteName:       "BTCUSD",
+											OracleSpecBinding: &proto.OracleSpecToFutureBinding{
+												SettlementPriceProperty:    "trading.settled",
+												TradingTerminationProperty: "trading.termination",
+											},
+											OracleSpecForTradingTermination: &v1.OracleSpecConfiguration{
+												PubKeys: []string{"0xDEADBEEF"},
+												Filters: []*v1.Filter{
+													&v1.Filter{Key: &v1.PropertyKey{
+														Name: "trading.termination",
+														Type: v1.PropertyKey_TYPE_BOOLEAN,
+													}},
+												},
+											},
+											OracleSpecForSettlementPrice: &v1.OracleSpecConfiguration{
+												PubKeys: []string{"0xDEADBEEF"},
+												Filters: []*v1.Filter{
+													&v1.Filter{Key: &v1.PropertyKey{
+														Name: "trading.settled",
+														Type: v1.PropertyKey_TYPE_INTEGER,
+													}},
+												},
+											},
+										},
+									},
+								},
+								RiskParameters: &proto.NewMarketConfiguration_Simple{
+									Simple: &proto.SimpleModelParams{
+										FactorLong:           0.15,
+										FactorShort:          0.25,
+										MaxMoveUp:            10,
+										MinMoveDown:          -5,
+										ProbabilityOfTrading: 0.1,
+									},
+								},
+							},
+							LiquidityCommitment: &proto.NewMarketCommitment{
+								Fee:              "0.01",
+								CommitmentAmount: "50000000",
+								Buys: []*proto.LiquidityOrder{
+									&proto.LiquidityOrder{
+										Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
+										Proportion: 10,
+										Offset:     "2000",
+									},
+								},
+								Sells: []*proto.LiquidityOrder{
+									&proto.LiquidityOrder{
+										Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+										Proportion: 10,
+										Offset:     "2000",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
+
+	cmd, err := m.MarshalToString(submitTxReq)
+	if err != nil {
+		return err
+	}
+
+	return w.SignSubmitTx(user, cmd)
 }
 
 // SendCancelAll will build and send a cancel all command to the wallet
-func (w *WalletWrapper) SendCancelAll(user int, marketID string) {
-	cmd := `{	"orderCancellation" :{
-              "marketId": "$MARKET_ID"
-            },
-            "pubKey": "$PUBKEY",
-            "propagate": true						
-          }`
-
-	cmd = strings.Replace(cmd, "$MARKET_ID", marketID, 1)
-	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
-
-	err := w.SignSubmitTx(user, cmd)
-	if err != nil {
-		fmt.Println(cmd)
-		log.Fatal("failed to submit Vote Submission: %w", err)
+func (w *WalletWrapper) SendCancelAll(user int, marketID string) error {
+	cancel := commandspb.OrderCancellation{
+		MarketId: marketID,
 	}
+
+	m := jsonpb.Marshaler{}
+
+	submitTxReq := &walletpb.SubmitTransactionRequest{
+		PubKey:    users[user].pubKey,
+		Propagate: true,
+		Command: &walletpb.SubmitTransactionRequest_OrderCancellation{
+			OrderCancellation: &cancel,
+		},
+	}
+	cmd, err := m.MarshalToString(submitTxReq)
+	if err != nil {
+		return err
+	}
+	return w.SignSubmitTx(user, cmd)
 }
 
 // SendVote will build and send a vote command to the wallet
-func (w *WalletWrapper) SendVote(user int, proposalID string, vote bool) error {
-	cmd := `{ "voteSubmission": {
-              "proposal_id": "$PROPOSAL_ID",
-              "value": "$VOTE"
-            },
-            "pubKey": "$PUBKEY",
-            "propagate" : true
-          }`
+func (w WalletWrapper) SendVote(user int, vote commandspb.VoteSubmission) error {
+	m := jsonpb.Marshaler{}
 
-	cmd = strings.Replace(cmd, "$PROPOSAL_ID", proposalID, 1)
-	cmd = strings.Replace(cmd, "$PUBKEY", users[user].pubKey, 1)
-	if vote {
-		cmd = strings.Replace(cmd, "$VOTE", "VALUE_YES", 1)
-	} else {
-		cmd = strings.Replace(cmd, "$VOTE", "VALUE_NO", 1)
+	submitTxReq := &walletpb.SubmitTransactionRequest{
+		PubKey:    users[user].pubKey,
+		Propagate: true,
+		Command: &walletpb.SubmitTransactionRequest_VoteSubmission{
+			VoteSubmission: &vote,
+		},
 	}
+	cmd, err := m.MarshalToString(submitTxReq)
 
-	err := w.SignSubmitTx(user, cmd)
+	err = w.SignSubmitTx(user, cmd)
 	if err != nil {
 		return err
 	}

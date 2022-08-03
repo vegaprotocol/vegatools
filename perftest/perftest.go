@@ -3,6 +3,7 @@ package perftest
 import (
 	"flag"
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 	datanode "code.vegaprotocol.io/protos/data-node/api/v1"
 	proto "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 )
 
 // Opts hold the command line values
@@ -25,7 +27,7 @@ type Opts struct {
 
 var (
 	dataNode dnWrapper
-	wallet WalletWrapper
+	wallet   WalletWrapper
 
 	// Information about all the users we can use to send orders
 	users []UserDetails
@@ -85,17 +87,40 @@ func proposeAndEnactMarket() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		dataNode.VoteOnProposal(propID)
+		err = dataNode.VoteOnProposal(propID)
+		if err != nil {
+			return "", err
+		}
 		time.Sleep(time.Second * 10)
 	}
 
 	// Move all markets out of auction
 	markets = dataNode.getMarkets()
 	if len(markets) > 0 {
-		wallet.SendOrder(OrderDetails{markets[0], 0, 10010, -100, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
-		wallet.SendOrder(OrderDetails{markets[0], 1, 9900, +100, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
-		wallet.SendOrder(OrderDetails{markets[0], 0, 10000, +5, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
-		wallet.SendOrder(OrderDetails{markets[0], 1, 10000, -5, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
+		wallet.SendOrder(0, commandspb.OrderSubmission{MarketId: markets[0],
+			Price:       "10010",
+			Size:        100,
+			Side:        proto.Side_SIDE_SELL,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+		wallet.SendOrder(1, commandspb.OrderSubmission{MarketId: markets[0],
+			Price:       "9900",
+			Size:        100,
+			Side:        proto.Side_SIDE_BUY,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+		wallet.SendOrder(0, commandspb.OrderSubmission{MarketId: markets[0],
+			Price:       "10000",
+			Size:        5,
+			Side:        proto.Side_SIDE_BUY,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+		wallet.SendOrder(1, commandspb.OrderSubmission{MarketId: markets[0],
+			Price:       "10000",
+			Size:        5,
+			Side:        proto.Side_SIDE_SELL,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 	} else {
 		return "", fmt.Errorf("failed to get open market")
 	}
@@ -122,23 +147,56 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 		choice := rand.Intn(100)
 		if choice < 2 {
 			// Perform a cancel all
-			wallet.SendCancelAll(user, marketID)
+			err := wallet.SendCancelAll(user, marketID)
+			if err != nil {
+				log.Println("Failed to send cancel all", err)
+			}
 		} else if choice < 7 {
 			// Perform a market order to generate some trades
 			if choice%2 == 1 {
-				wallet.SendOrder(OrderDetails{ marketID, user, 0, 3, proto.Order_TYPE_MARKET, proto.Order_TIME_IN_FORCE_IOC, 0})
+				err := wallet.SendOrder(user, commandspb.OrderSubmission{MarketId: marketID,
+					Size:        3,
+					Side:        proto.Side_SIDE_BUY,
+					Type:        proto.Order_TYPE_MARKET,
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
+				if err != nil {
+					log.Println("Failed to send market buy order", err)
+				}
 			} else {
-				wallet.SendOrder(OrderDetails{ marketID, user, 0, -3, proto.Order_TYPE_MARKET, proto.Order_TIME_IN_FORCE_IOC, 0})
+				err := wallet.SendOrder(user, commandspb.OrderSubmission{MarketId: marketID,
+					Size:        3,
+					Side:        proto.Side_SIDE_SELL,
+					Type:        proto.Order_TYPE_MARKET,
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
+				if err != nil {
+					log.Println("Failed to send market sell order", err)
+				}
 			}
 		} else {
 			// Insert a new order to fill up the book
 			priceOffset := rand.Int63n(12) - 6
 			if priceOffset > 0 {
 				// Send a sell
-				wallet.SendOrder(OrderDetails{ marketID, user, int64(10000+user), -1, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
+				err := wallet.SendOrder(user, commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint(10000 + user),
+					Size:        1,
+					Side:        proto.Side_SIDE_SELL,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+				if err != nil {
+					log.Println("Failed to send non crossing random limit sell order", err)
+				}
 			} else {
 				// Send a buy
-				wallet.SendOrder(OrderDetails{ marketID, user, int64(9999-user), 1, proto.Order_TYPE_LIMIT, proto.Order_TIME_IN_FORCE_GTC, 0})
+				err := wallet.SendOrder(user, commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint(9999 - user),
+					Size:        1,
+					Side:        proto.Side_SIDE_BUY,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+				if err != nil {
+					log.Println("Failed to send non crossing random limit buy order", err)
+				}
 			}
 		}
 		count++

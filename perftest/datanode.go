@@ -8,6 +8,7 @@ import (
 
 	datanode "code.vegaprotocol.io/protos/data-node/api/v1"
 	proto "code.vegaprotocol.io/protos/vega"
+	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 )
 
 type dnWrapper struct {
@@ -82,7 +83,7 @@ func (d *dnWrapper) getPendingProposalID() (string, error) {
 
 func (d *dnWrapper) VoteOnProposal(propID string) error {
 	for i := 0; i < 3; i++ {
-		err := d.wallet.SendVote(i, propID, true)
+		err := d.wallet.SendVote(i, v1.VoteSubmission{ProposalId: propID, Value: proto.Vote_VALUE_YES})
 		if err != nil {
 			return err
 		}
