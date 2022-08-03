@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	datanode "code.vegaprotocol.io/protos/data-node/api/v1"
 	proto "code.vegaprotocol.io/protos/vega"
@@ -79,6 +80,25 @@ func (d *dnWrapper) getPendingProposalID() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("no pending proposals found")
+}
+
+func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWait int) error {
+	request := &datanode.GetProposalsRequest{}
+
+	for i := 0; i < 10; i++ {
+		response, err := d.dataNode.GetProposals(context.Background(), request)
+		if err != nil {
+			return err
+		}
+
+		for _, proposal := range response.GetData() {
+			if proposal.Proposal.State == proto.Proposal_STATE_ENACTED {
+				return nil
+			}
+		}
+		time.Sleep(time.Second)
+	}
+	return fmt.Errorf("Timed out waiting for market to be enacted")
 }
 
 func (d *dnWrapper) VoteOnProposal(propID string) error {

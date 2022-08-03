@@ -82,7 +82,7 @@ func proposeAndEnactMarket() (string, error) {
 	markets := dataNode.getMarkets()
 	if len(markets) == 0 {
 		wallet.SendNewMarketProposal(0)
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 7)
 		propID, err := dataNode.getPendingProposalID()
 		if err != nil {
 			return "", err
@@ -91,10 +91,14 @@ func proposeAndEnactMarket() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		time.Sleep(time.Second * 10)
+		// We have to wait for the market to be enacted
+		err = dataNode.waitForMarketEnactment(propID, 20)
+		if err != nil {
+			return "", err
+		}
 	}
 
-	// Move all markets out of auction
+	// Move markets out of auction
 	markets = dataNode.getMarkets()
 	if len(markets) > 0 {
 		wallet.SendOrder(0, &commandspb.OrderSubmission{MarketId: markets[0],
@@ -121,10 +125,10 @@ func proposeAndEnactMarket() (string, error) {
 			Side:        proto.Side_SIDE_SELL,
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+		time.Sleep(time.Second * 5)
 	} else {
 		return "", fmt.Errorf("failed to get open market")
 	}
-	time.Sleep(time.Second * 5)
 
 	return markets[0], nil
 }
@@ -201,8 +205,7 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 		}
 		count++
 
-		newNow := time.Now()
-		actualDiffSeconds := newNow.Sub(now).Seconds()
+		actualDiffSeconds := time.Since(now).Seconds()
 		wantedDiffSeconds := float64(count) / opsScale
 
 		// See if we are sending quicker than we should
@@ -212,16 +215,14 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 				time.Sleep(time.Millisecond * time.Duration(delayMillis))
 				delays++
 			}
-
-			newNow = time.Now()
-			actualDiffSeconds = newNow.Sub(now).Seconds()
+			actualDiffSeconds = time.Since(now).Seconds()
 		}
 
 		if actualDiffSeconds >= 1 {
 			fmt.Printf("\rSending load transactions...[%d/%d] %dcps  ", i, numberOfTransactions, count)
 			count = 0
 			delays = 0
-			now = newNow
+			now = time.Now()
 		}
 	}
 	fmt.Printf("\rSending load transactions...")
