@@ -82,10 +82,10 @@ func (d *dnWrapper) getPendingProposalID() (string, error) {
 	return "", fmt.Errorf("no pending proposals found")
 }
 
-func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWait int) error {
+func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWaitSeconds int) error {
 	request := &datanode.GetProposalsRequest{}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < maxWaitSeconds; i++ {
 		response, err := d.dataNode.GetProposals(context.Background(), request)
 		if err != nil {
 			return err
