@@ -8,6 +8,7 @@ import (
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vegatools/stream"
+	"google.golang.org/protobuf/proto"
 )
 
 func min(a, b uint64) uint64 {
@@ -24,11 +25,25 @@ func max(a, b uint64) uint64 {
 	return b
 }
 
-// Run is the main function of `eventpersister` package
+type Data struct {
+	Events uint64
+	Bytes  uint64
+}
+
+func fixUnits(bytes uint64) string {
+	if bytes > 1000000 {
+		return fmt.Sprintf("%dMB", bytes/(1024*1024))
+	} else if bytes > 1000 {
+		return fmt.Sprintf("%dKB", bytes/1024)
+	}
+	return fmt.Sprintf("%dB", bytes)
+}
+
+// Run is the main function of `eventrate` package
 func Run(serverAddr string) error {
-	var	eventsThisSecond    uint64
-	var historicEvents      []uint64
-	var mu                  sync.Mutex
+	var dataThisSecond Data
+	var historicData []Data
+	var mu sync.Mutex
 
 	if len(serverAddr) <= 0 {
 		return fmt.Errorf("error: missing grpc server address")
@@ -36,7 +51,8 @@ func Run(serverAddr string) error {
 
 	handleEvent := func(e *eventspb.BusEvent) {
 		mu.Lock()
-		eventsThisSecond++
+		dataThisSecond.Events++
+		dataThisSecond.Bytes += uint64(proto.Size(e))
 		mu.Unlock()
 	}
 
@@ -50,30 +66,39 @@ func Run(serverAddr string) error {
 	for {
 		time.Sleep(time.Second)
 		mu.Lock()
-		historicEvents = append(historicEvents, eventsThisSecond)
-		eventsThisSecond = 0
+		historicData = append(historicData, dataThisSecond)
+		dataThisSecond.Events = 0
+		dataThisSecond.Bytes = 0
 		mu.Unlock()
 
 		// If we have more than 10 historic counts, remove the last
-		if len(historicEvents) > 10 {
-			historicEvents = historicEvents[1:]
+		if len(historicData) > 10 {
+			historicData = historicData[1:]
 		}
 
 		// Calculate values
-		minimum := historicEvents[0]
-		maximum := historicEvents[0]
-		var total uint64
-		for _, i := range historicEvents {
-			minimum = min(minimum,i)
-			maximum = max(maximum,i)
-			total += i
+		minEvents := historicData[0].Events
+		maxEvents := historicData[0].Events
+		minBytes := historicData[0].Bytes
+		maxBytes := historicData[0].Bytes
+		var totalEvents uint64
+		var totalBytes uint64
+		for _, i := range historicData {
+			minEvents = min(minEvents, i.Events)
+			maxEvents = max(maxEvents, i.Events)
+			totalEvents += i.Events
+			minBytes = min(minBytes, i.Bytes)
+			maxBytes = max(maxBytes, i.Bytes)
+			totalBytes += i.Bytes
 		}
-		average := total/uint64(len(historicEvents))
-		fmt.Printf("Events per second: (")
-		for i:=len(historicEvents)-1;i>0;i-- {
-			fmt.Printf("%d, ", historicEvents[i])
+		avgEvents := totalEvents / uint64(len(historicData))
+		avgBytes := totalBytes / uint64(len(historicData))
+		fmt.Printf("Events:Bandwidth (")
+		for i := len(historicData) - 1; i > 0; i-- {
+			fmt.Printf("[%d:%s], ", historicData[i].Events, fixUnits(historicData[i].Bytes))
 		}
-		fmt.Printf("%d) Min:%d Max:%d Avg:%d            \r", historicEvents[0], minimum, maximum, average)
+		fmt.Printf("[%d:%s]) Min:[%d:%s] Max:[%d:%s] Avg:[%d:%s]            \r",
+			historicData[0].Events, fixUnits(historicData[0].Bytes),
+			minEvents, fixUnits(minBytes), maxEvents, fixUnits(maxBytes), avgEvents, fixUnits(avgBytes))
 	}
-	return nil
 }
