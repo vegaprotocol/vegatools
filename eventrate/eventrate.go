@@ -25,7 +25,7 @@ func max(a, b uint64) uint64 {
 	return b
 }
 
-type Data struct {
+type data struct {
 	Events uint64
 	Bytes  uint64
 }
@@ -41,8 +41,8 @@ func fixUnits(bytes uint64) string {
 
 // Run is the main function of `eventrate` package
 func Run(serverAddr string) error {
-	var dataThisSecond Data
-	var historicData []Data
+	var dataThisSecond data
+	var historicData []data
 	var mu sync.Mutex
 
 	if len(serverAddr) <= 0 {
