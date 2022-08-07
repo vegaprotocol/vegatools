@@ -41,6 +41,8 @@ jobs:
       # yamllint disable rule:line-length
       - name: 'Get linked issue id and state'
         id: linked-issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api graphql -f query='
             query($pr_url: URI!) {
@@ -60,10 +62,11 @@ jobs:
       - name: 'Check if PR raised by bot'
         id: bot-pr
         if: |
-          startsWith(github.head_ref, 'renovate/') == true || startsWith(github.head_ref, 'dependabot/') == true
-           || github.actor == 'dependabot[bot]' || github.actor != 'renovate[bot]'
-        run: echo 'BOT_PR=true' >> $GITHUB_ENV
-             echo "::set-output name=is-bot::true"
+          ((startsWith(github.head_ref, 'renovate/') == true || startsWith(github.head_ref, 'dependabot/') == true)
+           || (github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]'))
+        run: |
+          echo 'BOT_PR=true' >> $GITHUB_ENV
+          echo "::set-output name=is-bot::1"
       - name: 'Check for linked issue'
         id: linked
         if: |
@@ -353,11 +356,18 @@ jobs:
     env:
       IS_BOT: ${{needs.project-board-automation.outputs.bot-pr-output}}
     steps:
+      - run: env
+      - name: Check bot
+        id: check-bot
+        if: env.IS_BOT == '1'
+        run: echo "pull request opened by bot"
+      - name: No changelog required
+        id: changelog-excluded
+        if: github.event.pull_request.draft == true || contains(github.event.pull_request.labels.*.name, 'no-changelog') == true
+        run: echo "changelog requirment excluded"
       - name: Checkout
         id: checkout
-        if: |
-          env.IS_BOT != 'true' || github.event.pull_request.draft != true
-           || contains(github.event.pull_request.labels.*.name, 'no-changelog') != true
+        if: steps.check-bot.outcome == 'skipped' && steps.changelog-excluded.outcome == 'skipped'
         uses: actions/checkout@v3
       # yamllint enable rule:line-length
       - name: Check changelog entry
