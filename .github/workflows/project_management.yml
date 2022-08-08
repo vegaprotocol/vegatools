@@ -360,11 +360,11 @@ jobs:
       - name: Check bot
         id: check-bot
         if: env.IS_BOT == '1'
-        run: echo "pull request opened by bot"
+        run: echo "Pull request opened by bot - no changelog required"
       - name: No changelog required
         id: changelog-excluded
         if: github.event.pull_request.draft == true || contains(github.event.pull_request.labels.*.name, 'no-changelog') == true
-        run: echo "changelog requirment excluded"
+        run: echo "Changelog requirment excluded"
       - name: Checkout
         id: checkout
         if: steps.check-bot.outcome == 'skipped' && steps.changelog-excluded.outcome == 'skipped'
