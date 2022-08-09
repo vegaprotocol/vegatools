@@ -7,11 +7,8 @@ import (
 )
 
 var (
-	eventRateOpts struct {
-		serverAddr string
-	}
-
-	eventRateCmd = &cobra.Command{
+	eventRateOpts eventrate.Opts
+	eventRateCmd  = &cobra.Command{
 		Use:   "eventrate",
 		Short: "Display the rate in which event bus messages are arriving",
 		RunE:  runEventRate,
@@ -20,10 +17,12 @@ var (
 
 func init() {
 	rootCmd.AddCommand(eventRateCmd)
-	eventRateCmd.Flags().StringVarP(&eventRateOpts.serverAddr, "address", "a", "", "address of the grpc server")
+	eventRateCmd.Flags().StringVarP(&eventRateOpts.ServerAddr, "address", "a", "", "address of the grpc server")
+	eventRateCmd.Flags().IntVarP(&eventRateOpts.Buckets, "buckets", "b", 10, "number of hisotirc buckets")
+	eventRateCmd.Flags().IntVarP(&eventRateOpts.SecondsPerBucket, "secondsperbucket", "s", 1, "number of seconds to record each bucket")
 	eventRateCmd.MarkFlagRequired("address")
 }
 
 func runEventRate(cmd *cobra.Command, args []string) error {
-	return eventrate.Run(eventRateOpts.serverAddr)
+	return eventrate.Run(eventRateOpts)
 }

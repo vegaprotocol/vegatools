@@ -11,6 +11,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+type Opts struct {
+	ServerAddr       string
+	Buckets          int
+	SecondsPerBucket int
+}
+
 func min(a, b uint64) uint64 {
 	if a > b {
 		return b
@@ -31,21 +37,21 @@ type data struct {
 }
 
 func fixUnits(bytes uint64) string {
-	if bytes > 1000000 {
+	if bytes > 1024*1024 {
 		return fmt.Sprintf("%dMB", bytes/(1024*1024))
-	} else if bytes > 1000 {
+	} else if bytes > 1024 {
 		return fmt.Sprintf("%dKB", bytes/1024)
 	}
 	return fmt.Sprintf("%dB", bytes)
 }
 
 // Run is the main function of `eventrate` package
-func Run(serverAddr string) error {
+func Run(opts Opts) error {
 	var dataThisSecond data
 	var historicData []data
 	var mu sync.Mutex
 
-	if len(serverAddr) <= 0 {
+	if len(opts.ServerAddr) <= 0 {
 		return fmt.Errorf("error: missing grpc server address")
 	}
 
@@ -59,20 +65,20 @@ func Run(serverAddr string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	wg := sync.WaitGroup{}
-	if err := stream.ReadEvents(ctx, cancel, &wg, 0, "", "", serverAddr, handleEvent, true, nil); err != nil {
+	if err := stream.ReadEvents(ctx, cancel, &wg, 0, "", "", opts.ServerAddr, handleEvent, true, nil); err != nil {
 		return fmt.Errorf("error reading events: %v", err)
 	}
 
 	for {
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * time.Duration(opts.SecondsPerBucket))
 		mu.Lock()
 		historicData = append(historicData, dataThisSecond)
 		dataThisSecond.Events = 0
 		dataThisSecond.Bytes = 0
 		mu.Unlock()
 
-		// If we have more than 10 historic counts, remove the last
-		if len(historicData) > 10 {
+		// Cap the number of historic buckets we keep
+		if len(historicData) > opts.Buckets {
 			historicData = historicData[1:]
 		}
 
