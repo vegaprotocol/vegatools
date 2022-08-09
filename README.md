@@ -93,3 +93,6 @@ LiquidityCommitment displays all of the liquidity providers for a given market i
 ### PerfTest
 
 This creates a market and a set of users and then generates a consistent flow of transactions to the market over a given length of time to allow for performance testing and statistics recording.
+
+### EventRate
+This listens to an unfiltered event bus stream and reports the number of events arriving per bucket (default 1 second) and the amount of network bandwidth it used to receive them. The bucket length can be defined as well as the number of historic bucket it uses to generate the average values. 
