@@ -14,7 +14,7 @@ import (
 
 type dnWrapper struct {
 	dataNode datanode.TradingDataServiceClient
-	wallet   WalletWrapper
+	wallet   walletWrapper
 }
 
 func (d *dnWrapper) getAssets() (map[string]string, error) {
@@ -101,9 +101,9 @@ func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWaitSeconds int) 
 	return fmt.Errorf("Timed out waiting for market to be enacted")
 }
 
-func (d *dnWrapper) VoteOnProposal(propID string) error {
+func (d *dnWrapper) voteOnProposal(users []UserDetails, propID string) error {
 	for i := 0; i < 3; i++ {
-		err := d.wallet.SendVote(i, &v1.VoteSubmission{ProposalId: propID, Value: proto.Vote_VALUE_YES})
+		err := d.wallet.SendVote(users[i], &v1.VoteSubmission{ProposalId: propID, Value: proto.Vote_VALUE_YES})
 		if err != nil {
 			return err
 		}

@@ -25,15 +25,16 @@ type Opts struct {
 	UserCount         int
 }
 
-var (
-	dataNode dnWrapper
-	wallet   WalletWrapper
-
+type perfLoadTesting struct {
 	// Information about all the users we can use to send orders
 	users []UserDetails
-)
 
-func connectToDataNode(dataNodeAddr string) (map[string]string, error) {
+	dataNode dnWrapper
+
+	wallet walletWrapper
+}
+
+func (p *perfLoadTesting) connectToDataNode(dataNodeAddr string) (map[string]string, error) {
 	connection, err := grpc.Dial(dataNodeAddr, grpc.WithInsecure())
 	if err != nil {
 		// Something went wrong
@@ -42,12 +43,12 @@ func connectToDataNode(dataNodeAddr string) (map[string]string, error) {
 
 	dn := datanode.NewTradingDataServiceClient(connection)
 
-	dataNode = dnWrapper{dataNode: dn,
-		wallet: wallet}
+	p.dataNode = dnWrapper{dataNode: dn,
+		wallet: p.wallet}
 
 	// load in all the assets
 	for {
-		assets, err := dataNode.getAssets()
+		assets, err := p.dataNode.getAssets()
 		if err != nil {
 			return nil, err
 		}
@@ -58,8 +59,14 @@ func connectToDataNode(dataNodeAddr string) (map[string]string, error) {
 	}
 }
 
-func depositTokens(assets map[string]string, faucetURL, ganacheURL string) error {
-	for index, user := range users {
+func (p *perfLoadTesting) CreateUsers(userCount int) error {
+	var err error
+	p.users, err = p.wallet.CreateOrLoadWallets(userCount)
+	return err
+}
+
+func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, ganacheURL string) error {
+	for index, user := range p.users {
 		if index > 3 {
 			break
 		}
@@ -67,59 +74,59 @@ func depositTokens(assets map[string]string, faucetURL, ganacheURL string) error
 		time.Sleep(time.Second * 1)
 	}
 
-	for _, user := range users {
+	for _, user := range p.users {
 		asset := assets["fUSDC"]
-		for amount, _ := dataNode.getAssetsPerUser(user.pubKey, asset); amount <= 100000000; {
+		for amount, _ := p.dataNode.getAssetsPerUser(user.pubKey, asset); amount <= 100000000; {
 			topUpAsset(faucetURL, user.pubKey, asset, 100000000)
 			time.Sleep(time.Second * 1)
-			amount, _ = dataNode.getAssetsPerUser(user.pubKey, asset)
+			amount, _ = p.dataNode.getAssetsPerUser(user.pubKey, asset)
 		}
 	}
 	return nil
 }
 
-func proposeAndEnactMarket() (string, error) {
-	markets := dataNode.getMarkets()
+func (p *perfLoadTesting) proposeAndEnactMarket() (string, error) {
+	markets := p.dataNode.getMarkets()
 	if len(markets) == 0 {
-		wallet.SendNewMarketProposal(0)
+		p.wallet.SendNewMarketProposal(p.users[0])
 		time.Sleep(time.Second * 7)
-		propID, err := dataNode.getPendingProposalID()
+		propID, err := p.dataNode.getPendingProposalID()
 		if err != nil {
 			return "", err
 		}
-		err = dataNode.VoteOnProposal(propID)
+		err = p.dataNode.voteOnProposal(p.users, propID)
 		if err != nil {
 			return "", err
 		}
 		// We have to wait for the market to be enacted
-		err = dataNode.waitForMarketEnactment(propID, 20)
+		err = p.dataNode.waitForMarketEnactment(propID, 20)
 		if err != nil {
 			return "", err
 		}
 	}
 
 	// Move markets out of auction
-	markets = dataNode.getMarkets()
+	markets = p.dataNode.getMarkets()
 	if len(markets) > 0 {
-		wallet.SendOrder(0, &commandspb.OrderSubmission{MarketId: markets[0],
+		p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[0],
 			Price:       "10010",
 			Size:        100,
 			Side:        proto.Side_SIDE_SELL,
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		wallet.SendOrder(1, &commandspb.OrderSubmission{MarketId: markets[0],
+		p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: markets[0],
 			Price:       "9900",
 			Size:        100,
 			Side:        proto.Side_SIDE_BUY,
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		wallet.SendOrder(0, &commandspb.OrderSubmission{MarketId: markets[0],
+		p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[0],
 			Price:       "10000",
 			Size:        5,
 			Side:        proto.Side_SIDE_BUY,
 			Type:        proto.Order_TYPE_LIMIT,
 			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		wallet.SendOrder(1, &commandspb.OrderSubmission{MarketId: markets[0],
+		p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: markets[0],
 			Price:       "10000",
 			Size:        5,
 			Side:        proto.Side_SIDE_SELL,
@@ -133,7 +140,7 @@ func proposeAndEnactMarket() (string, error) {
 	return markets[0], nil
 }
 
-func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
+func (p *perfLoadTesting) sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 	// Start load testing by sending off lots of orders at a given rate
 	userCount := users - 2
 	now := time.Now()
@@ -147,18 +154,19 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 	// Work out how many orders we need for 10 minute run
 	numberOfTransactions := runTimeSeconds * ordersPerSecond
 	for i := 0; i < numberOfTransactions; i++ {
-		user := rand.Intn(userCount) + 2
+		userOffset := rand.Intn(userCount) + 2
+		user := p.users[userOffset]
 		choice := rand.Intn(100)
 		if choice < 2 {
 			// Perform a cancel all
-			err := wallet.SendCancelAll(user, marketID)
+			err := p.wallet.SendCancelAll(user, marketID)
 			if err != nil {
 				log.Println("Failed to send cancel all", err)
 			}
 		} else if choice < 7 {
 			// Perform a market order to generate some trades
 			if choice%2 == 1 {
-				err := wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
+				err := p.wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
 					Size:        3,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_MARKET,
@@ -167,7 +175,7 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 					log.Println("Failed to send market buy order", err)
 				}
 			} else {
-				err := wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
+				err := p.wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
 					Size:        3,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_MARKET,
@@ -178,11 +186,11 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 			}
 		} else {
 			// Insert a new order to fill up the book
-			priceOffset := rand.Int63n(12) - 6
+			priceOffset := rand.Int63n(40) - 20
 			if priceOffset > 0 {
 				// Send a sell
-				err := wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
-					Price:       fmt.Sprint(10000 + user),
+				err := p.wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint(10000 + priceOffset),
 					Size:        1,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_LIMIT,
@@ -192,8 +200,8 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 				}
 			} else {
 				// Send a buy
-				err := wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
-					Price:       fmt.Sprint(9999 - user),
+				err := p.wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint(9999 - priceOffset),
 					Size:        1,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_LIMIT,
@@ -233,7 +241,7 @@ func sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
 func Run(opts Opts) error {
 	flag.Parse()
 
-	wallet = WalletWrapper{walletURL: opts.WalletURL}
+	plt := perfLoadTesting{wallet: walletWrapper{walletURL: opts.WalletURL}}
 
 	fmt.Print("Connecting to data node...")
 	if len(opts.DataNodeAddr) <= 0 {
@@ -242,7 +250,7 @@ func Run(opts Opts) error {
 	}
 
 	// Connect to data node and check it's working
-	assets, err := connectToDataNode(opts.DataNodeAddr)
+	assets, err := plt.connectToDataNode(opts.DataNodeAddr)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -251,7 +259,7 @@ func Run(opts Opts) error {
 
 	// Create a set of users
 	fmt.Print("Creating users...")
-	err = wallet.CreateOrLoadWallets(opts.UserCount)
+	err = plt.CreateUsers(opts.UserCount)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -260,7 +268,7 @@ func Run(opts Opts) error {
 
 	// Send some tokens to any newly created users
 	fmt.Print("Depositing tokens and assets...")
-	err = depositTokens(assets, opts.FaucetURL, opts.GanacheURL)
+	err = plt.depositTokens(assets, opts.FaucetURL, opts.GanacheURL)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -269,7 +277,7 @@ func Run(opts Opts) error {
 
 	// Send in a proposal to create a new market and vote to get it through
 	fmt.Print("Proposing and voting in new market...")
-	marketID, err := proposeAndEnactMarket()
+	marketID, err := plt.proposeAndEnactMarket()
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -278,7 +286,7 @@ func Run(opts Opts) error {
 
 	// Send off a controlled amount of orders and cancels
 	fmt.Print("Sending load transactions...")
-	err = sendTradingLoad(marketID, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds)
+	err = plt.sendTradingLoad(marketID, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
