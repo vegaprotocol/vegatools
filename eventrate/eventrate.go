@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// Opts are the command line options passed to the sub command
 type Opts struct {
 	ServerAddr       string
 	Buckets          int
