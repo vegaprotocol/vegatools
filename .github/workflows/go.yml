@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        go: ['1.16', '1.15']
+        go: ['1.18']
     steps:
       - name: Set up Go ${{ matrix.go }}
         uses: actions/setup-go@v2
@@ -41,7 +41,7 @@ jobs:
 
       - name: Lint
         run: |
-          go get golang.org/x/lint/golint@latest
+          go install golang.org/x/lint/golint@latest
           make lint
 
       - name: Vet

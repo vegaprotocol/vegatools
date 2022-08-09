@@ -210,12 +210,24 @@ func unmarshalAll(cp *checkpoint.Checkpoint) (*all, error) {
 	if ret.MultisigControl, err = unmarshalMultisigControl(cp); err != nil {
 		return nil, err
 	}
+	if ret.MarketTracker, err = unmarshalMarketActivityTracker(cp); err != nil {
+		return nil, err
+	}
+
 	return ret, nil
 }
 
 func unmarshalStaking(cp *checkpoint.Checkpoint) (*checkpoint.Staking, error) {
 	p := &checkpoint.Staking{}
 	if err := proto.Unmarshal(cp.Staking, p); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func unmarshalMarketActivityTracker(cp *checkpoint.Checkpoint) (*checkpoint.MarketTracker, error) {
+	p := &checkpoint.MarketTracker{}
+	if err := proto.Unmarshal(cp.MarketTracker, p); err != nil {
 		return nil, err
 	}
 	return p, nil

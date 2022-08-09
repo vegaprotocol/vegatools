@@ -29,6 +29,7 @@ type all struct {
 	Validators      *checkpoint.Validators      `json:"validators,omitempty"`
 	Staking         *checkpoint.Staking         `json:"staking,omitempty"`
 	MultisigControl *checkpoint.MultisigControl `json:"multisig_control,omitempty"`
+	MarketTracker   *checkpoint.MarketTracker   `json:"market_tracker,omitempty"`
 }
 
 // AssetErr a convenience error type
@@ -113,6 +114,11 @@ func (a all) JSON() ([]byte, error) {
 		return nil, err
 	}
 
+	marketTracker, err := marshaler.MarshalToString(a.MarketTracker)
+	if err != nil {
+		return nil, err
+	}
+
 	all := allJSON{
 		Governance:      json.RawMessage(g),
 		Assets:          json.RawMessage(as),
@@ -126,6 +132,7 @@ func (a all) JSON() ([]byte, error) {
 		Validators:      json.RawMessage(validators),
 		Staking:         json.RawMessage(staking),
 		MultisigControl: json.RawMessage(multisig),
+		MarketTracker:   json.RawMessage(marketTracker),
 	}
 
 	b, err := json.MarshalIndent(all, "", "   ")
@@ -229,6 +236,14 @@ func (a *all) FromJSON(in []byte) error {
 		}
 	}
 
+	if len(all.MarketTracker) != 0 {
+		a.MarketTracker = &checkpoint.MarketTracker{}
+		reader := bytes.NewReader([]byte(all.MarketTracker))
+		if err := jsonpb.Unmarshal(reader, a.MarketTracker); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -301,6 +316,10 @@ func (a all) CheckpointData() ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	marketTracker, err := proto.Marshal(a.MarketTracker)
+	if err != nil {
+		return nil, nil, err
+	}
 	cp := &checkpoint.Checkpoint{
 		Governance:        g,
 		Collateral:        c,
@@ -313,6 +332,7 @@ func (a all) CheckpointData() ([]byte, []byte, error) {
 		Validators:        validators,
 		Staking:           staking,
 		MultisigControl:   multi,
+		MarketTracker:     marketTracker,
 	}
 	if cp.Assets, err = proto.Marshal(a.Assets); err != nil {
 		return nil, nil, err
@@ -500,10 +520,8 @@ func dummy() *all {
 						Kind: &events.Transfer_Recurring{
 							Recurring: &events.RecurringTransfer{
 								StartEpoch: 10,
-								EndEpoch: &vega.Uint64Value{
-									Value: 100,
-								},
-								Factor: "1",
+								EndEpoch:   toPtr(uint64(100)),
+								Factor:     "1",
 							},
 						},
 					},
@@ -527,4 +545,7 @@ type allJSON struct {
 	Validators      json.RawMessage `json:"validators,omitempty"`
 	Staking         json.RawMessage `json:"staking,omitempty"`
 	MultisigControl json.RawMessage `json:"multisig_control,omitempty"`
+	MarketTracker   json.RawMessage `json:"market_tracker,omitempty"`
 }
+
+func toPtr[T any](t T) *T { return &t }
