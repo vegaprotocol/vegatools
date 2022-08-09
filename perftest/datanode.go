@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	datanode "code.vegaprotocol.io/protos/data-node/api/v1"
 	proto "code.vegaprotocol.io/protos/vega"
+	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 )
 
 type dnWrapper struct {
 	dataNode datanode.TradingDataServiceClient
-	wallet   WalletWrapper
+	wallet   walletWrapper
 }
 
 func (d *dnWrapper) getAssets() (map[string]string, error) {
@@ -80,9 +82,28 @@ func (d *dnWrapper) getPendingProposalID() (string, error) {
 	return "", fmt.Errorf("no pending proposals found")
 }
 
-func (d *dnWrapper) VoteOnProposal(propID string) error {
+func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWaitSeconds int) error {
+	request := &datanode.GetProposalsRequest{}
+
+	for i := 0; i < maxWaitSeconds; i++ {
+		response, err := d.dataNode.GetProposals(context.Background(), request)
+		if err != nil {
+			return err
+		}
+
+		for _, proposal := range response.GetData() {
+			if proposal.Proposal.State == proto.Proposal_STATE_ENACTED {
+				return nil
+			}
+		}
+		time.Sleep(time.Second)
+	}
+	return fmt.Errorf("Timed out waiting for market to be enacted")
+}
+
+func (d *dnWrapper) voteOnProposal(users []UserDetails, propID string) error {
 	for i := 0; i < 3; i++ {
-		err := d.wallet.SendVote(i, propID, true)
+		err := d.wallet.SendVote(users[i], &v1.VoteSubmission{ProposalId: propID, Value: proto.Vote_VALUE_YES})
 		if err != nil {
 			return err
 		}
