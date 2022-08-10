@@ -7,7 +7,7 @@ require (
 	code.vegaprotocol.io/shared v0.0.0-20220704150014-7c22d12ccb72
 	github.com/cosmos/iavl v0.17.3
 	github.com/ethereum/go-ethereum v1.10.20
-	github.com/gdamore/tcell/v2 v2.5.1
+	github.com/gdamore/tcell/v2 v2.5.2
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.2
 	github.com/spf13/cobra v1.5.0
@@ -17,7 +17,7 @@ require (
 	go.nanomsg.org/mangos/v3 v3.4.1
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	google.golang.org/grpc v1.48.0
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.28.1
 )
 
 require (
