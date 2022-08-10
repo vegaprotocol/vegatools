@@ -44,6 +44,8 @@
 - [156](https://github.com/vegaprotocol/vegatools/issue/156) - Upgraded go build versions to 1.16 + 1.17
 - [165](https://github.com/vegaprotocol/vegatools/issue/165) - Adding perftest subcommand
 - [184](https://github.com/vegaprotocol/vegatools/issue/184) - Refactoring perftest
+- [185](https://github.com/vegaprotocol/vegatools/issue/185) - Adding event rate measuring tool
+
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
