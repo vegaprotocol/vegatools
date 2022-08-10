@@ -18,7 +18,7 @@ var (
 func init() {
 	rootCmd.AddCommand(eventRateCmd)
 	eventRateCmd.Flags().StringVarP(&eventRateOpts.ServerAddr, "address", "a", "", "address of the grpc server")
-	eventRateCmd.Flags().IntVarP(&eventRateOpts.Buckets, "buckets", "b", 10, "number of hisotirc buckets")
+	eventRateCmd.Flags().IntVarP(&eventRateOpts.Buckets, "buckets", "b", 10, "number of historic buckets")
 	eventRateCmd.Flags().IntVarP(&eventRateOpts.SecondsPerBucket, "secondsperbucket", "s", 1, "number of seconds to record each bucket")
 	eventRateCmd.MarkFlagRequired("address")
 }
