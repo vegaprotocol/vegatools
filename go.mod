@@ -15,7 +15,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
 	github.com/tendermint/tm-db v0.6.7
 	go.nanomsg.org/mangos/v3 v3.4.1
-	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.28.1
 )
