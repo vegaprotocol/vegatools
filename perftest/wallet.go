@@ -292,9 +292,8 @@ func (w *walletWrapper) SendNewMarketProposal(user UserDetails) error {
 					Description: "PerfBotRational",
 				},
 				Terms: &proto.ProposalTerms{
-					ValidationTimestamp: w.SecondsFromNowInSecs(1),
-					ClosingTimestamp:    w.SecondsFromNowInSecs(15),
-					EnactmentTimestamp:  w.SecondsFromNowInSecs(20),
+					ClosingTimestamp:   w.SecondsFromNowInSecs(15),
+					EnactmentTimestamp: w.SecondsFromNowInSecs(20),
 					Change: &proto.ProposalTerms_NewMarket{
 						NewMarket: &proto.NewMarket{
 							Changes: &proto.NewMarketConfiguration{
