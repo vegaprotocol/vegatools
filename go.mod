@@ -5,7 +5,7 @@ go 1.18
 require (
 	code.vegaprotocol.io/protos v0.53.1-0.20220728102859-02ab6d8a0804
 	code.vegaprotocol.io/shared v0.0.0-20220704150014-7c22d12ccb72
-	github.com/cosmos/iavl v0.17.3
+	github.com/cosmos/iavl v0.19.1
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/gdamore/tcell/v2 v2.5.2
 	github.com/gogo/protobuf v1.3.2
