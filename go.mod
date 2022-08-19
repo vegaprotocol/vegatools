@@ -3,8 +3,8 @@ module code.vegaprotocol.io/vegatools
 go 1.18
 
 require (
-	code.vegaprotocol.io/protos v0.53.1-0.20220728102859-02ab6d8a0804
 	code.vegaprotocol.io/shared v0.0.0-20220704150014-7c22d12ccb72
+	code.vegaprotocol.io/vega v0.54.0
 	github.com/cosmos/iavl v0.19.1
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/gdamore/tcell/v2 v2.5.2
@@ -22,7 +22,7 @@ require (
 
 require (
 	github.com/DataDog/zstd v1.4.1 // indirect
-	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
+	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/confio/ics23/go v0.7.0 // indirect
@@ -41,7 +41,7 @@ require (
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
@@ -57,7 +57,7 @@ require (
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/net v0.0.0-20220617184016-355a448f1bc9 // indirect
-	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c // indirect
+	golang.org/x/sys v0.0.0-20220702020025-31831981b65f // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect

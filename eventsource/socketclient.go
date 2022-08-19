@@ -3,12 +3,13 @@ package eventsource
 import (
 	"fmt"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/golang/protobuf/proto"
 	mangos "go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/push"
+
 	// Required for socket client
 	_ "go.nanomsg.org/mangos/v3/transport/inproc"
 	// Required for socket client

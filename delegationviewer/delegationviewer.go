@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	api "code.vegaprotocol.io/protos/data-node/api/v1"
-	proto "code.vegaprotocol.io/protos/vega"
+	api "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"

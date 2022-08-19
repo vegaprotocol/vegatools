@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vegatools/stream"
 
 	"github.com/golang/protobuf/proto"

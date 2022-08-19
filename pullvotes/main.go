@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"path"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/golang/protobuf/proto"
 )
 

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
-	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	events "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/protos/vega"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+	events "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -359,11 +359,10 @@ func dummy() *all {
 	ae := &checkpoint.AssetEntry{
 		Id: "ETH",
 		AssetDetails: &vega.AssetDetails{
-			Name:        "ETH",
-			Symbol:      "ETH",
-			TotalSupply: "100000000000",
-			Decimals:    5,
-			Quantum:     "",
+			Name:     "ETH",
+			Symbol:   "ETH",
+			Decimals: 5,
+			Quantum:  "",
 			Source: &vega.AssetDetails_BuiltinAsset{
 				BuiltinAsset: &vega.BuiltinAsset{
 					MaxFaucetAmountMint: "100000000000",
