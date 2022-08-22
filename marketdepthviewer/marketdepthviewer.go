@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	api "code.vegaprotocol.io/protos/data-node/api/v1"
-	proto "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	api "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"

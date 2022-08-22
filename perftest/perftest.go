@@ -9,9 +9,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	datanode "code.vegaprotocol.io/protos/data-node/api/v1"
-	proto "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 // Opts hold the command line values

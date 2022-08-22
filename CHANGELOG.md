@@ -46,6 +46,7 @@
 - [184](https://github.com/vegaprotocol/vegatools/issue/184) - Refactoring perftest
 - [185](https://github.com/vegaprotocol/vegatools/issue/185) - Adding event rate measuring tool
 - [190](https://github.com/vegaprotocol/vegatools/issue/190) - Removed validation time from market proposal
+- [197](https://github.com/vegaprotocol/vegatools/issue/197) - Update protos location to their new place inside Vega
 
 
 ### 🐛 Fixes

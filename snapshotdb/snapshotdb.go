@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/cosmos/iavl"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/syndtr/goleveldb/leveldb/opt"

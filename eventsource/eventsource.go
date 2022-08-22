@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/golang/protobuf/proto"
 )

@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	datanode "code.vegaprotocol.io/protos/data-node/api/v1"
-	proto "code.vegaprotocol.io/protos/vega"
-	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
+	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 type dnWrapper struct {

@@ -12,10 +12,10 @@ import (
 
 	"github.com/gogo/protobuf/jsonpb"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
-	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 )
 
 // WalletWrapper holds details about the wallet
@@ -290,6 +290,7 @@ func (w *walletWrapper) SendNewMarketProposal(user UserDetails) error {
 				Reference: "PerfBotProposalRef",
 				Rationale: &proto.ProposalRationale{
 					Description: "PerfBotRational",
+					Title:       "Title",
 				},
 				Terms: &proto.ProposalTerms{
 					ClosingTimestamp:   w.SecondsFromNowInSecs(15),
