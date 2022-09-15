@@ -174,6 +174,15 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 			if err != nil {
 				log.Println("Failed to send cancel all", err)
 			}
+
+			// Move the pidprice around as well
+			midPrice = midPrice + (rand.Int63n(20) - 10)
+			if midPrice < 9500 {
+				midPrice = 9600
+			}
+			if midPrice > 10500 {
+				midPrice = 10400
+			}
 		} else if choice < 15 {
 			// Perform a market order to generate some trades
 			if choice%2 == 1 {
@@ -195,7 +204,7 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 					log.Println("Failed to send market sell order", err)
 				}
 			}
-		} else if choice < 95 {
+		} else {
 			// Insert a new order to fill up the book
 			priceOffset := rand.Int63n(40) - 20
 			if priceOffset > 0 {
@@ -220,14 +229,6 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 				if err != nil {
 					log.Println("Failed to send non crossing random limit buy order", err)
 				}
-			}
-		} else {
-			midPrice = midPrice + (rand.Int63n(20) - 10)
-			if midPrice < 9500 {
-				midPrice = 9600
-			}
-			if midPrice > 10500 {
-				midPrice = 10400
 			}
 		}
 		count++

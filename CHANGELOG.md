@@ -47,7 +47,7 @@
 - [185](https://github.com/vegaprotocol/vegatools/issue/185) - Adding event rate measuring tool
 - [190](https://github.com/vegaprotocol/vegatools/issue/190) - Removed validation time from market proposal
 - [197](https://github.com/vegaprotocol/vegatools/issue/197) - Update protos location to their new place inside Vega
-
+- [206](https://github.com/vegaprotocol/vegatools/issue/206) - Move liquidity provision from inside market proposal to it's own proposal
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
