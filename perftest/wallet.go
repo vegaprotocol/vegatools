@@ -278,19 +278,23 @@ func (w *walletWrapper) SendOrder(user UserDetails, os *commandspb.OrderSubmissi
 }
 
 // SendNewMarketProposal will build and send a new market proposal to the wallet
-func (w *walletWrapper) SendNewMarketProposal(user UserDetails) error {
+func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails) error {
 
 	m := jsonpb.Marshaler{}
+
+	ref := fmt.Sprintf("PerfBotProposalRef%d", marketIndex)
+	desc := fmt.Sprintf("PerfBotDesc%d", marketIndex)
+	title := fmt.Sprintf("PerfBotProposalTitle%d", marketIndex)
 
 	submitTxReq := &walletpb.SubmitTransactionRequest{
 		PubKey:    user.pubKey,
 		Propagate: true,
 		Command: &walletpb.SubmitTransactionRequest_ProposalSubmission{
 			ProposalSubmission: &commandspb.ProposalSubmission{
-				Reference: "PerfBotProposalRef",
+				Reference: ref,
 				Rationale: &proto.ProposalRationale{
-					Description: "PerfBotRational",
-					Title:       "Title",
+					Description: desc,
+					Title:       title,
 				},
 				Terms: &proto.ProposalTerms{
 					ClosingTimestamp:   w.SecondsFromNowInSecs(15),
@@ -341,24 +345,6 @@ func (w *walletWrapper) SendNewMarketProposal(user UserDetails) error {
 									},
 								},
 							},
-							LiquidityCommitment: &proto.NewMarketCommitment{
-								Fee:              "0.01",
-								CommitmentAmount: "50000000",
-								Buys: []*proto.LiquidityOrder{
-									&proto.LiquidityOrder{
-										Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
-										Proportion: 10,
-										Offset:     "2000",
-									},
-								},
-								Sells: []*proto.LiquidityOrder{
-									&proto.LiquidityOrder{
-										Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
-										Proportion: 10,
-										Offset:     "2000",
-									},
-								},
-							},
 						},
 					},
 				},
@@ -371,6 +357,64 @@ func (w *walletWrapper) SendNewMarketProposal(user UserDetails) error {
 		return err
 	}
 
+	return w.SignSubmitTx(user.token, cmd)
+}
+
+func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string) error {
+	lp := commandspb.LiquidityProvisionSubmission{
+		MarketId:         marketID,
+		Reference:        "MarketLiquidity",
+		Fee:              "0.01",
+		CommitmentAmount: "50000000",
+		Buys: []*proto.LiquidityOrder{
+			&proto.LiquidityOrder{
+				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
+				Proportion: 10,
+				Offset:     "1000",
+			},
+			&proto.LiquidityOrder{
+				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
+				Proportion: 10,
+				Offset:     "1500",
+			},
+			&proto.LiquidityOrder{
+				Reference:  proto.PeggedReference_PEGGED_REFERENCE_MID,
+				Proportion: 10,
+				Offset:     "2000",
+			},
+		},
+		Sells: []*proto.LiquidityOrder{
+			&proto.LiquidityOrder{
+				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+				Proportion: 10,
+				Offset:     "2000",
+			},
+			&proto.LiquidityOrder{
+				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+				Proportion: 10,
+				Offset:     "1500",
+			},
+			&proto.LiquidityOrder{
+				Reference:  proto.PeggedReference_PEGGED_REFERENCE_MID,
+				Proportion: 10,
+				Offset:     "1000",
+			},
+		},
+	}
+
+	m := jsonpb.Marshaler{}
+
+	submitTxReq := &walletpb.SubmitTransactionRequest{
+		PubKey:    user.pubKey,
+		Propagate: true,
+		Command: &walletpb.SubmitTransactionRequest_LiquidityProvisionSubmission{
+			LiquidityProvisionSubmission: &lp,
+		},
+	}
+	cmd, err := m.MarshalToString(submitTxReq)
+	if err != nil {
+		return err
+	}
 	return w.SignSubmitTx(user.token, cmd)
 }
 

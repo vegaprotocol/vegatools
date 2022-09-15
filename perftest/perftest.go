@@ -85,65 +85,74 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, gan
 	return nil
 }
 
-func (p *perfLoadTesting) proposeAndEnactMarket() (string, error) {
+func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets int) ([]string, error) {
 	markets := p.dataNode.getMarkets()
 	if len(markets) == 0 {
-		p.wallet.SendNewMarketProposal(p.users[0])
-		time.Sleep(time.Second * 7)
-		propID, err := p.dataNode.getPendingProposalID()
-		if err != nil {
-			return "", err
-		}
-		err = p.dataNode.voteOnProposal(p.users, propID)
-		if err != nil {
-			return "", err
-		}
-		// We have to wait for the market to be enacted
-		err = p.dataNode.waitForMarketEnactment(propID, 20)
-		if err != nil {
-			return "", err
+		for i := 0; i < numberOfMarkets; i++ {
+			p.wallet.SendNewMarketProposal(i, p.users[0])
+			time.Sleep(time.Second * 7)
+			propID, err := p.dataNode.getPendingProposalID()
+			if err != nil {
+				return nil, err
+			}
+			err = p.dataNode.voteOnProposal(p.users, propID)
+			if err != nil {
+				return nil, err
+			}
+			// We have to wait for the market to be enacted
+			err = p.dataNode.waitForMarketEnactment(propID, 20)
+			if err != nil {
+				return nil, err
+			}
+			time.Sleep(time.Second * 6)
 		}
 	}
 
 	// Move markets out of auction
 	markets = p.dataNode.getMarkets()
-	if len(markets) > 0 {
-		p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[0],
-			Price:       "10010",
-			Size:        100,
-			Side:        proto.Side_SIDE_SELL,
-			Type:        proto.Order_TYPE_LIMIT,
-			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: markets[0],
-			Price:       "9900",
-			Size:        100,
-			Side:        proto.Side_SIDE_BUY,
-			Type:        proto.Order_TYPE_LIMIT,
-			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[0],
-			Price:       "10000",
-			Size:        5,
-			Side:        proto.Side_SIDE_BUY,
-			Type:        proto.Order_TYPE_LIMIT,
-			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: markets[0],
-			Price:       "10000",
-			Size:        5,
-			Side:        proto.Side_SIDE_SELL,
-			Type:        proto.Order_TYPE_LIMIT,
-			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		time.Sleep(time.Second * 5)
+	if len(markets) >= numberOfMarkets {
+		for i := 0; i < len(markets); i++ {
+			// Send in a liquidity provision so we can get the market out of auction
+			p.wallet.SendLiquidityProvision(p.users[0], markets[i])
+
+			p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[i],
+				Price:       "10010",
+				Size:        100,
+				Side:        proto.Side_SIDE_SELL,
+				Type:        proto.Order_TYPE_LIMIT,
+				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: markets[i],
+				Price:       "9900",
+				Size:        100,
+				Side:        proto.Side_SIDE_BUY,
+				Type:        proto.Order_TYPE_LIMIT,
+				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[i],
+				Price:       "10000",
+				Size:        5,
+				Side:        proto.Side_SIDE_BUY,
+				Type:        proto.Order_TYPE_LIMIT,
+				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: markets[i],
+				Price:       "10000",
+				Size:        5,
+				Side:        proto.Side_SIDE_SELL,
+				Type:        proto.Order_TYPE_LIMIT,
+				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			time.Sleep(time.Second * 5)
+		}
 	} else {
-		return "", fmt.Errorf("failed to get open market")
+		return nil, fmt.Errorf("failed to get open market")
 	}
 
-	return markets[0], nil
+	return markets, nil
 }
 
-func (p *perfLoadTesting) sendTradingLoad(marketID string, users, ops, runTimeSeconds int) error {
+func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTimeSeconds int) error {
 	// Start load testing by sending off lots of orders at a given rate
 	userCount := users - 2
 	now := time.Now()
+	midPrice := int64(10000)
 	count := 0
 	delays := 0
 	ordersPerSecond := ops
@@ -154,16 +163,18 @@ func (p *perfLoadTesting) sendTradingLoad(marketID string, users, ops, runTimeSe
 	// Work out how many orders we need for 10 minute run
 	numberOfTransactions := runTimeSeconds * ordersPerSecond
 	for i := 0; i < numberOfTransactions; i++ {
+		// Pick a random market to send the trade on
+		marketID := marketIDs[rand.Intn(len(marketIDs))]
 		userOffset := rand.Intn(userCount) + 2
 		user := p.users[userOffset]
 		choice := rand.Intn(100)
-		if choice < 2 {
+		if choice < 3 {
 			// Perform a cancel all
 			err := p.wallet.SendCancelAll(user, marketID)
 			if err != nil {
 				log.Println("Failed to send cancel all", err)
 			}
-		} else if choice < 7 {
+		} else if choice < 15 {
 			// Perform a market order to generate some trades
 			if choice%2 == 1 {
 				err := p.wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
@@ -184,13 +195,13 @@ func (p *perfLoadTesting) sendTradingLoad(marketID string, users, ops, runTimeSe
 					log.Println("Failed to send market sell order", err)
 				}
 			}
-		} else {
+		} else if choice < 95 {
 			// Insert a new order to fill up the book
 			priceOffset := rand.Int63n(40) - 20
 			if priceOffset > 0 {
 				// Send a sell
 				err := p.wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
-					Price:       fmt.Sprint(10000 + priceOffset),
+					Price:       fmt.Sprint((midPrice - 1) + priceOffset),
 					Size:        1,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_LIMIT,
@@ -201,7 +212,7 @@ func (p *perfLoadTesting) sendTradingLoad(marketID string, users, ops, runTimeSe
 			} else {
 				// Send a buy
 				err := p.wallet.SendOrder(user, &commandspb.OrderSubmission{MarketId: marketID,
-					Price:       fmt.Sprint(9999 - priceOffset),
+					Price:       fmt.Sprint((midPrice + 1) + priceOffset),
 					Size:        1,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_LIMIT,
@@ -209,6 +220,14 @@ func (p *perfLoadTesting) sendTradingLoad(marketID string, users, ops, runTimeSe
 				if err != nil {
 					log.Println("Failed to send non crossing random limit buy order", err)
 				}
+			}
+		} else {
+			midPrice = midPrice + (rand.Int63n(20) - 10)
+			if midPrice < 9500 {
+				midPrice = 9600
+			}
+			if midPrice > 10500 {
+				midPrice = 10400
 			}
 		}
 		count++
@@ -277,7 +296,7 @@ func Run(opts Opts) error {
 
 	// Send in a proposal to create a new market and vote to get it through
 	fmt.Print("Proposing and voting in new market...")
-	marketID, err := plt.proposeAndEnactMarket()
+	marketIDs, err := plt.proposeAndEnactMarket(1)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -286,7 +305,7 @@ func Run(opts Opts) error {
 
 	// Send off a controlled amount of orders and cancels
 	fmt.Print("Sending load transactions...")
-	err = plt.sendTradingLoad(marketID, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds)
+	err = plt.sendTradingLoad(marketIDs, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
