@@ -24,6 +24,7 @@ func init() {
 	perfTestCmd.Flags().IntVarP(&opts.CommandsPerSecond, "cps", "c", 100, "commands per second")
 	perfTestCmd.Flags().IntVarP(&opts.RuntimeSeconds, "runtime", "r", 60, "runtime in seconds")
 	perfTestCmd.Flags().IntVarP(&opts.UserCount, "users", "u", 10, "number of users to send commands with")
+	perfTestCmd.Flags().IntVarP(&opts.MarketCount, "markets", "m", 1, "number of markets to create and use")
 	perfTestCmd.MarkFlagRequired("address")
 	perfTestCmd.MarkFlagRequired("wallet")
 	perfTestCmd.MarkFlagRequired("faucet")

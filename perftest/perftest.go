@@ -23,6 +23,7 @@ type Opts struct {
 	CommandsPerSecond int
 	RuntimeSeconds    int
 	UserCount         int
+	MarketCount       int
 }
 
 type perfLoadTesting struct {
@@ -297,7 +298,7 @@ func Run(opts Opts) error {
 
 	// Send in a proposal to create a new market and vote to get it through
 	fmt.Print("Proposing and voting in new market...")
-	marketIDs, err := plt.proposeAndEnactMarket(1)
+	marketIDs, err := plt.proposeAndEnactMarket(opts.MarketCount)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
