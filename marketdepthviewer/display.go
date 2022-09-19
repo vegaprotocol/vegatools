@@ -33,9 +33,6 @@ func initialiseScreen() error {
 	redStyle = tcell.StyleDefault.
 		Background(tcell.ColorReset).
 		Foreground(tcell.ColorRed)
-	inverseRedStyle = tcell.StyleDefault.
-		Background(tcell.ColorRed).
-		Foreground(tcell.ColorBlack)
 
 	return nil
 }
