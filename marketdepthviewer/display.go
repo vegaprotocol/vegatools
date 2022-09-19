@@ -105,7 +105,7 @@ func drawMarketDepth() {
 	var buyPrices []*big.Int = make([]*big.Int, 0, len(book.buys))
 	var sellPrices []*big.Int = make([]*big.Int, 0, len(book.sells))
 
-	for p, _ := range book.buys {
+	for p := range book.buys {
 		price, _ := new(big.Int).SetString(p, 10)
 		buyPrices = append(buyPrices, price)
 	}
@@ -115,7 +115,7 @@ func drawMarketDepth() {
 		})
 	}
 
-	for p, _ := range book.sells {
+	for p := range book.sells {
 		price, _ := new(big.Int).SetString(p, 10)
 		sellPrices = append(sellPrices, price)
 	}

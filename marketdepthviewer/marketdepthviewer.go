@@ -20,12 +20,14 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Opts command line options
 type Opts struct {
 	Market     string
 	ServerAddr string
 	UseDeltas  bool
 }
 
+// MarketDepthBook structure to hold market depth for delta updates
 type MarketDepthBook struct {
 	buys   map[string]*proto.PriceLevel
 	sells  map[string]*proto.PriceLevel
@@ -33,15 +35,14 @@ type MarketDepthBook struct {
 }
 
 var (
-	ts              tcell.Screen
-	redStyle        tcell.Style
-	greenStyle      tcell.Style
-	whiteStyle      tcell.Style
-	inverseRedStyle tcell.Style
-	market          *proto.Market
-	marketData      *proto.MarketData
-	updateMode      string
-	displayMutex    sync.Mutex
+	ts           tcell.Screen
+	redStyle     tcell.Style
+	greenStyle   tcell.Style
+	whiteStyle   tcell.Style
+	market       *proto.Market
+	marketData   *proto.MarketData
+	updateMode   string
+	displayMutex sync.Mutex
 
 	// Variables to control drawing speed
 	lastRedraw time.Time
