@@ -10,46 +10,47 @@ import (
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
-func getMarketDepthSnapshot(dataclient api.TradingDataServiceClient) error {
+func (m *mdv) getMarketDepthSnapshot(dataclient api.TradingDataServiceClient) error {
 	req := &api.MarketDepthRequest{
-		MarketId: market.Id,
+		MarketId: m.market.Id,
 	}
-
 	resp, err := dataclient.MarketDepth(context.Background(), req)
-
 	if err != nil {
 		return err
 	}
 
 	// Save the snapshot so we can update it later
 	for _, pl := range resp.Buy {
-		book.buys[pl.Price] = pl
+		m.book.buys[pl.Price] = pl
 	}
 
 	for _, pl := range resp.Sell {
-		book.sells[pl.Price] = pl
+		m.book.sells[pl.Price] = pl
 	}
-	book.seqNum = resp.SequenceNumber
+	m.book.seqNum = resp.SequenceNumber
 	return nil
 }
 
-func subscribeToMarketDepthUpdates(dataclient api.TradingDataServiceClient) {
+func (m *mdv) subscribeToMarketDepthUpdates(dataclient api.TradingDataServiceClient) error {
 	req := &api.MarketDepthUpdatesSubscribeRequest{
-		MarketId: market.Id,
+		MarketId: m.market.Id,
 	}
 	stream, err := dataclient.MarketDepthUpdatesSubscribe(context.Background(), req)
 	if err != nil {
-		log.Fatalln("Failed to subscribe to trades: ", err)
+		log.Println("Failed to subscribe to trades: ", err)
+		return err
 	}
 
 	// Run in background and process messages
-	go processMarketDepthUpdates(stream)
+	go m.processMarketDepthUpdates(stream)
 
 	// Run a background process to make sure we display all updates
-	go processBackgroundDisplay()
+	go m.processBackgroundDisplay()
+
+	return nil
 }
 
-func processMarketDepthUpdates(stream api.TradingDataService_MarketDepthUpdatesSubscribeClient) {
+func (m *mdv) processMarketDepthUpdates(stream api.TradingDataService_MarketDepthUpdatesSubscribeClient) {
 	for {
 		resp, err := stream.Recv()
 		if err == io.EOF {
@@ -65,50 +66,50 @@ func processMarketDepthUpdates(stream api.TradingDataService_MarketDepthUpdatesS
 			continue
 		}
 
-		if book.seqNum == 0 {
+		if m.book.seqNum == 0 {
 			continue
 		}
 
-		if resp.Update.PreviousSequenceNumber != book.seqNum {
+		if resp.Update.PreviousSequenceNumber != m.book.seqNum {
 			continue
 		}
-		updateMarketDepthUpdates(resp.Update)
+		m.updateMarketDepthUpdates(resp.Update)
 	}
 }
 
-func updateMarketDepthUpdates(update *proto.MarketDepthUpdate) {
+func (m *mdv) updateMarketDepthUpdates(update *proto.MarketDepthUpdate) {
 	for _, pl := range update.Buy {
 		if pl.NumberOfOrders == 0 {
 			// Remove price level
-			delete(book.buys, pl.Price)
+			delete(m.book.buys, pl.Price)
 		} else {
 			// Update price level
-			book.buys[pl.Price] = pl
+			m.book.buys[pl.Price] = pl
 		}
 	}
 	for _, pl := range update.Sell {
 		if pl.NumberOfOrders == 0 {
 			// Remove price level
-			delete(book.sells, pl.Price)
+			delete(m.book.sells, pl.Price)
 		} else {
 			// Update price level
-			book.sells[pl.Price] = pl
+			m.book.sells[pl.Price] = pl
 		}
 	}
 
-	dirty = true
-	book.seqNum = update.SequenceNumber
+	m.dirty = true
+	m.book.seqNum = update.SequenceNumber
 
 	// If we have already updated in the last second
-	if time.Now().After(lastRedraw.Add(time.Second)) {
-		drawMarketDepth()
+	if time.Now().After(m.lastRedraw.Add(time.Second)) {
+		m.drawMarketDepth()
 	}
 }
 
-func processBackgroundDisplay() {
+func (m *mdv) processBackgroundDisplay() {
 	for {
-		if dirty && time.Now().After(lastRedraw.Add(time.Second)) {
-			drawMarketDepth()
+		if m.dirty && time.Now().After(m.lastRedraw.Add(time.Second)) {
+			m.drawMarketDepth()
 		}
 		time.Sleep(time.Second)
 	}

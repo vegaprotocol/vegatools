@@ -10,99 +10,99 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-func initialiseScreen() error {
-	var e error
-	ts, e = tcell.NewScreen()
-	if e != nil {
-		log.Fatalln("Failed to create new tcell screen", e)
-		return e
+func (m *mdv) initialiseScreen() error {
+	var err error
+	m.ts, err = tcell.NewScreen()
+	if err != nil {
+		log.Println("Failed to create new tcell screen", err)
+		return err
 	}
 
-	e = ts.Init()
-	if e != nil {
-		log.Fatalln("Failed to initialise the tcell screen", e)
-		return e
+	err = m.ts.Init()
+	if err != nil {
+		log.Println("Failed to initialise the tcell screen", err)
+		return err
 	}
 
-	whiteStyle = tcell.StyleDefault.
+	m.whiteStyle = tcell.StyleDefault.
 		Background(tcell.ColorReset).
 		Foreground(tcell.ColorWhite)
-	greenStyle = tcell.StyleDefault.
+	m.greenStyle = tcell.StyleDefault.
 		Background(tcell.ColorReset).
 		Foreground(tcell.ColorGreen)
-	redStyle = tcell.StyleDefault.
+	m.redStyle = tcell.StyleDefault.
 		Background(tcell.ColorReset).
 		Foreground(tcell.ColorRed)
 
 	return nil
 }
 
-func drawString(x, y int, style tcell.Style, str string) {
+func (m *mdv) drawString(x, y int, style tcell.Style, str string) {
 	for i, c := range str {
-		ts.SetContent(x+i, y, c, nil, style)
+		m.ts.SetContent(x+i, y, c, nil, style)
 	}
 }
 
-func drawHeaders() {
-	w, h := ts.Size()
+func (m *mdv) drawHeaders() {
+	w, h := m.ts.Size()
 
 	// Draw the headings
-	drawString((w/4)-2, 2, whiteStyle, "Bids")
-	drawString((3*w/4)-2, 2, whiteStyle, "Asks")
+	m.drawString((w/4)-2, 2, m.whiteStyle, "Bids")
+	m.drawString((3*w/4)-2, 2, m.whiteStyle, "Asks")
 
-	drawString((w/4)-19, 3, whiteStyle, "--Volume--")
-	drawString((w/4)+8, 3, whiteStyle, "---Price---")
-	drawString((3*w/4)-22, 3, whiteStyle, "---Price---")
-	drawString((3*w/4)+9, 3, whiteStyle, "--Volume--")
+	m.drawString((w/4)-19, 3, m.whiteStyle, "--Volume--")
+	m.drawString((w/4)+8, 3, m.whiteStyle, "---Price---")
+	m.drawString((3*w/4)-22, 3, m.whiteStyle, "---Price---")
+	m.drawString((3*w/4)+9, 3, m.whiteStyle, "--Volume--")
 
 	// If we have a market name, use that
-	if market != nil {
-		text := fmt.Sprintf("Market: %s", market.TradableInstrument.Instrument.Name)
-		drawString(0, 0, whiteStyle, text)
-		drawString(0, 1, whiteStyle, market.Id)
+	if m.market != nil {
+		text := fmt.Sprintf("Market: %s", m.market.TradableInstrument.Instrument.Name)
+		m.drawString(0, 0, m.whiteStyle, text)
+		m.drawString(0, 1, m.whiteStyle, m.market.Id)
 	} else {
-		text := fmt.Sprintf("Market: %s", market.Id)
-		drawString(0, 0, whiteStyle, text)
+		text := fmt.Sprintf("Market: %s", m.market.Id)
+		m.drawString(0, 0, m.whiteStyle, text)
 	}
-	drawString(w-26, 0, whiteStyle, "Last Update Time:")
+	m.drawString(w-26, 0, m.whiteStyle, "Last Update Time:")
 
-	drawString((w/4)-8, h-1, whiteStyle, "Volume:")
-	drawString((3*w/4)-8, h-1, whiteStyle, "Volume:")
+	m.drawString((w/4)-8, h-1, m.whiteStyle, "Volume:")
+	m.drawString((3*w/4)-8, h-1, m.whiteStyle, "Volume:")
 }
 
-func drawMarketState() {
-	if marketData != nil {
-		w, h := ts.Size()
-		text := marketData.MarketTradingMode.String()
-		drawString((w-len(text))/2, h-1, whiteStyle, text)
-		text = fmt.Sprintf("Open Interest: %d", marketData.OpenInterest)
-		drawString(w-len(text), 1, whiteStyle, text)
-		ts.Show()
+func (m *mdv) drawMarketState() {
+	if m.marketData != nil {
+		w, h := m.ts.Size()
+		text := m.marketData.MarketTradingMode.String()
+		m.drawString((w-len(text))/2, h-1, m.whiteStyle, text)
+		text = fmt.Sprintf("Open Interest: %d", m.marketData.OpenInterest)
+		m.drawString(w-len(text), 1, m.whiteStyle, text)
+		m.ts.Show()
 	}
 }
 
-func drawTime() {
+func (m *mdv) drawTime() {
 	now := time.Now()
-	w, _ := ts.Size()
+	w, _ := m.ts.Size()
 	text := fmt.Sprintf("%02d:%02d:%02d", now.Hour(), now.Minute(), now.Second())
-	drawString(w-8, 0, whiteStyle, text)
+	m.drawString(w-8, 0, m.whiteStyle, text)
 }
 
-func drawSequenceNumber(seqNum uint64) {
-	w, _ := ts.Size()
-	text := fmt.Sprintf("%s SeqNum:%6d", updateMode, seqNum)
-	drawString((w/2)-6, 0, whiteStyle, text)
+func (m *mdv) drawSequenceNumber(seqNum uint64) {
+	w, _ := m.ts.Size()
+	text := fmt.Sprintf("%s SeqNum:%6d", m.updateMode, seqNum)
+	m.drawString((w/2)-(len(text)/2), 0, m.whiteStyle, text)
 }
 
-func drawMarketDepth() {
-	displayMutex.Lock()
-	defer displayMutex.Unlock()
+func (m *mdv) drawMarketDepth() {
+	m.displayMutex.Lock()
+	defer m.displayMutex.Unlock()
 
 	// Get the keys and sort
-	var buyPrices []*big.Int = make([]*big.Int, 0, len(book.buys))
-	var sellPrices []*big.Int = make([]*big.Int, 0, len(book.sells))
+	var buyPrices []*big.Int = make([]*big.Int, 0, len(m.book.buys))
+	var sellPrices []*big.Int = make([]*big.Int, 0, len(m.book.sells))
 
-	for p := range book.buys {
+	for p := range m.book.buys {
 		price, _ := new(big.Int).SetString(p, 10)
 		buyPrices = append(buyPrices, price)
 	}
@@ -112,7 +112,7 @@ func drawMarketDepth() {
 		})
 	}
 
-	for p := range book.sells {
+	for p := range m.book.sells {
 		price, _ := new(big.Int).SetString(p, 10)
 		sellPrices = append(sellPrices, price)
 	}
@@ -122,48 +122,48 @@ func drawMarketDepth() {
 		})
 	}
 
-	w, h := ts.Size()
+	w, h := m.ts.Size()
 
-	ts.Clear()
-	drawHeaders()
-	drawTime()
-	drawSequenceNumber(book.seqNum)
-	drawMarketState()
+	m.ts.Clear()
+	m.drawHeaders()
+	m.drawTime()
+	m.drawSequenceNumber(m.book.seqNum)
+	m.drawMarketState()
 
 	var bidVolume uint64
 	var askVolume uint64
 
 	// Print Buys
 	for index, price := range buyPrices {
-		pl := book.buys[price.String()]
+		pl := m.book.buys[price.String()]
 		bidVolume += pl.Volume
 		if index > (h - 6) {
 			continue
 		}
 		text := fmt.Sprintf("%12d", pl.Volume)
-		drawString((w/4)-21, index+4, greenStyle, text)
+		m.drawString((w/4)-21, index+4, m.greenStyle, text)
 		text = fmt.Sprintf("%12s", pl.Price)
-		drawString((w/4)+7, index+4, greenStyle, text)
+		m.drawString((w/4)+7, index+4, m.greenStyle, text)
 	}
 
 	// Print Sells
 	for index, price := range sellPrices {
-		pl := book.sells[price.String()]
+		pl := m.book.sells[price.String()]
 		askVolume += pl.Volume
 		if index > (h - 6) {
 			continue
 		}
-		drawString((3*w/4)-22, index+4, redStyle, pl.Price)
+		m.drawString((3*w/4)-22, index+4, m.redStyle, pl.Price)
 		text := fmt.Sprintf("%d", pl.Volume)
-		drawString((3*w/4)+9, index+4, redStyle, text)
+		m.drawString((3*w/4)+9, index+4, m.redStyle, text)
 	}
 
 	text := fmt.Sprintf("%8d", bidVolume)
-	drawString((w / 4), h-1, whiteStyle, text)
+	m.drawString((w / 4), h-1, m.whiteStyle, text)
 	text = fmt.Sprintf("%8d", askVolume)
-	drawString((3 * w / 4), h-1, whiteStyle, text)
+	m.drawString((3 * w / 4), h-1, m.whiteStyle, text)
 
-	ts.Show()
-	dirty = false
-	lastRedraw = time.Now()
+	m.ts.Show()
+	m.dirty = false
+	m.lastRedraw = time.Now()
 }

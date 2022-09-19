@@ -34,7 +34,7 @@ type MarketDepthBook struct {
 	seqNum uint64
 }
 
-var (
+type mdv struct {
 	ts           tcell.Screen
 	redStyle     tcell.Style
 	greenStyle   tcell.Style
@@ -50,32 +50,32 @@ var (
 
 	mode proto.Market_TradingMode
 
-	book MarketDepthBook = MarketDepthBook{buys: map[string]*proto.PriceLevel{}, sells: map[string]*proto.PriceLevel{}}
-)
+	book MarketDepthBook
+}
 
-func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string) *proto.Market {
+func (m *mdv) getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string) (*proto.Market, error) {
 	marketsRequest := &api.MarketsRequest{}
 
 	marketsResponse, err := dataclient.Markets(context.Background(), marketsRequest)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	// If the user has picked a market already that is valid, use that
 	for _, market := range marketsResponse.Markets {
 		if market.Id == marketID {
-			return market
+			return market, nil
 		}
 	}
 
 	// If we have no markets, lets quit now
 	if len(marketsResponse.Markets) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	// If there is only one market, pick that automatically
 	if len(marketsResponse.Markets) == 1 {
-		return marketsResponse.Markets[0]
+		return marketsResponse.Markets[0], nil
 	}
 
 	// Print out all the markets with their index
@@ -90,7 +90,7 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 	input, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Println("Failed to read option:", err)
-		os.Exit(0)
+		return nil, err
 	}
 
 	// Convert input into an index
@@ -99,42 +99,45 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 	index, err := strconv.Atoi(input)
 	if err != nil {
 		fmt.Println("Failed to convert input into index:", err)
-		os.Exit(0)
+		return nil, err
 	}
 	// Correct the index value as we start with 0
 	index--
 
 	if index < 0 || index > len(marketsResponse.Markets)-1 {
 		fmt.Println("Invalid market selected")
-		os.Exit(0)
+		return nil, fmt.Errorf("invalid market selection: %s", marketID)
 	}
 
 	fmt.Println("Using market:", index)
 
-	return marketsResponse.Markets[index]
+	return marketsResponse.Markets[index], nil
 }
 
-func subscribeToMarketData(dataclient api.TradingDataServiceClient) {
+func (m *mdv) subscribeToMarketData(dataclient api.TradingDataServiceClient) error {
 	events := []eventspb.BusEventType{eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA}
 	eventBusDataReq := &api.ObserveEventBusRequest{
 		Type:     events,
-		MarketId: market.Id,
+		MarketId: m.market.Id,
 	}
 
 	stream, err := dataclient.ObserveEventBus(context.Background())
 	if err != nil {
-		log.Panicln("Failed to subscribe to event bus data: ", err)
+		log.Println("Failed to subscribe to event bus data: ", err)
+		return err
 	}
 
 	// Then we subscribe to the data
 	err = stream.SendMsg(eventBusDataReq)
 	if err != nil {
-		log.Panicln("Unable to send event bus request on the stream", err)
+		log.Println("Unable to send event bus request on the stream", err)
+		return err
 	}
-	go processMarketDataSubscription(stream)
+	go m.processMarketDataSubscription(stream)
+	return err
 }
 
-func processMarketDataSubscription(stream api.TradingDataService_ObserveEventBusClient) {
+func (m *mdv) processMarketDataSubscription(stream api.TradingDataService_ObserveEventBusClient) {
 	for {
 		eb, err := stream.Recv()
 		if err == io.EOF {
@@ -149,33 +152,34 @@ func processMarketDataSubscription(stream api.TradingDataService_ObserveEventBus
 		for _, event := range eb.Events {
 			switch event.Type {
 			case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
-				mode = event.GetMarketData().MarketTradingMode
-				marketData = event.GetMarketData()
+				m.mode = event.GetMarketData().MarketTradingMode
+				m.marketData = event.GetMarketData()
 			}
 		}
 	}
 }
 
-func subscribeMarketDepthSnapshots(dataclient api.TradingDataServiceClient) {
+func (m *mdv) subscribeMarketDepthSnapshots(dataclient api.TradingDataServiceClient) error {
 	req := &api.MarketDepthSubscribeRequest{
-		MarketId: market.Id,
+		MarketId: m.market.Id,
 	}
 	stream, err := dataclient.MarketDepthSubscribe(context.Background(), req)
 	if err != nil {
-		log.Fatalln("Failed to subscribe to trades: ", err)
-		os.Exit(0)
+		log.Println("Failed to subscribe to trades: ", err)
+		return err
 	}
 
-	ts.Clear()
-	drawHeaders()
-	drawTime()
-	ts.Show()
+	m.ts.Clear()
+	m.drawHeaders()
+	m.drawTime()
+	m.ts.Show()
 
 	// Run in background and process messages
-	go processMarketDepth(stream)
+	go m.processMarketDepth(stream)
+	return nil
 }
 
-func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient) {
+func (m *mdv) processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient) {
 	for {
 		o, err := stream.Recv()
 		if err == io.EOF {
@@ -186,13 +190,13 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 			log.Println("orders: stream closed err: ", err)
 			break
 		}
-		w, h := ts.Size()
+		w, h := m.ts.Size()
 
-		ts.Clear()
-		drawHeaders()
-		drawTime()
-		drawSequenceNumber(o.MarketDepth.SequenceNumber)
-		drawMarketState()
+		m.ts.Clear()
+		m.drawHeaders()
+		m.drawTime()
+		m.drawSequenceNumber(o.MarketDepth.SequenceNumber)
+		m.drawMarketState()
 
 		var bidVolume uint64
 		var askVolume uint64
@@ -205,9 +209,9 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 				continue
 			}
 			text := fmt.Sprintf("%12d", pl.Volume)
-			drawString((w/4)-21, index+4, greenStyle, text)
+			m.drawString((w/4)-21, index+4, m.greenStyle, text)
 			text = fmt.Sprintf("%12s", pl.Price)
-			drawString((w/4)+7, index+4, greenStyle, text)
+			m.drawString((w/4)+7, index+4, m.greenStyle, text)
 		}
 
 		// Print Sells
@@ -217,23 +221,23 @@ func processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient
 			if index > (h - 6) {
 				continue
 			}
-			text := fmt.Sprintf("%s", pl.Price)
-			drawString((3*w/4)-22, index+4, redStyle, text)
-			text = fmt.Sprintf("%d", pl.Volume)
-			drawString((3*w/4)+9, index+4, redStyle, text)
+			m.drawString((3*w/4)-22, index+4, m.redStyle, pl.Price)
+			text := fmt.Sprintf("%d", pl.Volume)
+			m.drawString((3*w/4)+9, index+4, m.redStyle, text)
 		}
 
 		text := fmt.Sprintf("%8d", bidVolume)
-		drawString((w / 4), h-1, whiteStyle, text)
+		m.drawString((w / 4), h-1, m.whiteStyle, text)
 		text = fmt.Sprintf("%8d", askVolume)
-		drawString((3 * w / 4), h-1, whiteStyle, text)
+		m.drawString((3 * w / 4), h-1, m.whiteStyle, text)
 
-		ts.Show()
+		m.ts.Show()
 	}
 }
 
 // Run is the main entry point for this tool
 func Run(opts Opts) error {
+	m := mdv{book: MarketDepthBook{buys: map[string]*proto.PriceLevel{}, sells: map[string]*proto.PriceLevel{}}}
 	// Create connection to vega
 	connection, err := grpc.Dial(opts.ServerAddr, grpc.WithInsecure())
 	if err != nil {
@@ -244,40 +248,56 @@ func Run(opts Opts) error {
 	dataclient := api.NewTradingDataServiceClient(connection)
 
 	// Look up all the markets on this node
-	market = getMarketToDisplay(dataclient, opts.Market)
-	if market == nil {
+	m.market, err = m.getMarketToDisplay(dataclient, opts.Market)
+	if err != nil {
+		return err
+	}
+
+	if m.market == nil {
 		return fmt.Errorf("failed to get market details")
 	}
 
-	initialiseScreen()
+	err = m.initialiseScreen()
+	if err != nil {
+		return err
+	}
 
 	// Subscribe to the market stream to listen for market state
-	subscribeToMarketData(dataclient)
+	err = m.subscribeToMarketData(dataclient)
+	if err != nil {
+		return err
+	}
 
 	// Make the decision here if we are using snapshots or deltas
 	if opts.UseDeltas {
-		updateMode = "(DELTAS)"
+		m.updateMode = "(DELTAS)"
 		// Using deltas to update a snapshot
-		subscribeToMarketDepthUpdates(dataclient)
+		err = m.subscribeToMarketDepthUpdates(dataclient)
+		if err != nil {
+			return err
+		}
 		// Get one snapshot to act as the base
-		err = getMarketDepthSnapshot(dataclient)
+		err = m.getMarketDepthSnapshot(dataclient)
 		if err != nil {
 			return err
 		}
 	} else {
-		updateMode = "(SNAPSHOTS)"
+		m.updateMode = "(SNAPSHOTS)"
 		// Getting regular snapshots
-		subscribeMarketDepthSnapshots(dataclient)
+		err = m.subscribeMarketDepthSnapshots(dataclient)
+		if err != nil {
+			return err
+		}
 	}
 
 	for {
-		switch ev := ts.PollEvent().(type) {
+		switch ev := m.ts.PollEvent().(type) {
 		case *tcell.EventResize:
-			ts.Sync()
+			m.ts.Sync()
 		case *tcell.EventKey:
 			if ev.Key() == tcell.KeyEscape ||
 				ev.Rune() == 'q' {
-				ts.Fini()
+				m.ts.Fini()
 				os.Exit(0)
 			}
 		}
