@@ -14,8 +14,7 @@ func (m *mdv) initialiseScreen() error {
 	var err error
 	m.ts, err = tcell.NewScreen()
 	if err != nil {
-		log.Println("Failed to create new tcell screen", err)
-		return err
+		return fmt.Errorf("failed to create new tcell screen: %w", err)
 	}
 
 	err = m.ts.Init()
