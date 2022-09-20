@@ -109,7 +109,10 @@ func (m *mdv) updateMarketDepthUpdates(update *proto.MarketDepthUpdate) {
 
 func (m *mdv) processBackgroundDisplay() {
 	for {
-		if m.dirty && time.Now().After(m.lastRedraw.Add(time.Second)) {
+		m.displayMutex.Lock()
+		shouldRedraw := m.dirty && time.Now().After(m.lastRedraw.Add(time.Second))
+		m.displayMutex.Unlock()
+		if shouldRedraw {
 			m.drawMarketDepth()
 		}
 		time.Sleep(time.Second)
