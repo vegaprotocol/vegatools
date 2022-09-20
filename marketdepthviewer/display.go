@@ -19,8 +19,7 @@ func (m *mdv) initialiseScreen() error {
 
 	err = m.ts.Init()
 	if err != nil {
-		log.Println("Failed to initialise the tcell screen", err)
-		return err
+		return fmt.Errorf("failed to initialise the tcell screen: %w", err)
 	}
 
 	m.whiteStyle = tcell.StyleDefault.
