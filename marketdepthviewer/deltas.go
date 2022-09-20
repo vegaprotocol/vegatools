@@ -37,8 +37,7 @@ func (m *mdv) subscribeToMarketDepthUpdates(dataclient api.TradingDataServiceCli
 	}
 	stream, err := dataclient.MarketDepthUpdatesSubscribe(context.Background(), req)
 	if err != nil {
-		log.Println("Failed to subscribe to trades: ", err)
-		return err
+		return fmt.Errorf("failed to subscribe to trades: %w", err)
 	}
 
 	// Run in background and process messages
