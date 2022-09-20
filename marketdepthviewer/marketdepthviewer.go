@@ -130,8 +130,7 @@ func (m *mdv) subscribeToMarketData(dataclient api.TradingDataServiceClient) err
 	// Then we subscribe to the data
 	err = stream.SendMsg(eventBusDataReq)
 	if err != nil {
-		log.Println("Unable to send event bus request on the stream", err)
-		return err
+		return fmt.Errorf("unable to send event bus request on the stream: %w", err)
 	}
 	go m.processMarketDataSubscription(stream)
 	return err
