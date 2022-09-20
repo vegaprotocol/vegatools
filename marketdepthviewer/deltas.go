@@ -78,6 +78,7 @@ func (m *mdv) processMarketDepthUpdates(stream api.TradingDataService_MarketDept
 }
 
 func (m *mdv) updateMarketDepthUpdates(update *proto.MarketDepthUpdate) {
+	m.displayMutex.Lock()
 	for _, pl := range update.Buy {
 		if pl.NumberOfOrders == 0 {
 			// Remove price level
@@ -96,9 +97,9 @@ func (m *mdv) updateMarketDepthUpdates(update *proto.MarketDepthUpdate) {
 			m.book.sells[pl.Price] = pl
 		}
 	}
-
 	m.dirty = true
 	m.book.seqNum = update.SequenceNumber
+	m.displayMutex.Unlock()
 
 	// If we have already updated in the last second
 	if time.Now().After(m.lastRedraw.Add(time.Second)) {
