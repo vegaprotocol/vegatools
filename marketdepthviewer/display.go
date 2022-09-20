@@ -2,7 +2,6 @@ package marketdepthviewer
 
 import (
 	"fmt"
-	"log"
 	"math/big"
 	"sort"
 	"time"
