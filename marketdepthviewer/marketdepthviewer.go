@@ -165,8 +165,7 @@ func (m *mdv) subscribeMarketDepthSnapshots(dataclient api.TradingDataServiceCli
 	}
 	stream, err := dataclient.MarketDepthSubscribe(context.Background(), req)
 	if err != nil {
-		log.Println("Failed to subscribe to trades: ", err)
-		return err
+		return fmt.Errorf("failed to subscribe to trades: %w", err)
 	}
 
 	m.ts.Clear()
