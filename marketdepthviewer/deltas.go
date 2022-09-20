@@ -2,6 +2,7 @@ package marketdepthviewer
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"time"
