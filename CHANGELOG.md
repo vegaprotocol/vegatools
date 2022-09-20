@@ -49,6 +49,7 @@
 - [197](https://github.com/vegaprotocol/vegatools/issue/197) - Update protos location to their new place inside Vega
 - [206](https://github.com/vegaprotocol/vegatools/issue/206) - Move liquidity provision from inside market proposal to it's own proposal
 - [208](https://github.com/vegaprotocol/vegatools/issue/208) - User selectable number of markets for load testing 
+- [210](https://github.com/vegaprotocol/vegatools/issue/210) - Added delta based market depth display 
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
