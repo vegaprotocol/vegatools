@@ -123,8 +123,7 @@ func (m *mdv) subscribeToMarketData(dataclient api.TradingDataServiceClient) err
 
 	stream, err := dataclient.ObserveEventBus(context.Background())
 	if err != nil {
-		log.Println("Failed to subscribe to event bus data: ", err)
-		return err
+		return fmt.Errorf("failed to subscribe to event bus data: %w", err)
 	}
 
 	// Then we subscribe to the data
