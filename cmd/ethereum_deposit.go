@@ -71,7 +71,7 @@ func ethereumDeposit(cmd *cobra.Command, args []string) error {
 	amount := big.NewInt(ethereumDepositOpts.amount)
 
 	if _, err := tokenSession.ApproveSync(bridgeAddr, amount); err != nil {
-		return fmt.Errorf("failef to approve asset amount to bridge: %w", err)
+		return fmt.Errorf("failed to approve asset amount to bridge: %w", err)
 	}
 
 	vegaPubKeyArr, err := vgethereum.HexStringToByte32Array(ethereumDepositOpts.vegaPubKey)
