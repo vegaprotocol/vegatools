@@ -19,7 +19,7 @@ var (
 
 	ethereumMintCmd = &cobra.Command{
 		Use:   "mint",
-		Short: "Mint allows to mint a token managed by a Base Faucet Token contract.",
+		Short: "Mint allows a token to be minted by a Base Faucet Token contract.",
 		RunE:  ethereumMintToken,
 	}
 )
