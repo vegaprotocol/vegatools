@@ -20,7 +20,7 @@ var (
 
 	ethereumStakeCmd = &cobra.Command{
 		Use:   "stake",
-		Short: "Stake allows to stake an asset to given Vega public key.",
+		Short: "Stake allows an asset to be staked to a given Vega public key.",
 		RunE:  ethereumStake,
 	}
 )
