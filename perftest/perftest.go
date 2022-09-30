@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v1"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -24,6 +25,8 @@ type Opts struct {
 	RuntimeSeconds    int
 	UserCount         int
 	MarketCount       int
+	Voters            int
+	MoveMid           bool
 }
 
 type perfLoadTesting struct {
@@ -36,7 +39,7 @@ type perfLoadTesting struct {
 }
 
 func (p *perfLoadTesting) connectToDataNode(dataNodeAddr string) (map[string]string, error) {
-	connection, err := grpc.Dial(dataNodeAddr, grpc.WithInsecure())
+	connection, err := grpc.Dial(dataNodeAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		// Something went wrong
 		return nil, fmt.Errorf("failed to connect to the datanode gRPC port: %w ", err)
@@ -66,27 +69,41 @@ func (p *perfLoadTesting) CreateUsers(userCount int) error {
 	return err
 }
 
-func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, ganacheURL string) error {
+func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, ganacheURL string, voters int) error {
 	for index, user := range p.users {
-		if index > 3 {
+		if index >= voters {
 			break
 		}
 		sendVegaTokens(user.pubKey, ganacheURL)
 		time.Sleep(time.Second * 1)
 	}
 
+	// If the first user has not tokens, top everyone up
+	// quickly without checking if they need it
+	asset := assets["fUSDC"]
+	amount, _ := p.dataNode.getAssetsPerUser(p.users[0].pubKey, asset)
+	if amount == 0 {
+		for _, user := range p.users {
+			topUpAsset(faucetURL, user.pubKey, asset, 100000000)
+			time.Sleep(time.Millisecond * 50)
+			topUpAsset(faucetURL, user.pubKey, asset, 100000000)
+			time.Sleep(time.Millisecond * 50)
+		}
+	}
+
 	for _, user := range p.users {
-		asset := assets["fUSDC"]
 		for amount, _ := p.dataNode.getAssetsPerUser(user.pubKey, asset); amount <= 100000000; {
 			topUpAsset(faucetURL, user.pubKey, asset, 100000000)
 			time.Sleep(time.Second * 1)
 			amount, _ = p.dataNode.getAssetsPerUser(user.pubKey, asset)
 		}
 	}
+
+	time.Sleep(time.Second * 5)
 	return nil
 }
 
-func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets int) ([]string, error) {
+func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters int) ([]string, error) {
 	markets := p.dataNode.getMarkets()
 	if len(markets) == 0 {
 		for i := 0; i < numberOfMarkets; i++ {
@@ -114,7 +131,9 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets int) ([]string, 
 	if len(markets) >= numberOfMarkets {
 		for i := 0; i < len(markets); i++ {
 			// Send in a liquidity provision so we can get the market out of auction
-			p.wallet.SendLiquidityProvision(p.users[0], markets[i])
+			for j := 0; j < voters; j++ {
+				p.wallet.SendLiquidityProvision(p.users[j], markets[i])
+			}
 
 			p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[i],
 				Price:       "10010",
@@ -149,7 +168,7 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets int) ([]string, 
 	return markets, nil
 }
 
-func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTimeSeconds int) error {
+func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTimeSeconds int, moveMid bool) error {
 	// Start load testing by sending off lots of orders at a given rate
 	userCount := users - 2
 	now := time.Now()
@@ -176,13 +195,15 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 				log.Println("Failed to send cancel all", err)
 			}
 
-			// Move the pidprice around as well
-			midPrice = midPrice + (rand.Int63n(20) - 10)
-			if midPrice < 9500 {
-				midPrice = 9600
-			}
-			if midPrice > 10500 {
-				midPrice = 10400
+			if moveMid {
+				// Move the midprice around as well
+				midPrice = midPrice + (rand.Int63n(3) - 1)
+				if midPrice < 9500 {
+					midPrice = 9505
+				}
+				if midPrice > 10500 {
+					midPrice = 10495
+				}
 			}
 		} else if choice < 15 {
 			// Perform a market order to generate some trades
@@ -289,7 +310,7 @@ func Run(opts Opts) error {
 
 	// Send some tokens to any newly created users
 	fmt.Print("Depositing tokens and assets...")
-	err = plt.depositTokens(assets, opts.FaucetURL, opts.GanacheURL)
+	err = plt.depositTokens(assets, opts.FaucetURL, opts.GanacheURL, opts.Voters)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -298,7 +319,7 @@ func Run(opts Opts) error {
 
 	// Send in a proposal to create a new market and vote to get it through
 	fmt.Print("Proposing and voting in new market...")
-	marketIDs, err := plt.proposeAndEnactMarket(opts.MarketCount)
+	marketIDs, err := plt.proposeAndEnactMarket(opts.MarketCount, opts.Voters)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -307,7 +328,7 @@ func Run(opts Opts) error {
 
 	// Send off a controlled amount of orders and cancels
 	fmt.Print("Sending load transactions...")
-	err = plt.sendTradingLoad(marketIDs, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds)
+	err = plt.sendTradingLoad(marketIDs, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds, opts.MoveMid)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err

@@ -25,6 +25,8 @@ func init() {
 	perfTestCmd.Flags().IntVarP(&opts.RuntimeSeconds, "runtime", "r", 60, "runtime in seconds")
 	perfTestCmd.Flags().IntVarP(&opts.UserCount, "users", "u", 10, "number of users to send commands with")
 	perfTestCmd.Flags().IntVarP(&opts.MarketCount, "markets", "m", 1, "number of markets to create and use")
+	perfTestCmd.Flags().IntVarP(&opts.Voters, "voters", "v", 3, "number of accounts to assign voting power")
+	perfTestCmd.Flags().BoolVarP(&opts.MoveMid, "movemidprice", "p", false, "allow the mid price we place orders around to move randomly")
 	perfTestCmd.MarkFlagRequired("address")
 	perfTestCmd.MarkFlagRequired("wallet")
 	perfTestCmd.MarkFlagRequired("faucet")

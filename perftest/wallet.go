@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -50,7 +50,7 @@ func (w walletWrapper) LoginWallet(username, password string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -81,7 +81,7 @@ func (w walletWrapper) CreateWallet(username, password string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -122,7 +122,7 @@ func (w walletWrapper) CreateKey(password, token string) (string, error) {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -159,7 +159,7 @@ func (w walletWrapper) ListKeys(token string) ([]string, error) {
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func (w *walletWrapper) SendCommand(submission []byte, token string) error {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -317,7 +317,7 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 											OracleSpecForTradingTermination: &v1.OracleSpecConfiguration{
 												PubKeys: []string{"0xDEADBEEF"},
 												Filters: []*v1.Filter{
-													&v1.Filter{Key: &v1.PropertyKey{
+													{Key: &v1.PropertyKey{
 														Name: "trading.termination",
 														Type: v1.PropertyKey_TYPE_BOOLEAN,
 													}},
@@ -326,7 +326,7 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 											OracleSpecForSettlementPrice: &v1.OracleSpecConfiguration{
 												PubKeys: []string{"0xDEADBEEF"},
 												Filters: []*v1.Filter{
-													&v1.Filter{Key: &v1.PropertyKey{
+													{Key: &v1.PropertyKey{
 														Name: "trading.settled",
 														Type: v1.PropertyKey_TYPE_INTEGER,
 													}},
@@ -367,34 +367,34 @@ func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string
 		Fee:              "0.01",
 		CommitmentAmount: "50000000",
 		Buys: []*proto.LiquidityOrder{
-			&proto.LiquidityOrder{
+			{
 				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
 				Proportion: 10,
 				Offset:     "1000",
 			},
-			&proto.LiquidityOrder{
+			{
 				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
 				Proportion: 10,
 				Offset:     "1500",
 			},
-			&proto.LiquidityOrder{
+			{
 				Reference:  proto.PeggedReference_PEGGED_REFERENCE_MID,
 				Proportion: 10,
 				Offset:     "2000",
 			},
 		},
 		Sells: []*proto.LiquidityOrder{
-			&proto.LiquidityOrder{
+			{
 				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
 				Proportion: 10,
 				Offset:     "2000",
 			},
-			&proto.LiquidityOrder{
+			{
 				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
 				Proportion: 10,
 				Offset:     "1500",
 			},
-			&proto.LiquidityOrder{
+			{
 				Reference:  proto.PeggedReference_PEGGED_REFERENCE_MID,
 				Proportion: 10,
 				Offset:     "1000",
@@ -452,10 +452,8 @@ func (w walletWrapper) SendVote(user UserDetails, vote *commandspb.VoteSubmissio
 		},
 	}
 	cmd, err := m.MarshalToString(submitTxReq)
-
-	err = w.SignSubmitTx(user.token, cmd)
 	if err != nil {
 		return err
 	}
-	return nil
+	return w.SignSubmitTx(user.token, cmd)
 }
