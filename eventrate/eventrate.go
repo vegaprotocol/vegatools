@@ -33,8 +33,9 @@ func max(a, b uint64) uint64 {
 }
 
 type data struct {
-	Events uint64
-	Bytes  uint64
+	Events    uint64
+	Bytes     uint64
+	BlockTime time.Time
 }
 
 func fixUnits(bytes uint64) string {
@@ -60,6 +61,12 @@ func Run(opts Opts) error {
 		mu.Lock()
 		dataThisSecond.Events++
 		dataThisSecond.Bytes += uint64(proto.Size(e))
+
+		switch e.Type {
+		case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
+			tu := e.GetTimeUpdate()
+			dataThisSecond.BlockTime = time.Unix(0, tu.GetTimestamp())
+		}
 		mu.Unlock()
 	}
 
@@ -76,6 +83,7 @@ func Run(opts Opts) error {
 		historicData = append(historicData, dataThisSecond)
 		dataThisSecond.Events = 0
 		dataThisSecond.Bytes = 0
+		blockTime := dataThisSecond.BlockTime
 		mu.Unlock()
 
 		// Cap the number of historic buckets we keep
@@ -100,7 +108,7 @@ func Run(opts Opts) error {
 		}
 		avgEvents := totalEvents / uint64(len(historicData))
 		avgBytes := totalBytes / uint64(len(historicData))
-		fmt.Printf("Events:Bandwidth (")
+		fmt.Printf("%s Events:Bandwidth (", blockTime.Format(time.UnixDate))
 		for i := len(historicData) - 1; i > 0; i-- {
 			fmt.Printf("[%d:%s], ", historicData[i].Events, fixUnits(historicData[i].Bytes))
 		}
