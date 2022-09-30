@@ -52,6 +52,7 @@
 - [210](https://github.com/vegaprotocol/vegatools/issue/210) - Added delta based market depth display 
 - [214](https://github.com/vegaprotocol/vegatools/issue/214) - Increase gRPC receive buffer size 
 - [216](https://github.com/vegaprotocol/vegatools/issue/216) - Display block time in eventrate tool to monitor event stream lag 
+- [218](https://github.com/vegaprotocol/vegatools/issue/218) - perftest allows multiple LPs and moving of mid price for random orders 
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
