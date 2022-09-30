@@ -98,7 +98,7 @@ func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWaitSeconds int) 
 		}
 		time.Sleep(time.Second)
 	}
-	return fmt.Errorf("Timed out waiting for market to be enacted")
+	return fmt.Errorf("timed out waiting for market to be enacted")
 }
 
 func (d *dnWrapper) voteOnProposal(users []UserDetails, propID string) error {
