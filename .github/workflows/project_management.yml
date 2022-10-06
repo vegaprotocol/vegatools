@@ -30,7 +30,7 @@ env:
   DONE_COLUMN_NAME: '"Done"'
   ITERATION_FIELD_NAME: 'Sprint'   # See project settings (default is `Iteration`)
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
