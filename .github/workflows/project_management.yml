@@ -395,4 +395,3 @@ jobs:
           script: |
             console.log("Changelog should be updated, or if a small fix the 'no-changelog label used!");
             core.setFailed("Changelog should be updated, or if a small fix the 'no-changelog label used!");
-        # yamllint enable rule:line-length
