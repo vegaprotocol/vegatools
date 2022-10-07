@@ -355,7 +355,7 @@ jobs:
               -f status_value=${{ env.CURRENT_STATUS }} \
               -f iteration_field=$ITERATION_FIELD_ID \
               -f iteration_value=${{ env.CURRENT_ITERATION }}
-   verify-changelog-updated:
+  verify-changelog-updated:
     name: "Verify CHANGELOG Updated"
     needs: project-board-automation
     runs-on: ubuntu-latest
