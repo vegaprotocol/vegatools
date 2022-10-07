@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	code.vegaprotocol.io/shared v0.0.0-20220704150014-7c22d12ccb72
-	code.vegaprotocol.io/vega v0.54.1-0.20220905101955-78923c4d5950
+	code.vegaprotocol.io/vega v0.57.1-0.20221007134620-54ab707ac14d
 	github.com/cosmos/iavl v0.19.1
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/gdamore/tcell/v2 v2.5.2
