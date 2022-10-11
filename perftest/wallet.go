@@ -311,7 +311,7 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 											SettlementAsset: "fUSDC",
 											QuoteName:       "BTCUSD",
 											OracleSpecBinding: &proto.OracleSpecToFutureBinding{
-												SettlementPriceProperty:    "trading.settled",
+												SettlementDataProperty:     "trading.settled",
 												TradingTerminationProperty: "trading.termination",
 											},
 											OracleSpecForTradingTermination: &v1.OracleSpecConfiguration{
@@ -323,7 +323,7 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 													}},
 												},
 											},
-											OracleSpecForSettlementPrice: &v1.OracleSpecConfiguration{
+											OracleSpecForSettlementData: &v1.OracleSpecConfiguration{
 												PubKeys: []string{"0xDEADBEEF"},
 												Filters: []*v1.Filter{
 													{Key: &v1.PropertyKey{
