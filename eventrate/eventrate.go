@@ -3,6 +3,7 @@ package eventrate
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -16,6 +17,7 @@ type Opts struct {
 	ServerAddr       string
 	Buckets          int
 	SecondsPerBucket int
+	EventCountDump   int
 }
 
 func min(a, b uint64) uint64 {
@@ -38,6 +40,11 @@ type data struct {
 	BlockTime time.Time
 }
 
+type eventCount struct {
+	name  string
+	count uint64
+}
+
 func fixUnits(bytes uint64) string {
 	if bytes > 1024*1024 {
 		return fmt.Sprintf("%dMB", bytes/(1024*1024))
@@ -49,9 +56,13 @@ func fixUnits(bytes uint64) string {
 
 // Run is the main function of `eventrate` package
 func Run(opts Opts) error {
-	var dataThisSecond data
-	var historicData []data
-	var mu sync.Mutex
+	var (
+		dataThisSecond data
+		historicData   []data
+		mu             sync.Mutex
+		eventCounts    map[int32]uint64 = map[int32]uint64{}
+		displayCounter int
+	)
 
 	if len(opts.ServerAddr) <= 0 {
 		return fmt.Errorf("error: missing grpc server address")
@@ -61,6 +72,7 @@ func Run(opts Opts) error {
 		mu.Lock()
 		dataThisSecond.Events++
 		dataThisSecond.Bytes += uint64(proto.Size(e))
+		eventCounts[int32(e.Type)]++
 
 		switch e.Type {
 		case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
@@ -115,5 +127,31 @@ func Run(opts Opts) error {
 		fmt.Printf("[%d:%s]) Min:[%d:%s] Max:[%d:%s] Avg:[%d:%s]            \r",
 			historicData[0].Events, fixUnits(historicData[0].Bytes),
 			minEvents, fixUnits(minBytes), maxEvents, fixUnits(maxBytes), avgEvents, fixUnits(avgBytes))
+
+		if opts.EventCountDump > 0 {
+			displayCounter++
+			if displayCounter >= opts.EventCountDump {
+				fmt.Println()
+				displayCounter = 0
+
+				// Copy the map
+				var temp []eventCount = []eventCount{}
+				mu.Lock()
+				for key, value := range eventCounts {
+					temp = append(temp, eventCount{eventspb.BusEventType_name[key], value})
+				}
+				mu.Unlock()
+
+				// Sort it
+				sort.SliceStable(temp, func(i, j int) bool {
+					return temp[i].count < temp[j].count
+				})
+
+				// Now print it out
+				for _, value := range temp {
+					fmt.Printf("%s %d\n", value.name, value.count)
+				}
+			}
+		}
 	}
 }
