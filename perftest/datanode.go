@@ -26,12 +26,12 @@ func (d *dnWrapper) getNetworkParam(param string) (string, error) {
 	}
 
 	for _, value := range response.NetworkParameters {
-		if value.Key == "market.liquidityProvision.shapes.maxSize" {
+		if value.Key == param {
 			return value.Value, nil
 		}
 	}
 	// We didn't find it
-	return "", fmt.Errorf("failed to get network parameter for maximum LP shape size")
+	return "", fmt.Errorf("failed to get network parameter %s", param)
 }
 
 func (d *dnWrapper) getAssets() (map[string]string, error) {
