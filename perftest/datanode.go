@@ -17,6 +17,23 @@ type dnWrapper struct {
 	wallet   walletWrapper
 }
 
+func (d *dnWrapper) getNetworkParam(param string) (string, error) {
+	request := &datanode.NetworkParametersRequest{}
+
+	response, err := d.dataNode.NetworkParameters(context.Background(), request)
+	if err != nil {
+		return "", err
+	}
+
+	for _, value := range response.NetworkParameters {
+		if value.Key == "market.liquidityProvision.shapes.maxSize" {
+			return value.Value, nil
+		}
+	}
+	// We didn't find it
+	return "", fmt.Errorf("failed to get network parameter for maximum LP shape size")
+}
+
 func (d *dnWrapper) getAssets() (map[string]string, error) {
 	request := &datanode.AssetsRequest{}
 

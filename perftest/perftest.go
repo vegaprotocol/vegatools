@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"google.golang.org/grpc"
@@ -27,6 +28,7 @@ type Opts struct {
 	MarketCount       int
 	Voters            int
 	MoveMid           bool
+	LPOrdersPerSide   int
 }
 
 type perfLoadTesting struct {
@@ -103,7 +105,7 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, gan
 	return nil
 }
 
-func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters int) ([]string, error) {
+func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters, maxLPShape int) ([]string, error) {
 	markets := p.dataNode.getMarkets()
 	if len(markets) == 0 {
 		for i := 0; i < numberOfMarkets; i++ {
@@ -132,7 +134,7 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters int) ([]
 		for i := 0; i < len(markets); i++ {
 			// Send in a liquidity provision so we can get the market out of auction
 			for j := 0; j < voters; j++ {
-				p.wallet.SendLiquidityProvision(p.users[j], markets[i])
+				p.wallet.SendLiquidityProvision(p.users[j], markets[i], maxLPShape)
 			}
 
 			p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[i],
@@ -317,9 +319,20 @@ func Run(opts Opts) error {
 	}
 	fmt.Println("Complete")
 
+	networkParam, err := plt.dataNode.getNetworkParam("market.liquidityProvision.shapes.maxSize")
+	if err != nil {
+		fmt.Println("Failed to get LP maximum shape size")
+		return err
+	}
+	maxLPShape, _ := strconv.ParseInt(networkParam, 0, 32)
+
+	if opts.LPOrdersPerSide > int(maxLPShape) {
+		return fmt.Errorf("supplied lp size greater than network param (%d>%d)", opts.LPOrdersPerSide, maxLPShape)
+	}
+
 	// Send in a proposal to create a new market and vote to get it through
 	fmt.Print("Proposing and voting in new market...")
-	marketIDs, err := plt.proposeAndEnactMarket(opts.MarketCount, opts.Voters)
+	marketIDs, err := plt.proposeAndEnactMarket(opts.MarketCount, opts.Voters, opts.LPOrdersPerSide)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
