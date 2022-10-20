@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -360,47 +361,32 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 	return w.SignSubmitTx(user.token, cmd)
 }
 
-func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string) error {
+func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string, orderCount int) error {
 	lp := commandspb.LiquidityProvisionSubmission{
 		MarketId:         marketID,
 		Reference:        "MarketLiquidity",
 		Fee:              "0.01",
 		CommitmentAmount: "50000000",
-		Buys: []*proto.LiquidityOrder{
-			{
-				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
-				Proportion: 10,
-				Offset:     "1000",
-			},
-			{
-				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
-				Proportion: 10,
-				Offset:     "1500",
-			},
-			{
-				Reference:  proto.PeggedReference_PEGGED_REFERENCE_MID,
-				Proportion: 10,
-				Offset:     "2000",
-			},
-		},
-		Sells: []*proto.LiquidityOrder{
-			{
-				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
-				Proportion: 10,
-				Offset:     "2000",
-			},
-			{
-				Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
-				Proportion: 10,
-				Offset:     "1500",
-			},
-			{
-				Reference:  proto.PeggedReference_PEGGED_REFERENCE_MID,
-				Proportion: 10,
-				Offset:     "1000",
-			},
-		},
 	}
+
+	// Generate the buy and sell side LP orders
+	buys := make([]*proto.LiquidityOrder, orderCount)
+	sells := make([]*proto.LiquidityOrder, orderCount)
+	for i := 0; i < orderCount; i++ {
+		buys[i] = &proto.LiquidityOrder{
+			Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
+			Proportion: 10,
+			Offset:     strconv.FormatInt(int64(1000+(i*10)), 10),
+		}
+		sells[i] = &proto.LiquidityOrder{
+			Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+			Proportion: 10,
+			Offset:     strconv.FormatInt(int64(1000+(i*10)), 10),
+		}
+	}
+
+	lp.Buys = buys
+	lp.Sells = sells
 
 	m := jsonpb.Marshaler{}
 

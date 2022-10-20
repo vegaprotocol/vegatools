@@ -55,6 +55,7 @@
 - [218](https://github.com/vegaprotocol/vegatools/issue/218) - perftest allows multiple LPs and moving of mid price for random orders 
 - [222](https://github.com/vegaprotocol/vegatools/issue/222) - Updated market proposal text with renamed fields
 - [225](https://github.com/vegaprotocol/vegatools/issue/225) - Add option to dump total event counts
+- [227](https://github.com/vegaprotocol/vegatools/issue/227) - Allow configuration of the LP shape
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
