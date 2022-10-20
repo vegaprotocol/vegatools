@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -18,98 +18,99 @@ type dnWrapper struct {
 }
 
 func (d *dnWrapper) getNetworkParam(param string) (string, error) {
-	request := &datanode.NetworkParametersRequest{}
+	request := &datanode.GetNetworkParameterRequest{
+		Key: param,
+	}
 
-	response, err := d.dataNode.NetworkParameters(context.Background(), request)
+	response, err := d.dataNode.GetNetworkParameter(context.Background(), request)
 	if err != nil {
 		return "", err
 	}
 
-	for _, value := range response.NetworkParameters {
-		if value.Key == param {
-			return value.Value, nil
-		}
-	}
-	// We didn't find it
-	return "", fmt.Errorf("failed to get network parameter %s", param)
+	return response.NetworkParameter.Value, nil
 }
 
 func (d *dnWrapper) getAssets() (map[string]string, error) {
-	request := &datanode.AssetsRequest{}
+	request := &datanode.ListAssetsRequest{}
 
-	response, err := d.dataNode.Assets(context.Background(), request)
+	response, err := d.dataNode.ListAssets(context.Background(), request)
 	if err != nil {
 		return nil, err
 	}
 	assets := map[string]string{}
-	for _, asset := range response.Assets {
-		assets[asset.Details.Symbol] = asset.Id
+	for _, asset := range response.GetAssets().GetEdges() {
+		assets[asset.Node.Details.Symbol] = asset.Node.Id
 	}
 	return assets, nil
 }
 
 func (d *dnWrapper) getAssetsPerUser(pubKey, asset string) (int64, error) {
-	request := &datanode.PartyAccountsRequest{
-		PartyId: pubKey,
-		Asset:   asset,
+	request := &datanode.ListAccountsRequest{
+		Filter: &datanode.AccountFilter{
+			AssetId:  asset,
+			PartyIds: []string{pubKey},
+			AccountTypes: []proto.AccountType{
+				proto.AccountType_ACCOUNT_TYPE_GENERAL,
+			},
+		},
 	}
 
-	response, err := d.dataNode.PartyAccounts(context.Background(), request)
+	response, err := d.dataNode.ListAccounts(context.Background(), request)
 	if err != nil {
 		return 0, err
 	}
-	for _, account := range response.Accounts {
-		if account.Type == proto.AccountType_ACCOUNT_TYPE_GENERAL {
-			return strconv.ParseInt(account.Balance, 10, 64)
-		}
+	for _, account := range response.Accounts.Edges {
+		return strconv.ParseInt(account.Account.Balance, 10, 64)
 	}
 	return 0, nil
 }
 
 func (d *dnWrapper) getMarkets() []string {
-	marketsReq := &datanode.MarketsRequest{}
+	marketsReq := &datanode.ListMarketsRequest{}
 
-	response, err := d.dataNode.Markets(context.Background(), marketsReq)
+	response, err := d.dataNode.ListMarkets(context.Background(), marketsReq)
 	if err != nil {
 		log.Println(err)
 		return nil
 	}
 	marketIDs := []string{}
-	for _, market := range response.Markets {
-		if market.State != proto.Market_STATE_REJECTED {
-			marketIDs = append(marketIDs, market.Id)
+	for _, market := range response.Markets.Edges {
+		if market.Node.State != proto.Market_STATE_REJECTED {
+			marketIDs = append(marketIDs, market.Node.Id)
 		}
 	}
 	return marketIDs
 }
 
 func (d *dnWrapper) getPendingProposalID() (string, error) {
-	request := &datanode.GetProposalsRequest{}
+	request := &datanode.ListGovernanceDataRequest{}
 
-	response, err := d.dataNode.GetProposals(context.Background(), request)
+	response, err := d.dataNode.ListGovernanceData(context.Background(), request)
 	if err != nil {
 		log.Println(err)
 	}
 
-	for _, proposal := range response.GetData() {
-		if proposal.Proposal.State == proto.Proposal_STATE_OPEN {
-			return proposal.Proposal.Id, nil
+	for _, proposal := range response.Connection.Edges {
+		if proposal.Node.Proposal.State == proto.Proposal_STATE_OPEN {
+			return proposal.Node.Proposal.Id, nil
 		}
 	}
 	return "", fmt.Errorf("no pending proposals found")
 }
 
 func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWaitSeconds int) error {
-	request := &datanode.GetProposalsRequest{}
+	request := &datanode.ListGovernanceDataRequest{
+		ProposalReference: &marketID,
+	}
 
 	for i := 0; i < maxWaitSeconds; i++ {
-		response, err := d.dataNode.GetProposals(context.Background(), request)
+		response, err := d.dataNode.ListGovernanceData(context.Background(), request)
 		if err != nil {
 			return err
 		}
 
-		for _, proposal := range response.GetData() {
-			if proposal.Proposal.State == proto.Proposal_STATE_ENACTED {
+		for _, proposal := range response.Connection.Edges {
+			if proposal.Node.Proposal.State == proto.Proposal_STATE_ENACTED {
 				return nil
 			}
 		}
