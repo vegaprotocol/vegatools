@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	api "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	api "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -54,33 +54,33 @@ type mdv struct {
 }
 
 func (m *mdv) getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string) (*proto.Market, error) {
-	marketsRequest := &api.MarketsRequest{}
+	marketsRequest := &api.ListMarketsRequest{}
 
-	marketsResponse, err := dataclient.Markets(context.Background(), marketsRequest)
+	marketsResponse, err := dataclient.ListMarkets(context.Background(), marketsRequest)
 	if err != nil {
 		return nil, err
 	}
 
 	// If the user has picked a market already that is valid, use that
-	for _, market := range marketsResponse.Markets {
-		if market.Id == marketID {
-			return market, nil
+	for _, market := range marketsResponse.Markets.Edges {
+		if market.Node.Id == marketID {
+			return market.Node, nil
 		}
 	}
 
 	// If we have no markets, lets quit now
-	if len(marketsResponse.Markets) == 0 {
+	if len(marketsResponse.Markets.Edges) == 0 {
 		return nil, nil
 	}
 
 	// If there is only one market, pick that automatically
-	if len(marketsResponse.Markets) == 1 {
-		return marketsResponse.Markets[0], nil
+	if len(marketsResponse.Markets.Edges) == 1 {
+		return marketsResponse.Markets.Edges[0].Node, nil
 	}
 
 	// Print out all the markets with their index
-	for index, market := range marketsResponse.Markets {
-		fmt.Printf("[%d]:%s (%s) [%s]\n", index+1, market.State.String(), market.TradableInstrument.Instrument.Name, market.Id)
+	for index, market := range marketsResponse.Markets.Edges {
+		fmt.Printf("[%d]:%s (%s) [%s]\n", index+1, market.Node.State.String(), market.Node.TradableInstrument.Instrument.Name, market.Node.Id)
 	}
 
 	// Ask the user to select a market
@@ -104,14 +104,14 @@ func (m *mdv) getMarketToDisplay(dataclient api.TradingDataServiceClient, market
 	// Correct the index value as we start with 0
 	index--
 
-	if index < 0 || index > len(marketsResponse.Markets)-1 {
+	if index < 0 || index > len(marketsResponse.Markets.Edges)-1 {
 		fmt.Println("Invalid market selected")
 		return nil, fmt.Errorf("invalid market selection: %s", marketID)
 	}
 
 	fmt.Println("Using market:", index)
 
-	return marketsResponse.Markets[index], nil
+	return marketsResponse.Markets.Edges[index].Node, nil
 }
 
 func (m *mdv) subscribeToMarketData(dataclient api.TradingDataServiceClient) error {
@@ -158,10 +158,10 @@ func (m *mdv) processMarketDataSubscription(stream api.TradingDataService_Observ
 }
 
 func (m *mdv) subscribeMarketDepthSnapshots(dataclient api.TradingDataServiceClient) error {
-	req := &api.MarketDepthSubscribeRequest{
-		MarketId: m.market.Id,
+	req := &api.ObserveMarketsDepthRequest{
+		MarketIds: []string{m.market.Id},
 	}
-	stream, err := dataclient.MarketDepthSubscribe(context.Background(), req)
+	stream, err := dataclient.ObserveMarketsDepth(context.Background(), req)
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to trades: %w", err)
 	}
@@ -176,7 +176,7 @@ func (m *mdv) subscribeMarketDepthSnapshots(dataclient api.TradingDataServiceCli
 	return nil
 }
 
-func (m *mdv) processMarketDepth(stream api.TradingDataService_MarketDepthSubscribeClient) {
+func (m *mdv) processMarketDepth(stream api.TradingDataService_ObserveMarketsDepthClient) {
 	for {
 		o, err := stream.Recv()
 		if err == io.EOF {
@@ -192,43 +192,48 @@ func (m *mdv) processMarketDepth(stream api.TradingDataService_MarketDepthSubscr
 		m.ts.Clear()
 		m.drawHeaders()
 		m.drawTime()
-		m.drawSequenceNumber(o.MarketDepth.SequenceNumber)
 		m.drawMarketState()
 
-		var bidVolume uint64
-		var askVolume uint64
+		if len(o.MarketDepth) > 0 {
+			// Only use the latest depth snapshot
+			md := o.MarketDepth[len(o.MarketDepth)-1]
+			m.drawSequenceNumber(md.SequenceNumber)
 
-		// Print Buys
-		buyPriceLevels := o.MarketDepth.Buy
-		for index, pl := range buyPriceLevels {
-			bidVolume += pl.Volume
-			if index > (h - 6) {
-				continue
+			var bidVolume uint64
+			var askVolume uint64
+
+			// Print Buys
+			buyPriceLevels := md.Buy
+			for index, pl := range buyPriceLevels {
+				bidVolume += pl.Volume
+				if index > (h - 6) {
+					continue
+				}
+				text := fmt.Sprintf("%12d", pl.Volume)
+				m.drawString((w/4)-21, index+4, m.greenStyle, text)
+				text = fmt.Sprintf("%12s", pl.Price)
+				m.drawString((w/4)+7, index+4, m.greenStyle, text)
 			}
-			text := fmt.Sprintf("%12d", pl.Volume)
-			m.drawString((w/4)-21, index+4, m.greenStyle, text)
-			text = fmt.Sprintf("%12s", pl.Price)
-			m.drawString((w/4)+7, index+4, m.greenStyle, text)
-		}
 
-		// Print Sells
-		sellPriceLevels := o.MarketDepth.Sell
-		for index, pl := range sellPriceLevels {
-			askVolume += pl.Volume
-			if index > (h - 6) {
-				continue
+			// Print Sells
+			sellPriceLevels := md.Sell
+			for index, pl := range sellPriceLevels {
+				askVolume += pl.Volume
+				if index > (h - 6) {
+					continue
+				}
+				m.drawString((3*w/4)-22, index+4, m.redStyle, pl.Price)
+				text := fmt.Sprintf("%d", pl.Volume)
+				m.drawString((3*w/4)+9, index+4, m.redStyle, text)
 			}
-			m.drawString((3*w/4)-22, index+4, m.redStyle, pl.Price)
-			text := fmt.Sprintf("%d", pl.Volume)
-			m.drawString((3*w/4)+9, index+4, m.redStyle, text)
+
+			text := fmt.Sprintf("%8d", bidVolume)
+			m.drawString((w / 4), h-1, m.whiteStyle, text)
+			text = fmt.Sprintf("%8d", askVolume)
+			m.drawString((3 * w / 4), h-1, m.whiteStyle, text)
+
+			m.ts.Show()
 		}
-
-		text := fmt.Sprintf("%8d", bidVolume)
-		m.drawString((w / 4), h-1, m.whiteStyle, text)
-		text = fmt.Sprintf("%8d", askVolume)
-		m.drawString((3 * w / 4), h-1, m.whiteStyle, text)
-
-		m.ts.Show()
 	}
 }
 

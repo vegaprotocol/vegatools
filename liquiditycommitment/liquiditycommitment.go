@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	api "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	api "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
@@ -29,51 +29,55 @@ var (
 )
 
 func getLiquidityProvisions(dataclient api.TradingDataServiceClient, marketID string) []*proto.LiquidityProvision {
-	lpReq := &api.LiquidityProvisionsRequest{Market: marketID}
+	lpReq := &api.ListLiquidityProvisionsRequest{MarketId: &marketID}
 
-	response, err := dataclient.LiquidityProvisions(context.Background(), lpReq)
+	response, err := dataclient.ListLiquidityProvisions(context.Background(), lpReq)
 	if err != nil {
 		log.Println(err)
 	}
-	// Only return the orders currently ACTIVE
-	lps := make([]*proto.LiquidityProvision, 0)
-	for _, lp := range response.LiquidityProvisions {
-		if lp.Status != proto.LiquidityProvision_STATUS_CANCELLED {
-			lps = append(lps, lp)
+	// Only return the LPs currently ACTIVE
+	lps := make([]*proto.LiquidityProvision, 0, len(response.LiquidityProvisions.Edges))
+	for _, lp := range response.LiquidityProvisions.Edges {
+		if lp.Node.Status != proto.LiquidityProvision_STATUS_CANCELLED {
+			lps = append(lps, lp.Node)
 		}
 	}
 	return lps
 }
 
 func getMarketData(dataclient api.TradingDataServiceClient, marketID string) *proto.MarketData {
-	marketDataRequest := &api.MarketDataByIDRequest{
+	marketDataRequest := &api.GetLatestMarketDataRequest{
 		MarketId: marketID,
 	}
 
-	marketDataResponse, err := dataclient.MarketDataByID(context.Background(), marketDataRequest)
+	marketDataResponse, err := dataclient.GetLatestMarketData(context.Background(), marketDataRequest)
 	if err != nil {
 		fmt.Println("Failed to get market data")
 		os.Exit(0)
+		return nil
+	}
+
+	if marketDataResponse == nil {
 		return nil
 	}
 	return marketDataResponse.MarketData
 }
 
 func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string) *proto.Market {
-	marketsRequest := &api.MarketsRequest{}
+	marketsRequest := &api.ListMarketsRequest{}
 
-	marketsResponse, err := dataclient.Markets(context.Background(), marketsRequest)
+	marketsResponse, err := dataclient.ListMarkets(context.Background(), marketsRequest)
 	if err != nil {
 		return nil
 	}
 
 	var validMarkets []*proto.Market
 	// Check each market to see if we have at least one LP
-	for _, market := range marketsResponse.Markets {
-		lps := getLiquidityProvisions(dataclient, market.Id)
+	for _, market := range marketsResponse.Markets.Edges {
+		lps := getLiquidityProvisions(dataclient, market.Node.Id)
 		if len(lps) > 0 {
-			validMarkets = append(validMarkets, market)
-			mapMarketToLPs[market.Id] = lps
+			validMarkets = append(validMarkets, market.Node)
+			mapMarketToLPs[market.Node.Id] = lps
 		}
 	}
 
@@ -120,7 +124,7 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 	// Correct index as we start with 0
 	index--
 
-	if index < 0 || index > len(marketsResponse.Markets)-1 {
+	if index < 0 || index > len(marketsResponse.Markets.Edges)-1 {
 		fmt.Println("Invalid market selected")
 		os.Exit(0)
 	}
