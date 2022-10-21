@@ -7,15 +7,15 @@ import (
 	"log"
 	"time"
 
-	api "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	api "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 )
 
 func (m *mdv) getMarketDepthSnapshot(dataclient api.TradingDataServiceClient) error {
-	req := &api.MarketDepthRequest{
+	req := &api.GetLatestMarketDepthRequest{
 		MarketId: m.market.Id,
 	}
-	resp, err := dataclient.MarketDepth(context.Background(), req)
+	resp, err := dataclient.GetLatestMarketDepth(context.Background(), req)
 	if err != nil {
 		return err
 	}
@@ -33,10 +33,10 @@ func (m *mdv) getMarketDepthSnapshot(dataclient api.TradingDataServiceClient) er
 }
 
 func (m *mdv) subscribeToMarketDepthUpdates(dataclient api.TradingDataServiceClient) error {
-	req := &api.MarketDepthUpdatesSubscribeRequest{
-		MarketId: m.market.Id,
+	req := &api.ObserveMarketsDepthUpdatesRequest{
+		MarketIds: []string{m.market.Id},
 	}
-	stream, err := dataclient.MarketDepthUpdatesSubscribe(context.Background(), req)
+	stream, err := dataclient.ObserveMarketsDepthUpdates(context.Background(), req)
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to trades: %w", err)
 	}
@@ -50,7 +50,7 @@ func (m *mdv) subscribeToMarketDepthUpdates(dataclient api.TradingDataServiceCli
 	return nil
 }
 
-func (m *mdv) processMarketDepthUpdates(stream api.TradingDataService_MarketDepthUpdatesSubscribeClient) {
+func (m *mdv) processMarketDepthUpdates(stream api.TradingDataService_ObserveMarketsDepthUpdatesClient) {
 	for {
 		resp, err := stream.Recv()
 		if err == io.EOF {
@@ -62,7 +62,7 @@ func (m *mdv) processMarketDepthUpdates(stream api.TradingDataService_MarketDept
 			break
 		}
 
-		if len(resp.Update.Buy) == 0 && len(resp.Update.Sell) == 0 {
+		if len(resp.Update) == 0 {
 			continue
 		}
 
@@ -70,10 +70,15 @@ func (m *mdv) processMarketDepthUpdates(stream api.TradingDataService_MarketDept
 			continue
 		}
 
-		if resp.Update.PreviousSequenceNumber != m.book.seqNum {
-			continue
+		for _, md := range resp.Update {
+			if md.PreviousSequenceNumber != m.book.seqNum {
+				continue
+			}
+			if len(md.Buy) == 0 && len(md.Sell) == 0 {
+				continue
+			}
+			m.updateMarketDepthUpdates(md)
 		}
-		m.updateMarketDepthUpdates(resp.Update)
 	}
 }
 

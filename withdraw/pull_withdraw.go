@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	api "code.vegaprotocol.io/vega/protos/data-node/api/v1"
+	api "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"google.golang.org/grpc"
@@ -96,7 +96,7 @@ func getPartyWithdrawalAndBundlePairs(clt api.TradingDataServiceClient, withdraw
 func getBundle(clt api.TradingDataServiceClient, w *vega.Withdrawal) (*withdrawalBundle, error) {
 	ctx, cfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cfunc()
-	resp, err := clt.ERC20WithdrawalApproval(ctx, &api.ERC20WithdrawalApprovalRequest{
+	resp, err := clt.GetERC20WithdrawalApproval(ctx, &api.GetERC20WithdrawalApprovalRequest{
 		WithdrawalId: w.Id,
 	})
 	if err != nil {
@@ -130,20 +130,29 @@ func getWithdrawals(clt api.TradingDataServiceClient, parties []*vega.Party) (ma
 func getPartyWithdrawals(clt api.TradingDataServiceClient, party string) ([]*vega.Withdrawal, error) {
 	ctx, cfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cfunc()
-	withdrawals, err := clt.Withdrawals(ctx, &api.WithdrawalsRequest{PartyId: party})
+	withdrawalsResponse, err := clt.ListWithdrawals(ctx, &api.ListWithdrawalsRequest{PartyId: party})
 	if err != nil {
 		return nil, err
 	}
 
-	return withdrawals.Withdrawals, nil
+	withdrawals := make([]*vega.Withdrawal, 0, len(withdrawalsResponse.Withdrawals.Edges))
+	for _, w := range withdrawalsResponse.Withdrawals.Edges {
+		withdrawals = append(withdrawals, w.Node)
+	}
+
+	return withdrawals, nil
 }
 
 func getParties(clt api.TradingDataServiceClient) ([]*vega.Party, error) {
 	ctx, cfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cfunc()
-	parties, err := clt.Parties(ctx, &api.PartiesRequest{})
+	partiesResponse, err := clt.ListParties(ctx, &api.ListPartiesRequest{})
 	if err != nil {
 		return nil, err
 	}
-	return parties.Parties, nil
+	parties := make([]*vega.Party, 0, len(partiesResponse.Parties.Edges))
+	for _, value := range partiesResponse.Parties.Edges {
+		parties = append(parties, value.Node)
+	}
+	return parties, nil
 }
