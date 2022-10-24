@@ -259,6 +259,35 @@ func (w *walletWrapper) SendCommand(submission []byte, token string) error {
 	return nil
 }
 
+// SendBatchOrders sends a set of new order commands to the wallet
+func (w *walletWrapper) SendBatchOrders(user UserDetails,
+	cancels []*commandspb.OrderCancellation,
+	amends []*commandspb.OrderAmendment,
+	orders []*commandspb.OrderSubmission) error {
+	m := jsonpb.Marshaler{}
+
+	// Create the request
+	submitTxReq := &walletpb.SubmitTransactionRequest{
+		PubKey:    user.pubKey,
+		Propagate: true,
+	}
+
+	command := &walletpb.SubmitTransactionRequest_BatchMarketInstructions{
+		BatchMarketInstructions: &commandspb.BatchMarketInstructions{},
+	}
+	command.BatchMarketInstructions.Cancellations = cancels
+	command.BatchMarketInstructions.Amendments = amends
+	command.BatchMarketInstructions.Submissions = orders
+
+	submitTxReq.Command = command
+
+	cmd, err := m.MarshalToString(submitTxReq)
+	if err != nil {
+		return err
+	}
+	return w.SignSubmitTx(user.token, cmd)
+}
+
 // SendOrder sends a new order command to the wallet
 func (w *walletWrapper) SendOrder(user UserDetails, os *commandspb.OrderSubmission) error {
 	m := jsonpb.Marshaler{}
