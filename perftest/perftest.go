@@ -29,6 +29,7 @@ type Opts struct {
 	Voters            int
 	MoveMid           bool
 	LPOrdersPerSide   int
+	BatchSize         int
 }
 
 type perfLoadTesting struct {
@@ -105,6 +106,33 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, gan
 	return nil
 }
 
+func (p *perfLoadTesting) checkNetworkLimits(opts Opts) error {
+	// Check the limit of the number of orders per side in the LP shape
+	networkParam, err := p.dataNode.getNetworkParam("market.liquidityProvision.shapes.maxSize")
+	if err != nil {
+		fmt.Println("Failed to get LP maximum shape size")
+		return err
+	}
+	maxLPShape, _ := strconv.ParseInt(networkParam, 0, 32)
+
+	if opts.LPOrdersPerSide > int(maxLPShape) {
+		return fmt.Errorf("supplied lp size greater than network param (%d>%d)", opts.LPOrdersPerSide, maxLPShape)
+	}
+
+	// Check the maximum number of orders in a batch
+	networkParam, err = p.dataNode.getNetworkParam("spam.protection.max.batchSize")
+	if err != nil {
+		fmt.Println("Failed to get maximum order batch size")
+		return err
+	}
+	maxBatchSize, _ := strconv.ParseInt(networkParam, 0, 32)
+
+	if opts.BatchSize > int(maxBatchSize) {
+		return fmt.Errorf("supplied order batch size is greater than network param (%d>%d)", opts.BatchSize, maxBatchSize)
+	}
+	return nil
+}
+
 func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters, maxLPShape int) ([]string, error) {
 	markets := p.dataNode.getMarkets()
 	if len(markets) == 0 {
@@ -175,15 +203,15 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 	userCount := users - 2
 	now := time.Now()
 	midPrice := int64(10000)
-	count := 0
+	transactionCount := 0
 	delays := 0
-	ordersPerSecond := ops
+	transactionsPerSecond := ops
 	opsScale := 1.0
-	if ordersPerSecond > 1 {
-		opsScale = float64(ordersPerSecond - 1)
+	if transactionsPerSecond > 1 {
+		opsScale = float64(transactionsPerSecond - 1)
 	}
-	// Work out how many orders we need for 10 minute run
-	numberOfTransactions := runTimeSeconds * ordersPerSecond
+	// Work out how many transactions we need for the length of the run
+	numberOfTransactions := runTimeSeconds * transactionsPerSecond
 	for i := 0; i < numberOfTransactions; i++ {
 		// Pick a random market to send the trade on
 		marketID := marketIDs[rand.Intn(len(marketIDs))]
@@ -255,10 +283,10 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 				}
 			}
 		}
-		count++
+		transactionCount++
 
 		actualDiffSeconds := time.Since(now).Seconds()
-		wantedDiffSeconds := float64(count) / opsScale
+		wantedDiffSeconds := float64(transactionCount) / opsScale
 
 		// See if we are sending quicker than we should
 		if actualDiffSeconds < wantedDiffSeconds {
@@ -271,9 +299,128 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 		}
 
 		if actualDiffSeconds >= 1 {
-			fmt.Printf("\rSending load transactions...[%d/%d] %dcps  ", i, numberOfTransactions, count)
-			count = 0
+			fmt.Printf("\rSending load transactions...[%d/%d] %dcps  ", i, numberOfTransactions, transactionCount)
+			transactionCount = 0
 			delays = 0
+			now = time.Now()
+		}
+	}
+	fmt.Printf("\rSending load transactions...")
+	return nil
+}
+
+func (p *perfLoadTesting) sendBatchTradingLoad(marketIDs []string, users, ops, runTimeSeconds, batchSize int, moveMid bool) error {
+	userCount := users - 2
+	now := time.Now()
+	midPrice := int64(10000)
+	transactionCount := 0
+	batchCount := 0
+	transactionsPerSecond := ops
+
+	// Map to store the batch orders in
+	batchOrders := map[int]*BatchOrders{}
+
+	// Work out how many transactions we need for the length of the run
+	numberOfTransactions := runTimeSeconds * transactionsPerSecond
+	for i := 0; i < numberOfTransactions; i++ {
+		// Pick a random market to send the trade on
+		marketID := marketIDs[rand.Intn(len(marketIDs))]
+		userOffset := rand.Intn(userCount) + 2
+		user := p.users[userOffset]
+
+		batch := batchOrders[userOffset]
+		if batch == nil {
+			batch = &BatchOrders{}
+			batchOrders[userOffset] = batch
+		}
+
+		choice := rand.Intn(100)
+		if choice < 3 {
+			// Perform a cancel all
+			batch.cancels = append(batch.cancels, &commandspb.OrderCancellation{MarketId: marketID})
+
+			if moveMid {
+				// Move the midprice around as well
+				midPrice = midPrice + (rand.Int63n(3) - 1)
+				if midPrice < 9500 {
+					midPrice = 9505
+				}
+				if midPrice > 10500 {
+					midPrice = 10495
+				}
+			}
+		} else if choice < 15 {
+			// Perform a market order to generate some trades
+			if choice%2 == 1 {
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Size:        3,
+					Side:        proto.Side_SIDE_BUY,
+					Type:        proto.Order_TYPE_MARKET,
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
+			} else {
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Size:        3,
+					Side:        proto.Side_SIDE_SELL,
+					Type:        proto.Order_TYPE_MARKET,
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
+			}
+		} else {
+			// Insert a new order to fill up the book
+			priceOffset := rand.Int63n(40) - 20
+			if priceOffset > 0 {
+				// Send a sell
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint((midPrice - 1) + priceOffset),
+					Size:        1,
+					Side:        proto.Side_SIDE_SELL,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			} else {
+				// Send a buy
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint((midPrice + 1) + priceOffset),
+					Size:        1,
+					Side:        proto.Side_SIDE_BUY,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			}
+		}
+		transactionCount++
+
+		// If this batch has reached it's limit, send it and reset
+		if batch.GetMessageCount() == batchSize {
+			err := p.wallet.SendBatchOrders(user, batch.cancels, batch.amends, batch.orders)
+			if err != nil {
+				return err
+			}
+			batchCount++
+			batch.Empty()
+		}
+
+		// If we have done enough orders for this second, send them off
+		if transactionCount == ops {
+			for userOff, value := range batchOrders {
+				if value.GetMessageCount() > 0 {
+					err := p.wallet.SendBatchOrders(p.users[userOff], value.cancels, value.amends, value.orders)
+					if err != nil {
+						return err
+					}
+					batchCount++
+					value.Empty()
+				}
+			}
+
+			// If we are still under 1 second, wait before moving on to the next set of orders
+			timeUsed := time.Since(now).Seconds()
+
+			// Add in a delay to keep us processing at a per second rate
+			if timeUsed < 1.0 {
+				milliSecondsLeft := int((1.0 - timeUsed) * 1000.0)
+				time.Sleep(time.Millisecond * time.Duration(milliSecondsLeft))
+			}
+			fmt.Printf("\rSending load transactions...[%d/%d] %dcps %dbps ", i, numberOfTransactions, transactionCount, batchCount)
+			transactionCount = 0
+			batchCount = 0
 			now = time.Now()
 		}
 	}
@@ -319,15 +466,9 @@ func Run(opts Opts) error {
 	}
 	fmt.Println("Complete")
 
-	networkParam, err := plt.dataNode.getNetworkParam("market.liquidityProvision.shapes.maxSize")
+	err = plt.checkNetworkLimits(opts)
 	if err != nil {
-		fmt.Println("Failed to get LP maximum shape size")
 		return err
-	}
-	maxLPShape, _ := strconv.ParseInt(networkParam, 0, 32)
-
-	if opts.LPOrdersPerSide > int(maxLPShape) {
-		return fmt.Errorf("supplied lp size greater than network param (%d>%d)", opts.LPOrdersPerSide, maxLPShape)
 	}
 
 	// Send in a proposal to create a new market and vote to get it through
@@ -340,11 +481,20 @@ func Run(opts Opts) error {
 	fmt.Println("Complete")
 
 	// Send off a controlled amount of orders and cancels
-	fmt.Print("Sending load transactions...")
-	err = plt.sendTradingLoad(marketIDs, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds, opts.MoveMid)
-	if err != nil {
-		fmt.Println("FAILED")
-		return err
+	if opts.BatchSize > 0 {
+		fmt.Print("Sending load transactions...")
+		err = plt.sendBatchTradingLoad(marketIDs, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds, opts.BatchSize, opts.MoveMid)
+		if err != nil {
+			fmt.Println("FAILED")
+			return err
+		}
+	} else {
+		fmt.Print("Sending load transactions...")
+		err = plt.sendTradingLoad(marketIDs, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds, opts.MoveMid)
+		if err != nil {
+			fmt.Println("FAILED")
+			return err
+		}
 	}
 	fmt.Println("Complete                      ")
 

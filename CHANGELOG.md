@@ -57,6 +57,7 @@
 - [225](https://github.com/vegaprotocol/vegatools/issue/225) - Add option to dump total event counts
 - [227](https://github.com/vegaprotocol/vegatools/issue/227) - Allow configuration of the LP shape
 - [230](https://github.com/vegaprotocol/vegatools/issue/230) - Update datanode api use to v2
+- [232](https://github.com/vegaprotocol/vegatools/issue/232) - Add batched orders to perftest
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency

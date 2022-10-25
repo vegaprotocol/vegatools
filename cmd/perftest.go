@@ -27,6 +27,7 @@ func init() {
 	perfTestCmd.Flags().IntVarP(&opts.MarketCount, "markets", "m", 1, "number of markets to create and use")
 	perfTestCmd.Flags().IntVarP(&opts.Voters, "voters", "v", 3, "number of accounts to assign voting power")
 	perfTestCmd.Flags().IntVarP(&opts.LPOrdersPerSide, "lporders", "l", 3, "number of orders per side in the LP shape")
+	perfTestCmd.Flags().IntVarP(&opts.BatchSize, "batchsize", "b", 0, "set size of batch orders")
 	perfTestCmd.Flags().BoolVarP(&opts.MoveMid, "movemidprice", "p", false, "allow the mid price we place orders around to move randomly")
 	perfTestCmd.MarkFlagRequired("address")
 	perfTestCmd.MarkFlagRequired("wallet")
