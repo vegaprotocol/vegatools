@@ -314,109 +314,117 @@ func (p *perfLoadTesting) sendBatchTradingLoad(marketIDs []string, users, ops, r
 	now := time.Now()
 	midPrice := int64(10000)
 	transactionCount := 0
-	totalTransactionCount := 0
+	batchCount := 0
+	transactionsPerSecond := ops
 
-	for i := 0; i < runTimeSeconds; i++ {
+	// Map to store the batch orders in
+	batchOrders := map[int]*BatchOrders{}
+
+	// Work out how many transactions we need for the length of the run
+	numberOfTransactions := runTimeSeconds * transactionsPerSecond
+	for i := 0; i < numberOfTransactions; i++ {
 		// Pick a random market to send the trade on
 		marketID := marketIDs[rand.Intn(len(marketIDs))]
 		userOffset := rand.Intn(userCount) + 2
 		user := p.users[userOffset]
 
-		cancels := []*commandspb.OrderCancellation{}
-		amends := []*commandspb.OrderAmendment{}
-		orders := []*commandspb.OrderSubmission{}
+		batch := batchOrders[userOffset]
+		if batch == nil {
+			batch = &BatchOrders{}
+			batchOrders[userOffset] = batch
+		}
 
-		batchCount := 0
-		// Now process transactions for this user and market in a batch
-		for j := 0; j < ops; j++ {
-			choice := rand.Intn(100)
-			if choice < 3 {
-				cancels = append(cancels, &commandspb.OrderCancellation{
-					MarketId: marketID,
-				})
-				if moveMid {
-					// Move the midprice around as well
-					midPrice = midPrice + (rand.Int63n(3) - 1)
-					if midPrice < 9500 {
-						midPrice = 9505
-					}
-					if midPrice > 10500 {
-						midPrice = 10495
-					}
+		choice := rand.Intn(100)
+		if choice < 3 {
+			// Perform a cancel all
+			batch.cancels = append(batch.cancels, &commandspb.OrderCancellation{MarketId: marketID})
+
+			if moveMid {
+				// Move the midprice around as well
+				midPrice = midPrice + (rand.Int63n(3) - 1)
+				if midPrice < 9500 {
+					midPrice = 9505
 				}
-			} else if choice < 15 {
-				// Perform a market order to generate some trades
-				if choice%2 == 1 {
-					orders = append(orders, &commandspb.OrderSubmission{MarketId: marketID,
-						Size:        3,
-						Side:        proto.Side_SIDE_BUY,
-						Type:        proto.Order_TYPE_MARKET,
-						TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
-				} else {
-					orders = append(orders, &commandspb.OrderSubmission{MarketId: marketID,
-						Size:        3,
-						Side:        proto.Side_SIDE_SELL,
-						Type:        proto.Order_TYPE_MARKET,
-						TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
+				if midPrice > 10500 {
+					midPrice = 10495
 				}
+			}
+		} else if choice < 15 {
+			// Perform a market order to generate some trades
+			if choice%2 == 1 {
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Size:        3,
+					Side:        proto.Side_SIDE_BUY,
+					Type:        proto.Order_TYPE_MARKET,
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
 			} else {
-				// Insert a new order to fill up the book
-				priceOffset := rand.Int63n(40) - 20
-				if priceOffset > 0 {
-					// Send a sell
-					orders = append(orders, &commandspb.OrderSubmission{MarketId: marketID,
-						Price:       fmt.Sprint((midPrice - 1) + priceOffset),
-						Size:        1,
-						Side:        proto.Side_SIDE_SELL,
-						Type:        proto.Order_TYPE_LIMIT,
-						TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-				} else {
-					// Send a buy
-					orders = append(orders, &commandspb.OrderSubmission{MarketId: marketID,
-						Price:       fmt.Sprint((midPrice + 1) + priceOffset),
-						Size:        1,
-						Side:        proto.Side_SIDE_BUY,
-						Type:        proto.Order_TYPE_LIMIT,
-						TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-				}
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Size:        3,
+					Side:        proto.Side_SIDE_SELL,
+					Type:        proto.Order_TYPE_MARKET,
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
 			}
-			transactionCount++
+		} else {
+			// Insert a new order to fill up the book
+			priceOffset := rand.Int63n(40) - 20
+			if priceOffset > 0 {
+				// Send a sell
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint((midPrice - 1) + priceOffset),
+					Size:        1,
+					Side:        proto.Side_SIDE_SELL,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			} else {
+				// Send a buy
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint((midPrice + 1) + priceOffset),
+					Size:        1,
+					Side:        proto.Side_SIDE_BUY,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			}
+		}
+		transactionCount++
+
+		// If this batch has reached it's limit, send it and reset
+		if batch.GetMessageCount() == batchSize {
+			err := p.wallet.SendBatchOrders(user, batch.cancels, batch.amends, batch.orders)
+			if err != nil {
+				return err
+			}
 			batchCount++
-			if batchCount == batchSize {
-				// Send off the batch and reset everything
-				err := p.wallet.SendBatchOrders(user, cancels, amends, orders)
-				if err != nil {
-					return err
+			batch.Empty()
+		}
+
+		// If we have done enough orders for this second, send them off
+		if transactionCount == ops {
+			for userOff, value := range batchOrders {
+				if value.GetMessageCount() > 0 {
+					err := p.wallet.SendBatchOrders(p.users[userOff], value.cancels, value.amends, value.orders)
+					if err != nil {
+						return err
+					}
+					batchCount++
+					value.Empty()
 				}
-				batchCount = 0
-				marketID = marketIDs[rand.Intn(len(marketIDs))]
-				userOffset = rand.Intn(userCount) + 2
-				user = p.users[userOffset]
-
-				cancels = cancels[:0]
-				amends = amends[:0]
-				orders = orders[:0]
 			}
-		}
 
-		// Now send off all the commands in a batch
-		err := p.wallet.SendBatchOrders(user, cancels, amends, orders)
-		if err != nil {
-			return err
-		}
+			// If we are still under 1 second, wait before moving on to the next set of orders
+			timeUsed := time.Since(now).Seconds()
 
-		timeUsed := time.Since(now).Seconds()
-
-		// Add in a delay to keep us processing at a per second rate
-		if timeUsed < 1.0 {
-			milliSecondsLeft := int((1.0 - timeUsed) * 1000.0)
-			time.Sleep(time.Millisecond * time.Duration(milliSecondsLeft))
+			// Add in a delay to keep us processing at a per second rate
+			if timeUsed < 1.0 {
+				milliSecondsLeft := int((1.0 - timeUsed) * 1000.0)
+				time.Sleep(time.Millisecond * time.Duration(milliSecondsLeft))
+			}
+			fmt.Printf("\rSending load transactions...[%d/%d] %dcps %dbps ", i, numberOfTransactions, transactionCount, batchCount)
+			transactionCount = 0
+			batchCount = 0
+			now = time.Now()
 		}
-		totalTransactionCount += transactionCount
-		fmt.Printf("\rSending load transactions...[%d/%d] %dcps  ", totalTransactionCount, ops*runTimeSeconds, transactionCount)
-		transactionCount = 0
-		now = time.Now()
 	}
+	fmt.Printf("\rSending load transactions...")
 	return nil
 }
 
