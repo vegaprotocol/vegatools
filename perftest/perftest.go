@@ -30,6 +30,7 @@ type Opts struct {
 	MoveMid           bool
 	LPOrdersPerSide   int
 	BatchSize         int
+	PeggedOrders      int
 }
 
 type perfLoadTesting struct {
@@ -196,6 +197,53 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters, maxLPSh
 	}
 
 	return markets, nil
+}
+
+func (p *perfLoadTesting) seedPeggedOrders(marketIDs []string, peggedOrderCount int) error {
+	// Loop through every market
+	for _, marketID := range marketIDs {
+		for i := 0; i < peggedOrderCount; i++ {
+			// Only use the first 2 users as they won't have their orders deleted
+			userOffset := rand.Intn(2)
+			user := p.users[userOffset]
+
+			priceOffset := 100 + rand.Intn(100)
+			side := rand.Intn(100)
+
+			order := &commandspb.OrderSubmission{
+				MarketId:    marketID,
+				Size:        1,
+				Type:        proto.Order_TYPE_LIMIT,
+				TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
+				PeggedOrder: &proto.PeggedOrder{
+					Offset: fmt.Sprint(priceOffset),
+				},
+			}
+
+			if side < 50 {
+				// We are a buy side pegged order
+				order.Side = proto.Side_SIDE_BUY
+				if side%2 == 0 {
+					order.PeggedOrder.Reference = proto.PeggedReference_PEGGED_REFERENCE_BEST_BID
+				} else {
+					order.PeggedOrder.Reference = proto.PeggedReference_PEGGED_REFERENCE_MID
+				}
+			} else {
+				// We are a sell side pegged order
+				order.Side = proto.Side_SIDE_SELL
+				if side%2 == 0 {
+					order.PeggedOrder.Reference = proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK
+				} else {
+					order.PeggedOrder.Reference = proto.PeggedReference_PEGGED_REFERENCE_MID
+				}
+			}
+			err := p.wallet.SendOrder(user, order)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTimeSeconds int, moveMid bool) error {
@@ -479,6 +527,14 @@ func Run(opts Opts) error {
 		return err
 	}
 	fmt.Println("Complete")
+
+	// Do we need to seed the market with some pegged orders for load testing purposes?
+	if opts.PeggedOrders > 0 {
+		err = plt.seedPeggedOrders(marketIDs, opts.PeggedOrders)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Send off a controlled amount of orders and cancels
 	if opts.BatchSize > 0 {
