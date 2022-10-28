@@ -21,6 +21,7 @@ func init() {
 	eventRateCmd.Flags().IntVarP(&eventRateOpts.Buckets, "buckets", "b", 10, "number of historic buckets")
 	eventRateCmd.Flags().IntVarP(&eventRateOpts.SecondsPerBucket, "secondsperbucket", "s", 1, "number of seconds to record each bucket")
 	eventRateCmd.Flags().IntVarP(&eventRateOpts.EventCountDump, "eventcountdump", "e", 0, "dump total event count every x seconds")
+	eventRateCmd.Flags().BoolVarP(&eventRateOpts.ReportStyle, "reportstyle", "r", false, "print output on a new line")
 	eventRateCmd.MarkFlagRequired("address")
 }
 

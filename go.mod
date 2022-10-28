@@ -3,8 +3,8 @@ module code.vegaprotocol.io/vegatools
 go 1.19
 
 require (
-	code.vegaprotocol.io/shared v0.0.0-20220704150014-7c22d12ccb72
-	code.vegaprotocol.io/vega v0.58.1-0.20221018160916-e5debe36ecb1
+	code.vegaprotocol.io/shared v0.0.0-20221010085458-55c50711135f
+	code.vegaprotocol.io/vega v0.60.1-0.20221028083753-0937da9816e1
 	github.com/cosmos/iavl v0.19.1
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/gdamore/tcell/v2 v2.5.2
@@ -16,7 +16,7 @@ require (
 	github.com/tendermint/tm-db v0.6.7
 	go.nanomsg.org/mangos/v3 v3.4.2
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
-	google.golang.org/grpc v1.48.0
+	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
 )
 
@@ -42,7 +42,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.9.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
@@ -52,12 +52,12 @@ require (
 	github.com/rjeczalik/notify v0.9.1 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/tendermint/tendermint v0.34.21 // indirect
+	github.com/tendermint/tendermint v0.34.22 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	golang.org/x/net v0.0.0-20220726230323-06994584191e // indirect
-	golang.org/x/sys v0.0.0-20220727055044-e65921a090b8 // indirect
+	golang.org/x/net v0.0.0-20220812174116-3211cb980234 // indirect
+	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b // indirect
