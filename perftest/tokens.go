@@ -42,10 +42,10 @@ func approveAndStakeToken(token token, bridge *ethereum.StakingBridgeSession, am
 func sendVegaTokens(vegaPubKey, ganacheURL string) error {
 	ctx := context.Background()
 
-	url := "http://" + ganacheURL
+	url := "ws://" + ganacheURL
 
 	// Create a connection to ganache
-	client, err := ethereum.NewClient(ctx, url, 1440)
+	client, err := ethereum.NewClient(ctx, url)
 	if err != nil {
 		return err
 	}

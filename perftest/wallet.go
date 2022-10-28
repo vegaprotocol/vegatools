@@ -15,7 +15,7 @@ import (
 
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 )
 
@@ -340,12 +340,18 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 										Future: &proto.FutureProduct{
 											SettlementAsset: "fUSDC",
 											QuoteName:       "BTCUSD",
-											OracleSpecBinding: &proto.OracleSpecToFutureBinding{
+											DataSourceSpecBinding: &proto.DataSourceSpecToFutureBinding{
 												SettlementDataProperty:     "trading.settled",
 												TradingTerminationProperty: "trading.termination",
 											},
-											OracleSpecForTradingTermination: &v1.OracleSpecConfiguration{
-												PubKeys: []string{"0xDEADBEEF"},
+											DataSourceSpecForTradingTermination: &v1.DataSourceSpecConfiguration{
+												Signers: []*v1.Signer{
+													{
+														Signer: &v1.Signer_PubKey{
+															PubKey: &v1.PubKey{Key: "0xDEADBEEF"},
+														},
+													},
+												},
 												Filters: []*v1.Filter{
 													{Key: &v1.PropertyKey{
 														Name: "trading.termination",
@@ -353,8 +359,14 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 													}},
 												},
 											},
-											OracleSpecForSettlementData: &v1.OracleSpecConfiguration{
-												PubKeys: []string{"0xDEADBEEF"},
+											DataSourceSpecForSettlementData: &v1.DataSourceSpecConfiguration{
+												Signers: []*v1.Signer{
+													{
+														Signer: &v1.Signer_PubKey{
+															PubKey: &v1.PubKey{Key: "0xDEADBEEF"},
+														},
+													},
+												},
 												Filters: []*v1.Filter{
 													{Key: &v1.PropertyKey{
 														Name: "trading.settled",

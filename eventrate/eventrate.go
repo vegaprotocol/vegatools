@@ -18,6 +18,7 @@ type Opts struct {
 	Buckets          int
 	SecondsPerBucket int
 	EventCountDump   int
+	ReportStyle      bool
 }
 
 func min(a, b uint64) uint64 {
@@ -127,6 +128,10 @@ func Run(opts Opts) error {
 		fmt.Printf("[%d:%s]) Min:[%d:%s] Max:[%d:%s] Avg:[%d:%s]            \r",
 			historicData[0].Events, fixUnits(historicData[0].Bytes),
 			minEvents, fixUnits(minBytes), maxEvents, fixUnits(maxBytes), avgEvents, fixUnits(avgBytes))
+
+		if opts.ReportStyle {
+			fmt.Println()
+		}
 
 		if opts.EventCountDump > 0 {
 			displayCounter++
