@@ -13,16 +13,17 @@ import (
 	"syscall"
 	"time"
 
-	api "code.vegaprotocol.io/protos/vega/api/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/golang/protobuf/jsonpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func connect(ctx context.Context,
 	batchSize uint,
 	party, market, serverAddr string, types []string) (*grpc.ClientConn, api.CoreService_ObserveEventBusClient, error) {
-	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1024*1024*64)))
 	if err != nil {
 		return nil, nil, err
 	}

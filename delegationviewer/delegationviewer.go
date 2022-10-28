@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	api "code.vegaprotocol.io/protos/data-node/api/v1"
-	proto "code.vegaprotocol.io/protos/vega"
+	api "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
@@ -51,12 +51,16 @@ func initialiseValidatorNames() {
 }
 
 func getDelegationDetails(dataclient api.TradingDataServiceClient) error {
-	req := &api.GetNodesRequest{}
-	nodeResp, err := dataclient.GetNodes(context.Background(), req)
+	req := &api.ListNodesRequest{}
+	nodeResp, err := dataclient.ListNodes(context.Background(), req)
 	if err != nil {
-		return fmt.Errorf("Failed to get node details: %v", err)
+		return fmt.Errorf("failed to get node details: %v", err)
 	}
-	nodes = nodeResp.Nodes
+
+	nodes = make([]*proto.Node, 0, len(nodeResp.Nodes.Edges))
+	for _, edgeNode := range nodeResp.Nodes.GetEdges() {
+		nodes = append(nodes, edgeNode.Node)
+	}
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].Id < nodes[j].Id })
 	return nil
 }
@@ -197,7 +201,7 @@ func Run(gRPCAddress string, delay uint) error {
 	connection, err := grpc.Dial(gRPCAddress, grpc.WithInsecure())
 	if err != nil {
 		// Something went wrong
-		return fmt.Errorf("Failed to connect to the vega gRPC port: %s", err)
+		return fmt.Errorf("failed to connect to the vega gRPC port: %s", err)
 	}
 	defer connection.Close()
 	dataclient := api.NewTradingDataServiceClient(connection)
@@ -205,7 +209,7 @@ func Run(gRPCAddress string, delay uint) error {
 	// Check we can get delegation information
 	err = getDelegationDetails(dataclient)
 	if err != nil {
-		return fmt.Errorf("Failed to get delegation details: %v", err)
+		return fmt.Errorf("failed to get delegation details: %v", err)
 	}
 
 	initialiseValidatorNames()

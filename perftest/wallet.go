@@ -4,18 +4,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/jsonpb"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
-	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/oracles/v1"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 )
 
 // WalletWrapper holds details about the wallet
@@ -50,7 +51,7 @@ func (w walletWrapper) LoginWallet(username, password string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -81,7 +82,7 @@ func (w walletWrapper) CreateWallet(username, password string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -122,7 +123,7 @@ func (w walletWrapper) CreateKey(password, token string) (string, error) {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -159,7 +160,7 @@ func (w walletWrapper) ListKeys(token string) ([]string, error) {
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +247,7 @@ func (w *walletWrapper) SendCommand(submission []byte, token string) error {
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -256,6 +257,35 @@ func (w *walletWrapper) SendCommand(submission []byte, token string) error {
 		return fmt.Errorf(sb)
 	}
 	return nil
+}
+
+// SendBatchOrders sends a set of new order commands to the wallet
+func (w *walletWrapper) SendBatchOrders(user UserDetails,
+	cancels []*commandspb.OrderCancellation,
+	amends []*commandspb.OrderAmendment,
+	orders []*commandspb.OrderSubmission) error {
+	m := jsonpb.Marshaler{}
+
+	// Create the request
+	submitTxReq := &walletpb.SubmitTransactionRequest{
+		PubKey:    user.pubKey,
+		Propagate: true,
+	}
+
+	command := &walletpb.SubmitTransactionRequest_BatchMarketInstructions{
+		BatchMarketInstructions: &commandspb.BatchMarketInstructions{},
+	}
+	command.BatchMarketInstructions.Cancellations = cancels
+	command.BatchMarketInstructions.Amendments = amends
+	command.BatchMarketInstructions.Submissions = orders
+
+	submitTxReq.Command = command
+
+	cmd, err := m.MarshalToString(submitTxReq)
+	if err != nil {
+		return err
+	}
+	return w.SignSubmitTx(user.token, cmd)
 }
 
 // SendOrder sends a new order command to the wallet
@@ -278,23 +308,27 @@ func (w *walletWrapper) SendOrder(user UserDetails, os *commandspb.OrderSubmissi
 }
 
 // SendNewMarketProposal will build and send a new market proposal to the wallet
-func (w *walletWrapper) SendNewMarketProposal(user UserDetails) error {
+func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails) error {
 
 	m := jsonpb.Marshaler{}
+
+	ref := fmt.Sprintf("PerfBotProposalRef%d", marketIndex)
+	desc := fmt.Sprintf("PerfBotDesc%d", marketIndex)
+	title := fmt.Sprintf("PerfBotProposalTitle%d", marketIndex)
 
 	submitTxReq := &walletpb.SubmitTransactionRequest{
 		PubKey:    user.pubKey,
 		Propagate: true,
 		Command: &walletpb.SubmitTransactionRequest_ProposalSubmission{
 			ProposalSubmission: &commandspb.ProposalSubmission{
-				Reference: "PerfBotProposalRef",
+				Reference: ref,
 				Rationale: &proto.ProposalRationale{
-					Description: "PerfBotRational",
+					Description: desc,
+					Title:       title,
 				},
 				Terms: &proto.ProposalTerms{
-					ValidationTimestamp: w.SecondsFromNowInSecs(1),
-					ClosingTimestamp:    w.SecondsFromNowInSecs(15),
-					EnactmentTimestamp:  w.SecondsFromNowInSecs(20),
+					ClosingTimestamp:   w.SecondsFromNowInSecs(15),
+					EnactmentTimestamp: w.SecondsFromNowInSecs(20),
 					Change: &proto.ProposalTerms_NewMarket{
 						NewMarket: &proto.NewMarket{
 							Changes: &proto.NewMarketConfiguration{
@@ -307,22 +341,22 @@ func (w *walletWrapper) SendNewMarketProposal(user UserDetails) error {
 											SettlementAsset: "fUSDC",
 											QuoteName:       "BTCUSD",
 											OracleSpecBinding: &proto.OracleSpecToFutureBinding{
-												SettlementPriceProperty:    "trading.settled",
+												SettlementDataProperty:     "trading.settled",
 												TradingTerminationProperty: "trading.termination",
 											},
 											OracleSpecForTradingTermination: &v1.OracleSpecConfiguration{
 												PubKeys: []string{"0xDEADBEEF"},
 												Filters: []*v1.Filter{
-													&v1.Filter{Key: &v1.PropertyKey{
+													{Key: &v1.PropertyKey{
 														Name: "trading.termination",
 														Type: v1.PropertyKey_TYPE_BOOLEAN,
 													}},
 												},
 											},
-											OracleSpecForSettlementPrice: &v1.OracleSpecConfiguration{
+											OracleSpecForSettlementData: &v1.OracleSpecConfiguration{
 												PubKeys: []string{"0xDEADBEEF"},
 												Filters: []*v1.Filter{
-													&v1.Filter{Key: &v1.PropertyKey{
+													{Key: &v1.PropertyKey{
 														Name: "trading.settled",
 														Type: v1.PropertyKey_TYPE_INTEGER,
 													}},
@@ -341,24 +375,6 @@ func (w *walletWrapper) SendNewMarketProposal(user UserDetails) error {
 									},
 								},
 							},
-							LiquidityCommitment: &proto.NewMarketCommitment{
-								Fee:              "0.01",
-								CommitmentAmount: "50000000",
-								Buys: []*proto.LiquidityOrder{
-									&proto.LiquidityOrder{
-										Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
-										Proportion: 10,
-										Offset:     "2000",
-									},
-								},
-								Sells: []*proto.LiquidityOrder{
-									&proto.LiquidityOrder{
-										Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
-										Proportion: 10,
-										Offset:     "2000",
-									},
-								},
-							},
 						},
 					},
 				},
@@ -371,6 +387,49 @@ func (w *walletWrapper) SendNewMarketProposal(user UserDetails) error {
 		return err
 	}
 
+	return w.SignSubmitTx(user.token, cmd)
+}
+
+func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string, orderCount int) error {
+	lp := commandspb.LiquidityProvisionSubmission{
+		MarketId:         marketID,
+		Reference:        "MarketLiquidity",
+		Fee:              "0.01",
+		CommitmentAmount: "50000000",
+	}
+
+	// Generate the buy and sell side LP orders
+	buys := make([]*proto.LiquidityOrder, orderCount)
+	sells := make([]*proto.LiquidityOrder, orderCount)
+	for i := 0; i < orderCount; i++ {
+		buys[i] = &proto.LiquidityOrder{
+			Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
+			Proportion: 10,
+			Offset:     strconv.FormatInt(int64(1000+(i*10)), 10),
+		}
+		sells[i] = &proto.LiquidityOrder{
+			Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+			Proportion: 10,
+			Offset:     strconv.FormatInt(int64(1000+(i*10)), 10),
+		}
+	}
+
+	lp.Buys = buys
+	lp.Sells = sells
+
+	m := jsonpb.Marshaler{}
+
+	submitTxReq := &walletpb.SubmitTransactionRequest{
+		PubKey:    user.pubKey,
+		Propagate: true,
+		Command: &walletpb.SubmitTransactionRequest_LiquidityProvisionSubmission{
+			LiquidityProvisionSubmission: &lp,
+		},
+	}
+	cmd, err := m.MarshalToString(submitTxReq)
+	if err != nil {
+		return err
+	}
 	return w.SignSubmitTx(user.token, cmd)
 }
 
@@ -408,10 +467,8 @@ func (w walletWrapper) SendVote(user UserDetails, vote *commandspb.VoteSubmissio
 		},
 	}
 	cmd, err := m.MarshalToString(submitTxReq)
-
-	err = w.SignSubmitTx(user.token, cmd)
 	if err != nil {
 		return err
 	}
-	return nil
+	return w.SignSubmitTx(user.token, cmd)
 }

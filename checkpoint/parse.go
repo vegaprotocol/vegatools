@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
-	events "code.vegaprotocol.io/protos/vega/events/v1"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
+	events "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/golang/protobuf/proto"
 )

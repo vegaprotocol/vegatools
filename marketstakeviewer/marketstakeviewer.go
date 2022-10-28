@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	api "code.vegaprotocol.io/protos/data-node/api/v1"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	api "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
@@ -176,17 +176,16 @@ func getTargetStakeTriggeringRatio(dataclient api.TradingDataServiceClient) (rat
 	const key = "market.liquidity.targetstake.triggering.ratio"
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	var response *api.NetworkParametersResponse
-	response, err = dataclient.NetworkParameters(ctx, &api.NetworkParametersRequest{})
+	request := api.GetNetworkParameterRequest{
+		Key: key,
+	}
+	response, err := dataclient.GetNetworkParameter(ctx, &request)
 	if err != nil {
 		err = fmt.Errorf("gRPC NetworkParameters call failed: %w", err)
 		return
 	}
-	for _, p := range response.NetworkParameters {
-		if p.Key != key {
-			continue
-		}
-		ratio, err = strconv.ParseFloat(p.Value, 64)
+	if response.NetworkParameter != nil {
+		ratio, err = strconv.ParseFloat(response.NetworkParameter.Value, 64)
 		if err != nil {
 			err = fmt.Errorf("failed to parse float: %w", err)
 		}

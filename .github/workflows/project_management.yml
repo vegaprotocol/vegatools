@@ -4,13 +4,16 @@
 name: 'Project Board Automation'
 
 "on":
+  pull_request_target:
+    branches: [develop, main]
+    types: [synchronize, opened, reopened, labeled, unlabeled, ready_for_review, review_requested, converted_to_draft, closed]
   pull_request:
     branches: [develop, main]
     types: [synchronize, opened, reopened, labeled, unlabeled, ready_for_review, review_requested, converted_to_draft, closed]
   pull_request_review:
-    types: [submitted]
+    types: [submitted, edited]
   pull_request_review_comment:
-    types: [created]
+    types: [created, edited]
 
 # Configure the project specific variables
 env:
@@ -27,6 +30,10 @@ env:
   DONE_COLUMN_NAME: '"Done"'
   ITERATION_FIELD_NAME: 'Sprint'   # See project settings (default is `Iteration`)
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   project-board-automation:
     name: 'Linked Issues & Project Board Automation'
@@ -41,8 +48,8 @@ jobs:
       # yamllint disable rule:line-length
       - name: 'Get linked issue id and state'
         id: linked-issue
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # env:
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api graphql -f query='
             query($pr_url: URI!) {
@@ -72,7 +79,7 @@ jobs:
         if: |
           env.LINKED_ISSUE_ID != '' &&
            contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) != true
-        uses: actions/github-script@v6.1.0
+        uses: actions/github-script@v6.1.1
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -82,7 +89,7 @@ jobs:
         if: |
           steps.bot-pr.outcome == 'success' || env.LINKED_ISSUE_ID == '' &&
            contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) == true
-        uses: actions/github-script@v6.1.0
+        uses: actions/github-script@v6.1.1
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -90,7 +97,7 @@ jobs:
       - name: 'Fail if no linked issue or exclusion label'
         id: exclude-linked-error
         if: steps.linked.outcome == 'skipped' && steps.exclude-linked.outcome == 'skipped'
-        uses: actions/github-script@v6.1.0
+        uses: actions/github-script@v6.1.1
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -99,7 +106,7 @@ jobs:
       - name: 'Fail if linked issue AND exclusion label'
         id: linked-and-nochangelog
         if: steps.linked.outcome == 'success' && steps.exclude-linked.outcome == 'success'
-        uses: actions/github-script@v6.1.0
+        uses: actions/github-script@v6.1.1
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -275,7 +282,9 @@ jobs:
           echo 'CURRENT_STATUS='${{ env.IN_REVIEW_COLUMN }} >> $GITHUB_ENV
       - name: 'Set work item for approved column'
         id: approved
-        if: steps.draft-pr.outcome == 'skipped' && env.REVIEW_DECISION == '"APPROVED"'
+        if: |
+          (steps.draft-pr.outcome == 'skipped' && (env.REVIEW_DECISION == '"APPROVED"' ||
+           env.LATEST_REVIEW_STATE == '"APPROVED"'))
         run: |
           echo 'ITEM_ID='${{  env.BOARD_ITEM_ID }} >> $GITHUB_ENV
           echo 'CURRENT_STATUS='${{ env.APPROVED_COLUMN }} >> $GITHUB_ENV
@@ -349,34 +358,43 @@ jobs:
               -f status_value=${{ env.CURRENT_STATUS }} \
               -f iteration_field=$ITERATION_FIELD_ID \
               -f iteration_value=${{ env.CURRENT_ITERATION }}
+
   verify-changelog-updated:
-    name: Verify CHANGELOG Updated
+    name: "Verify CHANGELOG Updated"
     needs: project-board-automation
     runs-on: ubuntu-latest
     env:
       IS_BOT: ${{needs.project-board-automation.outputs.bot-pr-output}}
     steps:
       - run: env
-      - name: Check bot
+      - name: "Check bot"
         id: check-bot
         if: env.IS_BOT == '1'
-        run: echo "Pull request opened by bot - no changelog required"
-      - name: No changelog required
+        run: echo "pull request opened by bot"
+      - name: "No changelog required"
         id: changelog-excluded
         if: github.event.pull_request.draft == true || contains(github.event.pull_request.labels.*.name, 'no-changelog') == true
-        run: echo "Changelog requirment excluded"
-      - name: Checkout
+        run: echo "changelog requirment excluded"
+      - name: "Checkout"
         id: checkout
         if: steps.check-bot.outcome == 'skipped' && steps.changelog-excluded.outcome == 'skipped'
         uses: actions/checkout@v3
-      # yamllint enable rule:line-length
-      - name: Check changelog entry
-        id: changelog-check
-        if: steps.checkout.outcome == 'success'
-        uses: Zomzog/changelog-checker@v1.2.0
         with:
-          fileName: CHANGELOG.md
-          noChangelogLabel: "no-changelog"
-          checkNotification: Simple
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: "Check changelog entry"
+        shell: pwsh
+        id: check_file_changed
+        if: steps.checkout.outcome == 'success'
+        run: |
+          $diff = git diff --name-only HEAD^ HEAD
+          $SourceDiff = $diff | Where-Object { $_ -match 'CHANGELOG.md' }
+          $HasDiff = $SourceDiff.Length -gt 0
+          Write-Host "::set-output name=changelog_changed::$HasDiff"
+      - name: "Report fail"
+        if: steps.check_file_changed.outputs.changelog_changed != 'True' && steps.check_file_changed.outcome == 'success'
+        uses: actions/github-script@v6.1.0
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            console.log("Changelog should be updated, or if a small fix the 'no-changelog label used!");
+            core.setFailed("Changelog should be updated, or if a small fix the 'no-changelog label used!");

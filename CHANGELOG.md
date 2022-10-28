@@ -44,6 +44,21 @@
 - [156](https://github.com/vegaprotocol/vegatools/issue/156) - Upgraded go build versions to 1.16 + 1.17
 - [165](https://github.com/vegaprotocol/vegatools/issue/165) - Adding perftest subcommand
 - [184](https://github.com/vegaprotocol/vegatools/issue/184) - Refactoring perftest
+- [185](https://github.com/vegaprotocol/vegatools/issue/185) - Adding event rate measuring tool
+- [190](https://github.com/vegaprotocol/vegatools/issue/190) - Removed validation time from market proposal
+- [197](https://github.com/vegaprotocol/vegatools/issue/197) - Update protos location to their new place inside Vega
+- [206](https://github.com/vegaprotocol/vegatools/issue/206) - Move liquidity provision from inside market proposal to it's own proposal
+- [208](https://github.com/vegaprotocol/vegatools/issue/208) - User selectable number of markets for load testing 
+- [210](https://github.com/vegaprotocol/vegatools/issue/210) - Added delta based market depth display 
+- [214](https://github.com/vegaprotocol/vegatools/issue/214) - Increase gRPC receive buffer size 
+- [216](https://github.com/vegaprotocol/vegatools/issue/216) - Display block time in eventrate tool to monitor event stream lag 
+- [218](https://github.com/vegaprotocol/vegatools/issue/218) - perftest allows multiple LPs and moving of mid price for random orders 
+- [222](https://github.com/vegaprotocol/vegatools/issue/222) - Updated market proposal text with renamed fields
+- [225](https://github.com/vegaprotocol/vegatools/issue/225) - Add option to dump total event counts
+- [227](https://github.com/vegaprotocol/vegatools/issue/227) - Allow configuration of the LP shape
+- [230](https://github.com/vegaprotocol/vegatools/issue/230) - Update datanode api use to v2
+- [232](https://github.com/vegaprotocol/vegatools/issue/232) - Add batched orders to perftest
+- [234](https://github.com/vegaprotocol/vegatools/issue/234) - Add pegged order support to perftest
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency

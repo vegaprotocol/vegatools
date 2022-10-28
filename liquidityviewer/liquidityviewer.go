@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	api "code.vegaprotocol.io/protos/data-node/api/v1"
-	proto "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	api "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	proto "code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/gdamore/tcell/v2"
 	"google.golang.org/grpc"
@@ -36,30 +36,35 @@ var (
 )
 
 func getLiquidityProvisions(dataclient api.TradingDataServiceClient, marketID string) []*proto.LiquidityProvision {
-	lpReq := &api.LiquidityProvisionsRequest{Market: marketID}
+	lpReq := &api.ListLiquidityProvisionsRequest{MarketId: &marketID}
 
-	response, err := dataclient.LiquidityProvisions(context.Background(), lpReq)
+	response, err := dataclient.ListLiquidityProvisions(context.Background(), lpReq)
 	if err != nil {
 		log.Println(err)
 	}
-	return response.LiquidityProvisions
+	lps := make([]*proto.LiquidityProvision, 0, len(response.LiquidityProvisions.Edges))
+
+	for _, lp := range response.LiquidityProvisions.Edges {
+		lps = append(lps, lp.Node)
+	}
+	return lps
 }
 
 func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string) *proto.Market {
-	marketsRequest := &api.MarketsRequest{}
+	marketsRequest := &api.ListMarketsRequest{}
 
-	marketsResponse, err := dataclient.Markets(context.Background(), marketsRequest)
+	marketsResponse, err := dataclient.ListMarkets(context.Background(), marketsRequest)
 	if err != nil {
 		return nil
 	}
 
 	var validMarkets []*proto.Market
 	// Check each market to see if we have at least one LP
-	for _, market := range marketsResponse.Markets {
-		lps := getLiquidityProvisions(dataclient, market.Id)
+	for _, market := range marketsResponse.Markets.Edges {
+		lps := getLiquidityProvisions(dataclient, market.Node.Id)
 		if len(lps) > 0 {
-			validMarkets = append(validMarkets, market)
-			mapMarketToLPs[market.Id] = lps
+			validMarkets = append(validMarkets, market.Node)
+			mapMarketToLPs[market.Node.Id] = lps
 		}
 	}
 
@@ -106,7 +111,7 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 	// Correct index as we start with 0
 	index--
 
-	if index < 0 || index > len(marketsResponse.Markets)-1 {
+	if index < 0 || index > len(marketsResponse.Markets.Edges)-1 {
 		fmt.Println("Invalid market selected")
 		os.Exit(0)
 	}
@@ -167,36 +172,38 @@ func getPartyToDisplay(dataclient api.TradingDataServiceClient, marketID, partyI
 }
 
 func getAccountDetails(dataclient api.TradingDataServiceClient, partyID, assetID string) {
-	lpReq := &api.PartyAccountsRequest{
-		PartyId: partyID,
-		Asset:   assetID,
+	lpReq := &api.ListAccountsRequest{
+		Filter: &api.AccountFilter{
+			PartyIds: strings.Fields(partyID),
+			AssetId:  assetID,
+		},
 	}
 
-	response, err := dataclient.PartyAccounts(context.Background(), lpReq)
+	response, err := dataclient.ListAccounts(context.Background(), lpReq)
 	if err != nil {
 		log.Fatalln(err)
 		return
 	}
 
-	for _, acct := range response.Accounts {
+	for _, acct := range response.Accounts.Edges {
 		log.Println(acct)
-		switch acct.Type {
+		switch acct.Account.Type {
 		case proto.AccountType_ACCOUNT_TYPE_BOND:
-			acctBond = acct.Balance
+			acctBond = acct.Account.Balance
 		case proto.AccountType_ACCOUNT_TYPE_MARGIN:
-			acctMargin = acct.Balance
+			acctMargin = acct.Account.Balance
 		case proto.AccountType_ACCOUNT_TYPE_GENERAL:
-			acctGeneral = acct.Balance
+			acctGeneral = acct.Account.Balance
 		}
 	}
 }
 
 func subscribePositions(dataclient api.TradingDataServiceClient, marketID string, userKey string) {
-	req := &api.PositionsSubscribeRequest{
-		MarketId: marketID,
-		PartyId:  userKey,
+	req := &api.ObservePositionsRequest{
+		MarketId: &marketID,
+		PartyId:  &userKey,
 	}
-	stream, err := dataclient.PositionsSubscribe(context.Background(), req)
+	stream, err := dataclient.ObservePositions(context.Background(), req)
 	if err != nil {
 		log.Panicln("Failed to subscribe to positions: ", err)
 	}
@@ -205,7 +212,7 @@ func subscribePositions(dataclient api.TradingDataServiceClient, marketID string
 	go processPositions(stream)
 }
 
-func processPositions(stream api.TradingDataService_PositionsSubscribeClient) {
+func processPositions(stream api.TradingDataService_ObservePositionsClient) {
 	for {
 		o, err := stream.Recv()
 		if err == io.EOF {
@@ -216,7 +223,12 @@ func processPositions(stream api.TradingDataService_PositionsSubscribeClient) {
 			log.Panicln("positions: stream closed err:", err)
 			break
 		}
-		position = o.GetPosition()
+		snapshots := o.GetSnapshot()
+		if snapshots != nil {
+			if len(snapshots.Positions) > 0 {
+				position = snapshots.Positions[len(snapshots.Positions)-1]
+			}
+		}
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
+	proto "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/gdamore/tcell/v2"
 )
 
