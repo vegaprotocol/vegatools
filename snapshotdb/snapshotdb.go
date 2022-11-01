@@ -3,6 +3,7 @@ package snapshotdb
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -97,6 +98,32 @@ func writeSnapshotAsJSON(tree *iavl.MutableTree, outputPath string) error {
 	return nil
 }
 
+// writeSnapshotAsProtobuf saves the snapshot as a binary slice of payloads which is more useful for loading when comparing against datanode.
+func writeSnapshotAsProtobuf(tree *iavl.MutableTree, outputPath string) error {
+	// traverse the tree and get the payloads
+	payloads, _, err := getAllPayloads(tree)
+	if err != nil {
+		return err
+	}
+
+	f, _ := os.Create(outputPath)
+	defer f.Close()
+
+	w := bufio.NewWriter(f)
+
+	chunk := &snapshot.Chunk{Data: payloads}
+	bytes, err := proto.Marshal(chunk)
+	if err != nil {
+		return err
+	}
+
+	w.WriteString(string(bytes))
+
+	w.Flush()
+	fmt.Println("snapshot payloads written to:", outputPath)
+	return nil
+}
+
 func displayNumberOfVersions(versions int) error {
 	j := struct {
 		Versions int64 `json:"n_versions"`
@@ -113,7 +140,7 @@ func displayNumberOfVersions(versions int) error {
 }
 
 // Run is the main entry point for this tool
-func Run(dbpath string, versionsOnly bool, outputPath string, heightToOutput int64) error {
+func Run(dbpath string, versionsOnly bool, outputPath string, heightToOutput int64, outputFormat string) error {
 	// Attempt to open the database
 	options := &opt.Options{
 		ErrorIfMissing: true,
@@ -152,9 +179,14 @@ func Run(dbpath string, versionsOnly bool, outputPath string, heightToOutput int
 			// either a height wasn't specified so we take the latest
 			if heightToOutput == 0 || blockHeight == uint64(heightToOutput) {
 				fmt.Println("found snapshot for block-height", blockHeight)
-				return writeSnapshotAsJSON(tree, outputPath)
+				if outputFormat == "json" {
+					return writeSnapshotAsJSON(tree, outputPath)
+				}
+				if outputFormat == "proto" {
+					return writeSnapshotAsProtobuf(tree, outputPath)
+				}
+				return errors.New("unknown output format requested")
 			}
-
 		}
 		return fmt.Errorf("could not find snapshot for height %d", heightToOutput)
 

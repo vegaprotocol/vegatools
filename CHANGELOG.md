@@ -59,6 +59,7 @@
 - [230](https://github.com/vegaprotocol/vegatools/issue/230) - Update datanode api use to v2
 - [232](https://github.com/vegaprotocol/vegatools/issue/232) - Add batched orders to perftest
 - [234](https://github.com/vegaprotocol/vegatools/issue/234) - Add pegged order support to perftest
+- [236](https://github.com/vegaprotocol/vegatools/issues/236) - Diff tool introduced to compare core snapshot with data node `API` 
 - [237](https://github.com/vegaprotocol/vegatools/issue/237) - Rename of Oracles to Data Sources
 
 ### 🐛 Fixes
