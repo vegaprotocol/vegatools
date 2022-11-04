@@ -407,7 +407,7 @@ func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string
 		MarketId:         marketID,
 		Reference:        "MarketLiquidity",
 		Fee:              "0.01",
-		CommitmentAmount: "50000000",
+		CommitmentAmount: "1000000000",
 	}
 
 	// Generate the buy and sell side LP orders

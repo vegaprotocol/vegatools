@@ -40,27 +40,28 @@
 - [113](https://github.com/vegaprotocol/vegatools/pull/113) - Update checkpoint utility to match current state of vega
 - [122](https://github.com/vegaprotocol/vegatools/pull/122) - Update protos for new position state message
 - [121](https://github.com/vegaprotocol/vegatools/pull/121) - Add option to `snapshotdb` to print a snapshot to a file as JSON
-- [140](https://github.com/vegaprotocol/vegatools/issue/140) - Add status column to liquidity commitment viewer
-- [156](https://github.com/vegaprotocol/vegatools/issue/156) - Upgraded go build versions to 1.16 + 1.17
-- [165](https://github.com/vegaprotocol/vegatools/issue/165) - Adding perftest subcommand
-- [184](https://github.com/vegaprotocol/vegatools/issue/184) - Refactoring perftest
-- [185](https://github.com/vegaprotocol/vegatools/issue/185) - Adding event rate measuring tool
-- [190](https://github.com/vegaprotocol/vegatools/issue/190) - Removed validation time from market proposal
-- [197](https://github.com/vegaprotocol/vegatools/issue/197) - Update protos location to their new place inside Vega
-- [206](https://github.com/vegaprotocol/vegatools/issue/206) - Move liquidity provision from inside market proposal to it's own proposal
-- [208](https://github.com/vegaprotocol/vegatools/issue/208) - User selectable number of markets for load testing 
-- [210](https://github.com/vegaprotocol/vegatools/issue/210) - Added delta based market depth display 
-- [214](https://github.com/vegaprotocol/vegatools/issue/214) - Increase gRPC receive buffer size 
-- [216](https://github.com/vegaprotocol/vegatools/issue/216) - Display block time in eventrate tool to monitor event stream lag 
-- [218](https://github.com/vegaprotocol/vegatools/issue/218) - perftest allows multiple LPs and moving of mid price for random orders 
-- [222](https://github.com/vegaprotocol/vegatools/issue/222) - Updated market proposal text with renamed fields
-- [225](https://github.com/vegaprotocol/vegatools/issue/225) - Add option to dump total event counts
-- [227](https://github.com/vegaprotocol/vegatools/issue/227) - Allow configuration of the LP shape
-- [230](https://github.com/vegaprotocol/vegatools/issue/230) - Update datanode api use to v2
-- [232](https://github.com/vegaprotocol/vegatools/issue/232) - Add batched orders to perftest
-- [234](https://github.com/vegaprotocol/vegatools/issue/234) - Add pegged order support to perftest
+- [140](https://github.com/vegaprotocol/vegatools/issues/140) - Add status column to liquidity commitment viewer
+- [156](https://github.com/vegaprotocol/vegatools/issues/156) - Upgraded go build versions to 1.16 + 1.17
+- [165](https://github.com/vegaprotocol/vegatools/issues/165) - Adding perftest subcommand
+- [184](https://github.com/vegaprotocol/vegatools/issues/184) - Refactoring perftest
+- [185](https://github.com/vegaprotocol/vegatools/issues/185) - Adding event rate measuring tool
+- [190](https://github.com/vegaprotocol/vegatools/issues/190) - Removed validation time from market proposal
+- [197](https://github.com/vegaprotocol/vegatools/issues/197) - Update protos location to their new place inside Vega
+- [206](https://github.com/vegaprotocol/vegatools/issues/206) - Move liquidity provision from inside market proposal to it's own proposal
+- [208](https://github.com/vegaprotocol/vegatools/issues/208) - User selectable number of markets for load testing 
+- [210](https://github.com/vegaprotocol/vegatools/issues/210) - Added delta based market depth display 
+- [214](https://github.com/vegaprotocol/vegatools/issues/214) - Increase gRPC receive buffer size 
+- [216](https://github.com/vegaprotocol/vegatools/issues/216) - Display block time in eventrate tool to monitor event stream lag 
+- [218](https://github.com/vegaprotocol/vegatools/issues/218) - perftest allows multiple LPs and moving of mid price for random orders 
+- [222](https://github.com/vegaprotocol/vegatools/issues/222) - Updated market proposal text with renamed fields
+- [225](https://github.com/vegaprotocol/vegatools/issues/225) - Add option to dump total event counts
+- [227](https://github.com/vegaprotocol/vegatools/issues/227) - Allow configuration of the LP shape
+- [230](https://github.com/vegaprotocol/vegatools/issues/230) - Update datanode api use to v2
+- [232](https://github.com/vegaprotocol/vegatools/issues/232) - Add batched orders to perftest
+- [234](https://github.com/vegaprotocol/vegatools/issues/234) - Add pegged order support to perftest
 - [236](https://github.com/vegaprotocol/vegatools/issues/236) - Diff tool introduced to compare core snapshot with data node `API` 
-- [237](https://github.com/vegaprotocol/vegatools/issue/237) - Rename of Oracles to Data Sources
+- [237](https://github.com/vegaprotocol/vegatools/issues/237) - Rename of Oracles to Data Sources
+- [240](https://github.com/vegaprotocol/vegatools/issues/240) - Add support for filling price levels before perf testing begins
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
