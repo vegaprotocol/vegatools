@@ -72,10 +72,6 @@ func diffAccountBalances(coreSnapshot *Result, dn *Result) Status {
 	}
 	datanode = filteredDN
 
-	if len(core) != len(datanode) {
-		return getSizeMismatchStatus("accounts", core, datanode)
-	}
-
 	sort.Slice(core, func(i, j int) bool {
 		return core[i].Owner+core[i].MarketId+core[i].Asset+core[i].Type.String() < core[j].Owner+core[j].MarketId+core[j].Asset+core[j].Type.String()
 	})

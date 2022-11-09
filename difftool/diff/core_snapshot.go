@@ -202,7 +202,7 @@ func (s *snap) getOrders() []*vega.Order {
 		o.ExpiresAt = (o.ExpiresAt / 1000) * 1000
 		o.UpdatedAt = (o.UpdatedAt / 1000) * 1000
 		price, _ := decimal.NewFromString(o.Price)
-		o.Price = price.Div(dpFactors[o.MarketId]).String()
+		o.Price = price.Div(dpFactors[o.MarketId]).Truncate(0).String()
 	}
 
 	return orders

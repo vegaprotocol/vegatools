@@ -272,7 +272,9 @@ func (dnc *dataNodeClient) listAssets() ([]*vega.Asset, error) {
 	}
 	assets := make([]*vega.Asset, 0, len(assetResp.Assets.Edges))
 	for _, a := range assetResp.Assets.Edges {
-		assets = append(assets, a.Node)
+		if a.Node.Status != vega.Asset_STATUS_REJECTED {
+			assets = append(assets, a.Node)
+		}
 	}
 	return assets, nil
 }
@@ -435,7 +437,10 @@ func (dnc *dataNodeClient) getStake() ([]*v1.StakeLinking, error) {
 			return stake, err
 		}
 		for _, sle := range resp.StakeLinkings.Edges {
-			stake = append(stake, sle.Node)
+			// ignore 0 amounts
+			if sle.Node.Amount != "0" {
+				stake = append(stake, sle.Node)
+			}
 		}
 	}
 	return stake, nil
