@@ -344,7 +344,9 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 												SettlementDataProperty:     "trading.settled",
 												TradingTerminationProperty: "trading.termination",
 											},
-											DataSourceSpecForTradingTermination: &v1.DataSourceSpecConfiguration{
+											DataSourceSpecForTradingTermination: proto.NewDataSourceDefinition(
+												proto.DataSourceDefinitionTypeExt,
+											).SetOracleConfig(&proto.DataSourceSpecConfiguration{
 												Signers: []*v1.Signer{
 													{
 														Signer: &v1.Signer_PubKey{
@@ -358,8 +360,10 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 														Type: v1.PropertyKey_TYPE_BOOLEAN,
 													}},
 												},
-											},
-											DataSourceSpecForSettlementData: &v1.DataSourceSpecConfiguration{
+											}),
+											DataSourceSpecForSettlementData: proto.NewDataSourceDefinition(
+												proto.DataSourceDefinitionTypeExt,
+											).SetOracleConfig(&proto.DataSourceSpecConfiguration{
 												Signers: []*v1.Signer{
 													{
 														Signer: &v1.Signer_PubKey{
@@ -373,7 +377,7 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 														Type: v1.PropertyKey_TYPE_INTEGER,
 													}},
 												},
-											},
+											}),
 										},
 									},
 								},

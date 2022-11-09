@@ -4,6 +4,8 @@ code.vegaprotocol.io/shared v0.0.0-20221010085458-55c50711135f h1:ivaWSXN7XKESSh
 code.vegaprotocol.io/shared v0.0.0-20221010085458-55c50711135f/go.mod h1:XzX67GsyOHzvytMr0QOHX4CCTdCZDYKUUi88rx40Nt0=
 code.vegaprotocol.io/vega v0.61.1-0.20221031193706-46d1c0c29f82 h1:BDUzLad+pZhn32lYCmCSH1D07ryTNZYGwaH5V1m9hyQ=
 code.vegaprotocol.io/vega v0.61.1-0.20221031193706-46d1c0c29f82/go.mod h1:sVg4/2ExeIOZc2MCpdGjNiRM74ANqMQlhDyqdJEWPQE=
+code.vegaprotocol.io/vega v0.62.0 h1:fqUOhsRY3/4LJWeXhxphjVi+eKcrHCXK0OMwjfYvL6M=
+code.vegaprotocol.io/vega v0.62.0/go.mod h1:U7ciCZQIhgSDGmxnev2htma+22ox6mznt3UREopCOCw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/DataDog/zstd v1.4.1 h1:3oxKN3wbHibqx897utPC2LTQU4J+IHWWJO+glkAkpFM=
 github.com/DataDog/zstd v1.4.1/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
