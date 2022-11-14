@@ -62,6 +62,7 @@
 - [236](https://github.com/vegaprotocol/vegatools/issues/236) - Diff tool introduced to compare core snapshot with data node `API` 
 - [237](https://github.com/vegaprotocol/vegatools/issues/237) - Rename of Oracles to Data Sources
 - [240](https://github.com/vegaprotocol/vegatools/issues/240) - Add support for filling price levels before perf testing begins
+- [247](https://github.com/vegaprotocol/vegatools/issues/247) - Made ganache value optional for perftool
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
