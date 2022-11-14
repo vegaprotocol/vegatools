@@ -328,7 +328,7 @@ func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails)
 				},
 				Terms: &proto.ProposalTerms{
 					ClosingTimestamp:   w.SecondsFromNowInSecs(15),
-					EnactmentTimestamp: w.SecondsFromNowInSecs(20),
+					EnactmentTimestamp: w.SecondsFromNowInSecs(30),
 					Change: &proto.ProposalTerms_NewMarket{
 						NewMarket: &proto.NewMarket{
 							Changes: &proto.NewMarketConfiguration{

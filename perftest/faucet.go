@@ -17,7 +17,11 @@ func topUpAsset(faucetURL, pubKey, asset string, amount int) error {
 	})
 	responseBody := bytes.NewBuffer(postBody)
 
-	URL := "http://" + faucetURL + "/api/v1/mint"
+	if !strings.HasPrefix(faucetURL, "http") {
+		faucetURL = "http://" + faucetURL
+	}
+
+	URL := faucetURL + "/api/v1/mint"
 
 	resp, err := http.Post(URL, "application/json", responseBody)
 	if err != nil {

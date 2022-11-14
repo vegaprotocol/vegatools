@@ -65,7 +65,7 @@ func (d *dnWrapper) getAssetsPerUser(pubKey, asset string) (int64, error) {
 	return 0, nil
 }
 
-func (d *dnWrapper) getMarkets() []string {
+func (d *dnWrapper) getMarkets() []*proto.Market {
 	marketsReq := &datanode.ListMarketsRequest{}
 
 	response, err := d.dataNode.ListMarkets(context.Background(), marketsReq)
@@ -73,10 +73,10 @@ func (d *dnWrapper) getMarkets() []string {
 		log.Println(err)
 		return nil
 	}
-	marketIDs := []string{}
+	marketIDs := []*proto.Market{}
 	for _, market := range response.Markets.Edges {
 		if market.Node.State != proto.Market_STATE_REJECTED {
-			marketIDs = append(marketIDs, market.Node.Id)
+			marketIDs = append(marketIDs, market.Node)
 		}
 	}
 	return marketIDs
@@ -119,8 +119,8 @@ func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWaitSeconds int) 
 	return fmt.Errorf("timed out waiting for market to be enacted")
 }
 
-func (d *dnWrapper) voteOnProposal(users []UserDetails, propID string) error {
-	for i := 0; i < 3; i++ {
+func (d *dnWrapper) voteOnProposal(users []UserDetails, propID string, voters int) error {
+	for i := 0; i < voters; i++ {
 		err := d.wallet.SendVote(users[i], &v1.VoteSubmission{ProposalId: propID, Value: proto.Vote_VALUE_YES})
 		if err != nil {
 			return err
