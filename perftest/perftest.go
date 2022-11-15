@@ -77,12 +77,14 @@ func (p *perfLoadTesting) CreateUsers(userCount int) error {
 }
 
 func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, ganacheURL string, voters int) error {
-	for index, user := range p.users {
-		if index >= voters {
-			break
+	if len(ganacheURL) > 0 {
+		for index, user := range p.users {
+			if index >= voters {
+				break
+			}
+			sendVegaTokens(user.pubKey, ganacheURL)
+			time.Sleep(time.Second * 1)
 		}
-		sendVegaTokens(user.pubKey, ganacheURL)
-		time.Sleep(time.Second * 1)
 	}
 
 	// If the first user has not tokens, top everyone up
@@ -92,16 +94,25 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, gan
 	if amount == 0 {
 		for t := 0; t < 50; t++ {
 			for _, user := range p.users {
-				topUpAsset(faucetURL, user.pubKey, asset, 100000000)
+				err := topUpAsset(faucetURL, user.pubKey, asset, 100000000)
+				if err != nil {
+					return err
+				}
 				time.Sleep(time.Millisecond * 5)
 			}
 		}
 
 		// Add some more to the special accounts as we might need it for price level orders
-		for t := 0; t < 1000; t++ {
-			topUpAsset(faucetURL, p.users[0].pubKey, asset, 100000000)
+		for t := 0; t < 100; t++ {
+			err := topUpAsset(faucetURL, p.users[0].pubKey, asset, 100000000)
+			if err != nil {
+				return err
+			}
 			time.Sleep(time.Millisecond * 5)
-			topUpAsset(faucetURL, p.users[1].pubKey, asset, 100000000)
+			err = topUpAsset(faucetURL, p.users[1].pubKey, asset, 100000000)
+			if err != nil {
+				return err
+			}
 			time.Sleep(time.Millisecond * 5)
 		}
 
@@ -109,8 +120,11 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, gan
 	time.Sleep(time.Second * 5)
 
 	for _, user := range p.users {
-		for amount, _ := p.dataNode.getAssetsPerUser(user.pubKey, asset); amount < 5000000000; {
-			topUpAsset(faucetURL, user.pubKey, asset, 100000000)
+		for amount, _ = p.dataNode.getAssetsPerUser(user.pubKey, asset); amount < 5000000000; {
+			err := topUpAsset(faucetURL, user.pubKey, asset, 100000000)
+			if err != nil {
+				return nil
+			}
 			time.Sleep(time.Second * 1)
 			amount, _ = p.dataNode.getAssetsPerUser(user.pubKey, asset)
 		}
@@ -154,18 +168,21 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters, maxLPSh
 	markets := p.dataNode.getMarkets()
 	if len(markets) == 0 {
 		for i := 0; i < numberOfMarkets; i++ {
-			p.wallet.SendNewMarketProposal(i, p.users[0])
+			err := p.wallet.SendNewMarketProposal(i, p.users[0])
+			if err != nil {
+				return nil, err
+			}
 			time.Sleep(time.Second * 7)
 			propID, err := p.dataNode.getPendingProposalID()
 			if err != nil {
 				return nil, err
 			}
-			err = p.dataNode.voteOnProposal(p.users, propID)
+			err = p.dataNode.voteOnProposal(p.users, propID, voters)
 			if err != nil {
 				return nil, err
 			}
 			// We have to wait for the market to be enacted
-			err = p.dataNode.waitForMarketEnactment(propID, 20)
+			err = p.dataNode.waitForMarketEnactment(propID, 40)
 			if err != nil {
 				return nil, err
 			}
@@ -175,43 +192,46 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters, maxLPSh
 
 	// Move markets out of auction
 	markets = p.dataNode.getMarkets()
+	marketIds := []string{}
 	if len(markets) >= numberOfMarkets {
-		for i := 0; i < len(markets); i++ {
-			// Send in a liquidity provision so we can get the market out of auction
-			for j := 0; j < voters; j++ {
-				p.wallet.SendLiquidityProvision(p.users[j], markets[i], maxLPShape)
+		for _, market := range markets {
+			marketIds = append(marketIds, market.Id)
+			if market.State != proto.Market_STATE_ACTIVE {
+				// Send in a liquidity provision so we can get the market out of auction
+				for j := 0; j < voters; j++ {
+					p.wallet.SendLiquidityProvision(p.users[j], market.Id, maxLPShape)
+				}
+				p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: market.Id,
+					Price:       fmt.Sprint(startingMidPrice + 100),
+					Size:        100,
+					Side:        proto.Side_SIDE_SELL,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+				p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: market.Id,
+					Price:       fmt.Sprint(startingMidPrice - 100),
+					Size:        100,
+					Side:        proto.Side_SIDE_BUY,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+				p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: market.Id,
+					Price:       fmt.Sprint(startingMidPrice),
+					Size:        5,
+					Side:        proto.Side_SIDE_BUY,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+				p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: market.Id,
+					Price:       fmt.Sprint(startingMidPrice),
+					Size:        5,
+					Side:        proto.Side_SIDE_SELL,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 			}
-
-			p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[i],
-				Price:       fmt.Sprint(startingMidPrice + 100),
-				Size:        100,
-				Side:        proto.Side_SIDE_SELL,
-				Type:        proto.Order_TYPE_LIMIT,
-				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-			p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: markets[i],
-				Price:       fmt.Sprint(startingMidPrice - 100),
-				Size:        100,
-				Side:        proto.Side_SIDE_BUY,
-				Type:        proto.Order_TYPE_LIMIT,
-				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-			p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: markets[i],
-				Price:       fmt.Sprint(startingMidPrice),
-				Size:        5,
-				Side:        proto.Side_SIDE_BUY,
-				Type:        proto.Order_TYPE_LIMIT,
-				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-			p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: markets[i],
-				Price:       fmt.Sprint(startingMidPrice),
-				Size:        5,
-				Side:        proto.Side_SIDE_SELL,
-				Type:        proto.Order_TYPE_LIMIT,
-				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 		}
 	} else {
 		return nil, fmt.Errorf("failed to get open market")
 	}
 	time.Sleep(time.Second * 5)
-	return markets, nil
+	return marketIds, nil
 }
 
 func (p *perfLoadTesting) seedPeggedOrders(marketIDs []string, peggedOrderCount, priceLevels int) error {

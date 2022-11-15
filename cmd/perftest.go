@@ -36,7 +36,6 @@ func init() {
 	perfTestCmd.MarkFlagRequired("address")
 	perfTestCmd.MarkFlagRequired("wallet")
 	perfTestCmd.MarkFlagRequired("faucet")
-	perfTestCmd.MarkFlagRequired("ganache")
 }
 
 func runPerfTest(cmd *cobra.Command, args []string) error {
