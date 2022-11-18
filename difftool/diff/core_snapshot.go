@@ -354,11 +354,15 @@ func (s *snap) getProposals() []*vega.Proposal {
 	for _, c := range s.chunk.Data {
 		switch c.Data.(type) {
 		case *snapshot.Payload_GovernanceActive:
+			println("active proposals")
 			for _, p := range c.GetGovernanceActive().Proposals {
+				println(p.Proposal.String())
 				proposals = append(proposals, p.Proposal)
 			}
 		case *snapshot.Payload_GovernanceEnacted:
+			println("enacted proposals")
 			for _, p := range c.GetGovernanceEnacted().Proposals {
+				println(p.Proposal.String())
 				proposals = append(proposals, p.Proposal)
 			}
 		case *snapshot.Payload_GovernanceNode:
