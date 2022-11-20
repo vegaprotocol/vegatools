@@ -187,13 +187,13 @@ func getAccountDetails(dataclient api.TradingDataServiceClient, partyID, assetID
 
 	for _, acct := range response.Accounts.Edges {
 		log.Println(acct)
-		switch acct.Account.Type {
+		switch acct.Node.Type {
 		case proto.AccountType_ACCOUNT_TYPE_BOND:
-			acctBond = acct.Account.Balance
+			acctBond = acct.Node.Balance
 		case proto.AccountType_ACCOUNT_TYPE_MARGIN:
-			acctMargin = acct.Account.Balance
+			acctMargin = acct.Node.Balance
 		case proto.AccountType_ACCOUNT_TYPE_GENERAL:
-			acctGeneral = acct.Account.Balance
+			acctGeneral = acct.Node.Balance
 		}
 	}
 }

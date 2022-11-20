@@ -60,7 +60,7 @@ func (d *dnWrapper) getAssetsPerUser(pubKey, asset string) (int64, error) {
 		return 0, err
 	}
 	for _, account := range response.Accounts.Edges {
-		return strconv.ParseInt(account.Account.Balance, 10, 64)
+		return strconv.ParseInt(account.Node.Balance, 10, 64)
 	}
 	return 0, nil
 }

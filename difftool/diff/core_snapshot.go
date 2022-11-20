@@ -350,16 +350,17 @@ func (s *snap) getEpoch() *vega.Epoch {
 // getProposals returns all the pending and enacted proposals. To make it compatible with datanode, the timestamps are converted to have
 // microsecond resolution.
 func (s *snap) getProposals() []*vega.Proposal {
+	pMap := map[string]*vega.Proposal{}
 	proposals := []*vega.Proposal{}
 	for _, c := range s.chunk.Data {
 		switch c.Data.(type) {
 		case *snapshot.Payload_GovernanceActive:
 			for _, p := range c.GetGovernanceActive().Proposals {
-				proposals = append(proposals, p.Proposal)
+				pMap[p.Proposal.Id] = p.Proposal
 			}
 		case *snapshot.Payload_GovernanceEnacted:
 			for _, p := range c.GetGovernanceEnacted().Proposals {
-				proposals = append(proposals, p.Proposal)
+				pMap[p.Proposal.Id] = p.Proposal
 			}
 		case *snapshot.Payload_GovernanceNode:
 			proposals = append(proposals, c.GetGovernanceNode().Proposals...)
@@ -367,8 +368,9 @@ func (s *snap) getProposals() []*vega.Proposal {
 			continue
 		}
 	}
-	for _, p := range proposals {
+	for _, p := range pMap {
 		p.Timestamp = (p.Timestamp / 1000) * 1000
+		proposals = append(proposals, p)
 	}
 	return proposals
 }
