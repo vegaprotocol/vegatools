@@ -213,7 +213,7 @@ func (dnc *dataNodeClient) listAccounts() ([]*dn.AccountBalance, error) {
 	}
 	accounts := make([]*dn.AccountBalance, 0, len(accResp.Accounts.Edges))
 	for _, ae := range accResp.Accounts.Edges {
-		accounts = append(accounts, ae.Account)
+		accounts = append(accounts, ae.Node)
 	}
 	return accounts, nil
 }
