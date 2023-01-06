@@ -9,7 +9,6 @@ import (
 
 	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
 type dnWrapper struct {
@@ -121,7 +120,7 @@ func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWaitSeconds int) 
 
 func (d *dnWrapper) voteOnProposal(users []UserDetails, propID string, voters int) error {
 	for i := 0; i < voters; i++ {
-		err := d.wallet.SendVote(users[i], &v1.VoteSubmission{ProposalId: propID, Value: proto.Vote_VALUE_YES})
+		err := d.wallet.SendVote(users[i], propID)
 		if err != nil {
 			return err
 		}

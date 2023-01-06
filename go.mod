@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	code.vegaprotocol.io/shared v0.0.0-20221010085458-55c50711135f
-	code.vegaprotocol.io/vega v0.62.2-0.20221118155204-060bc3b13f56
-	github.com/cosmos/iavl v0.19.1
+	code.vegaprotocol.io/vega v0.66.0
+	github.com/cosmos/iavl v0.19.4
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/gdamore/tcell/v2 v2.5.2
 	github.com/gogo/protobuf v1.3.2
@@ -54,7 +54,7 @@ require (
 	github.com/rjeczalik/notify v0.9.1 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/tendermint/tendermint v0.34.23 // indirect
+	github.com/tendermint/tendermint v0.34.24 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
