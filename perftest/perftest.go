@@ -383,7 +383,8 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 					Size:        3,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_MARKET,
-					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC,
+					Reference:   "MarketBuy"})
 				if err != nil {
 					log.Println("Failed to send market buy order", err)
 				}
@@ -392,7 +393,8 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 					Size:        3,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_MARKET,
-					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC,
+					Reference:   "MarketSell"})
 				if err != nil {
 					log.Println("Failed to send market sell order", err)
 				}
@@ -407,7 +409,8 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 					Size:        1,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_LIMIT,
-					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
+					Reference:   "NonTouchingLimitSell"})
 				if err != nil {
 					log.Println("Failed to send non crossing random limit sell order", err)
 				}
@@ -418,7 +421,8 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 					Size:        1,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_LIMIT,
-					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
+					Reference:   "NonTouchingLimitBuy"})
 				if err != nil {
 					log.Println("Failed to send non crossing random limit buy order", err)
 				}

@@ -78,7 +78,7 @@ func (w walletWrapper) sendRequest(request []byte) ([]byte, error) {
 	defer resp.Body.Close()
 
 	reply, err := io.ReadAll(resp.Body)
-	fmt.Println(string(reply))
+
 	if err != nil {
 		return nil, err
 	}
