@@ -31,17 +31,17 @@ func (w walletWrapper) SecondsFromNowInSecs(seconds int64) int64 {
 	return time.Now().Unix() + seconds
 }
 
-type Keys struct {
-	Keys []Key
+type keys struct {
+	Keys []key
 }
-type Key struct {
+type key struct {
 	Name      string
 	PublicKey string
 }
-type ListKeysResult struct {
+type listKeysResult struct {
 	Jsonrpc string
-	Result  Keys
-	Id      string
+	Result  keys
+	ID      string
 }
 
 func (w walletWrapper) sendTransaction(user UserDetails, subType string, subData interface{}) ([]byte, error) {
@@ -75,6 +75,9 @@ func (w walletWrapper) sendRequest(request []byte) ([]byte, error) {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
@@ -191,7 +194,7 @@ func (w walletWrapper) GetFirstKey(longLivenToken string) (string, error) {
 	})
 	body, err := w.sendRequest(post)
 
-	var values ListKeysResult = ListKeysResult{}
+	var values listKeysResult = listKeysResult{}
 	err = json.Unmarshal(body, &values)
 	if err != nil {
 		fmt.Println(err)
@@ -272,9 +275,9 @@ func (w *walletWrapper) SendCancelAll(user UserDetails, marketID string) error {
 }
 
 // SendVote will build and send a vote command to the wallet
-func (w walletWrapper) SendVote(user UserDetails, propId string) error {
+func (w walletWrapper) SendVote(user UserDetails, propID string) error {
 	vote := commandspb.VoteSubmission{
-		ProposalId: propId,
+		ProposalId: propID,
 		Value:      proto.Vote_VALUE_YES,
 	}
 
