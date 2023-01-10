@@ -63,6 +63,7 @@
 - [237](https://github.com/vegaprotocol/vegatools/issues/237) - Rename of Oracles to Data Sources
 - [240](https://github.com/vegaprotocol/vegatools/issues/240) - Add support for filling price levels before perf testing begins
 - [247](https://github.com/vegaprotocol/vegatools/issues/247) - Made ganache value optional for perftool
+- [251](https://github.com/vegaprotocol/vegatools/issues/251) - Changed code to use wallet V2 and updated protobuf mod to correct version
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
