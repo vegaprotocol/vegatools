@@ -21,6 +21,7 @@ func init() {
 	perfTestCmd.Flags().StringVarP(&opts.WalletURL, "wallet", "w", "", "address of the wallet server")
 	perfTestCmd.Flags().StringVarP(&opts.FaucetURL, "faucet", "f", "", "address of the faucet server")
 	perfTestCmd.Flags().StringVarP(&opts.GanacheURL, "ganache", "g", "", "address of the ganache server")
+	perfTestCmd.Flags().StringVarP(&opts.TokenKeysFile, "tokenkeys", "t", "", "path to api token keys file")
 	perfTestCmd.Flags().IntVarP(&opts.CommandsPerSecond, "cps", "c", 100, "commands per second")
 	perfTestCmd.Flags().IntVarP(&opts.RuntimeSeconds, "runtime", "r", 60, "runtime in seconds")
 	perfTestCmd.Flags().IntVarP(&opts.UserCount, "users", "u", 10, "number of users to send commands with")
@@ -36,6 +37,7 @@ func init() {
 	perfTestCmd.MarkFlagRequired("address")
 	perfTestCmd.MarkFlagRequired("wallet")
 	perfTestCmd.MarkFlagRequired("faucet")
+	perfTestCmd.MarkFlagRequired("tokenkeys")
 }
 
 func runPerfTest(cmd *cobra.Command, args []string) error {

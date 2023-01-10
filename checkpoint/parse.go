@@ -10,7 +10,7 @@ import (
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	events "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 var (

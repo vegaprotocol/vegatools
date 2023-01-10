@@ -11,9 +11,9 @@ import (
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	events "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/jsonpb"
 	"golang.org/x/crypto/sha3"
+	"google.golang.org/protobuf/proto"
 )
 
 type all struct {
@@ -413,7 +413,7 @@ func dummy() *all {
 								TimeWindow:    10,
 								ScalingFactor: 0.7,
 							},
-							TriggeringRatio:  0.5,
+							TriggeringRatio:  "0.5",
 							AuctionExtension: 10,
 						},
 						RiskParameters: &vega.NewMarketConfiguration_LogNormal{

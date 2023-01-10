@@ -151,7 +151,7 @@ func Run(dbpath string, versionsOnly bool, outputPath string, heightToOutput int
 		return fmt.Errorf("failed to open database located at %s : %w", dbpath, err)
 	}
 
-	tree, err := iavl.NewMutableTree(db, 0)
+	tree, err := iavl.NewMutableTree(db, 0, false)
 	if err != nil {
 		return err
 	}

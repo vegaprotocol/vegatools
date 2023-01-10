@@ -5,10 +5,10 @@ import (
 
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"github.com/golang/protobuf/proto"
 	mangos "go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/push"
+	"google.golang.org/protobuf/proto"
 
 	// Required for socket client
 	_ "go.nanomsg.org/mangos/v3/transport/inproc"

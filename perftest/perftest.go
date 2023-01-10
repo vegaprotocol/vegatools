@@ -1,11 +1,14 @@
 package perftest
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -22,6 +25,7 @@ type Opts struct {
 	WalletURL         string
 	FaucetURL         string
 	GanacheURL        string
+	TokenKeysFile     string
 	CommandsPerSecond int
 	RuntimeSeconds    int
 	UserCount         int
@@ -70,10 +74,28 @@ func (p *perfLoadTesting) connectToDataNode(dataNodeAddr string) (map[string]str
 	}
 }
 
-func (p *perfLoadTesting) CreateUsers(userCount int) error {
-	var err error
-	p.users, err = p.wallet.CreateOrLoadWallets(userCount)
-	return err
+func (p *perfLoadTesting) LoadUsers(tokenFilePath string, userCount int) error {
+	// See if we have a token file defined and if so load all the wallet names and api-keys
+	p.users = []UserDetails{}
+	tokenFile, err := os.Open(tokenFilePath)
+	if err != nil {
+		return err
+	}
+	fileScanner := bufio.NewScanner(tokenFile)
+	fileScanner.Split(bufio.ScanLines)
+
+	for fileScanner.Scan() {
+		lineParts := strings.Split(fileScanner.Text(), " ")
+		if len(lineParts) == 2 {
+			pubKey, _ := p.wallet.GetFirstKey(lineParts[1])
+
+			p.users = append(p.users, UserDetails{userName: lineParts[0], token: lineParts[1], pubKey: pubKey})
+		}
+		if len(p.users) == userCount {
+			break
+		}
+	}
+	return nil
 }
 
 func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, ganacheURL string, voters int) error {
@@ -168,7 +190,7 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters, maxLPSh
 	markets := p.dataNode.getMarkets()
 	if len(markets) == 0 {
 		for i := 0; i < numberOfMarkets; i++ {
-			err := p.wallet.SendNewMarketProposal(i, p.users[0])
+			err := p.wallet.NewMarket(i, p.users[0])
 			if err != nil {
 				return nil, err
 			}
@@ -361,7 +383,8 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 					Size:        3,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_MARKET,
-					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC,
+					Reference:   "MarketBuy"})
 				if err != nil {
 					log.Println("Failed to send market buy order", err)
 				}
@@ -370,7 +393,8 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 					Size:        3,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_MARKET,
-					TimeInForce: proto.Order_TIME_IN_FORCE_IOC})
+					TimeInForce: proto.Order_TIME_IN_FORCE_IOC,
+					Reference:   "MarketSell"})
 				if err != nil {
 					log.Println("Failed to send market sell order", err)
 				}
@@ -385,7 +409,8 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 					Size:        1,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_LIMIT,
-					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
+					Reference:   "NonTouchingLimitSell"})
 				if err != nil {
 					log.Println("Failed to send non crossing random limit sell order", err)
 				}
@@ -396,7 +421,8 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, users, ops, runTim
 					Size:        1,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_LIMIT,
-					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
+					Reference:   "NonTouchingLimitBuy"})
 				if err != nil {
 					log.Println("Failed to send non crossing random limit buy order", err)
 				}
@@ -568,11 +594,16 @@ func Run(opts Opts) error {
 	fmt.Println("Complete")
 
 	// Create a set of users
-	fmt.Print("Creating users...")
-	err = plt.CreateUsers(opts.UserCount)
-	if err != nil {
+	fmt.Print("Loading users from token API file...")
+	if len(opts.TokenKeysFile) > 0 {
+		err = plt.LoadUsers(opts.TokenKeysFile, opts.UserCount)
+		if err != nil {
+			fmt.Println("FAILED")
+			return err
+		}
+	} else {
 		fmt.Println("FAILED")
-		return err
+		return fmt.Errorf("error: unable to open token file")
 	}
 	fmt.Println("Complete")
 

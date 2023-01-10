@@ -8,7 +8,7 @@ import (
 	"path"
 
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 var (

@@ -106,7 +106,6 @@ func getBundle(clt api.TradingDataServiceClient, w *vega.Withdrawal) (*withdrawa
 	return &withdrawalBundle{
 		AssetSource:   resp.AssetSource,
 		Amount:        resp.Amount,
-		Expiry:        resp.Expiry,
 		Nonce:         resp.Nonce,
 		Signatures:    resp.Signatures,
 		TargetAddress: w.GetExt().GetErc20().GetReceiverAddress(),

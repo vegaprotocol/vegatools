@@ -5,17 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
-
-	"github.com/gogo/protobuf/jsonpb"
 
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 )
 
@@ -36,227 +31,179 @@ func (w walletWrapper) SecondsFromNowInSecs(seconds int64) int64 {
 	return time.Now().Unix() + seconds
 }
 
-// LoginWallet opens a wallet and logs into it using the supplied username and password
-func (w walletWrapper) LoginWallet(username, password string) (string, error) {
-	postBody, _ := json.Marshal(map[string]string{
-		"wallet":     username,
-		"passphrase": password,
-	})
-	responseBody := bytes.NewBuffer(postBody)
-
-	URL := "http://" + w.walletURL + "/api/v1/auth/token"
-
-	resp, err := http.Post(URL, "application/json", responseBody)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	sb := string(body)
-	if strings.Contains(sb, "error") {
-		return "", fmt.Errorf(sb)
-	}
-
-	// Get the token value out from the JSON
-	var result map[string]interface{}
-	json.Unmarshal([]byte(sb), &result)
-
-	return result["token"].(string), nil
+type keys struct {
+	Keys []key
+}
+type key struct {
+	Name      string
+	PublicKey string
+}
+type listKeysResult struct {
+	Jsonrpc string
+	Result  keys
+	ID      string
 }
 
-// CreateWallet will create a new wallet if one does not already exist
-func (w walletWrapper) CreateWallet(username, password string) (string, error) {
-	postBody, _ := json.Marshal(map[string]string{
-		"wallet":     username,
-		"passphrase": password,
+func (w walletWrapper) sendTransaction(user UserDetails, subType string, subData interface{}) ([]byte, error) {
+	transaction, _ := json.Marshal(map[string]interface{}{
+		"jsonrpc": "2.0",
+		"method":  "client.send_transaction",
+		"id":      "1",
+		"params": map[string]interface{}{
+			"token":       user.token,
+			"publicKey":   user.pubKey,
+			"sendingMode": "TYPE_SYNC",
+			"transaction": map[string]interface{}{
+				subType: subData,
+			},
+		},
 	})
-	responseBody := bytes.NewBuffer(postBody)
 
-	URL := "http://" + w.walletURL + "/api/v1/wallets"
-
-	resp, err := http.Post(URL, "application/json", responseBody)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	sb := string(body)
-	if strings.Contains(sb, "\"error\"") {
-		return "", fmt.Errorf(sb)
-	}
-
-	// Get the token value out from the JSON
-	var result map[string]interface{}
-	json.Unmarshal([]byte(sb), &result)
-
-	return result["token"].(string), nil
+	return w.sendRequest(transaction)
 }
 
-// CreateKey will create a new key pair in the open wallet
-func (w walletWrapper) CreateKey(password, token string) (string, error) {
-	postBody, _ := json.Marshal(map[string]string{
-		"passphrase": password,
-	})
-	postBuffer := bytes.NewBuffer(postBody)
+func (w walletWrapper) sendRequest(request []byte) ([]byte, error) {
+	postBody := bytes.NewBuffer(request)
 
-	URL := "http://" + w.walletURL + "/api/v1/keys"
+	URL := "http://" + w.walletURL + "/api/v2/requests"
 
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodPost, URL, postBuffer)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	bearer := "Bearer " + token
-
-	req.Header.Add("Authorization", bearer)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println(err)
-	}
-
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	sb := string(body)
-	if strings.Contains(sb, "error") {
-		return "", fmt.Errorf(sb)
-	}
-
-	// Get the token value out from the JSON
-	var result map[string]interface{}
-	json.Unmarshal([]byte(sb), &result)
-	keys := result["key"].(map[string]interface{})
-	return keys["pub"].(string), nil
-}
-
-// ListKeys shows all the keys associated with the open wallet.
-func (w walletWrapper) ListKeys(token string) ([]string, error) {
-	URL := "http://" + w.walletURL + "/api/v1/keys"
-
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, URL, nil)
+	req, err := http.NewRequest(http.MethodPost, URL, postBody)
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("origin", "perfbot")
 
-	bearer := "Bearer " + token
-
-	req.Header.Add("Authorization", bearer)
-
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf(resp.Status)
+	}
+
+	reply, err := io.ReadAll(resp.Body)
+
 	if err != nil {
 		return nil, err
 	}
-	sb := string(body)
-	if strings.Contains(sb, "error") {
-		return nil, fmt.Errorf(sb)
-	}
-
-	// Get the token value out from the JSON
-	var result map[string]interface{}
-	json.Unmarshal([]byte(sb), &result)
-	keys := result["keys"].([]interface{})
-	if len(keys) == 0 {
-		return nil, fmt.Errorf("no keys found")
-	}
-
-	pubKeys := []string{}
-	for i := 0; i < len(keys); i++ {
-		key := keys[i].(map[string]interface{})
-		pubKeys = append(pubKeys, key["pub"].(string))
-	}
-	return pubKeys, nil
+	return reply, nil
 }
 
-// CreateOrLoadWallets will first attempt to open a wallet but if that does not
-// exist it will create one and create a key ready for use
-func (w walletWrapper) CreateOrLoadWallets(number int) ([]UserDetails, error) {
-	// We want to make or load a set of wallets, do it in a loop here
-	var key string
-	var newKeys = 0
-	var users []UserDetails = []UserDetails{}
-	for i := 0; i < number; i++ {
-		userName := fmt.Sprintf("User%04d", i)
-
-		// Attempt to log in with that username
-		token, err := w.LoginWallet(userName, "p3rfb0t")
-		if err != nil {
-			token, err = w.CreateWallet(userName, "p3rfb0t")
-			if err != nil {
-				return nil, fmt.Errorf("unable to create a new wallet: %w", err)
-			}
-		}
-		keys, _ := w.ListKeys(token)
-		if len(keys) == 0 {
-			key, _ = w.CreateKey("p3rfb0t", token)
-			newKeys++
-		} else {
-			key = keys[0]
-		}
-
-		users = append(users, UserDetails{
-			userName: userName,
-			token:    token,
-			pubKey:   key,
-		})
+func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
+	newMarket := map[string]interface{}{
+		"rationale": map[string]interface{}{
+			"description": "desc",
+			"title":       "title",
+		},
+		"terms": map[string]interface{}{
+			"closingTimestamp":   w.SecondsFromNowInSecs(15),
+			"enactmentTimestamp": w.SecondsFromNowInSecs(30),
+			"newMarket": map[string]interface{}{
+				"changes": map[string]interface{}{
+					"lpPriceRange":          "10",
+					"decimalPlaces":         "5",
+					"positionDecimalPlaces": "5",
+					"instrument": map[string]interface{}{
+						"code": "CRYPTO:BTCUSD/NOV22",
+						"name": "NOV 2022 BTC vs USD future",
+						"future": map[string]interface{}{
+							"settlementAsset": "fUSDC",
+							"quoteName":       "BTCUSD",
+							"dataSourceSpecForSettlementData": map[string]interface{}{
+								"external": map[string]interface{}{
+									"oracle": map[string]interface{}{
+										"signers": []interface{}{
+											map[string]interface{}{
+												"ethAddress": map[string]interface{}{
+													"address": "0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC",
+												},
+											},
+										},
+										"filters": []interface{}{
+											map[string]interface{}{
+												"key": map[string]interface{}{
+													"name": "trading.settled",
+													"type": "TYPE_INTEGER",
+												},
+												"conditions": []interface{}{
+													map[string]interface{}{
+														"operator": "OPERATOR_GREATER_THAN",
+														"value":    "0",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							"dataSourceSpecForTradingTermination": map[string]interface{}{
+								"external": map[string]interface{}{
+									"oracle": map[string]interface{}{
+										"signers": []interface{}{
+											map[string]interface{}{
+												"ethAddress": map[string]interface{}{
+													"address": "0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC",
+												},
+											},
+										},
+										"filters": []interface{}{
+											map[string]interface{}{
+												"key": map[string]interface{}{
+													"name": "trading.terminated",
+													"type": "TYPE_BOOLEAN",
+												},
+											},
+										},
+									},
+								},
+							},
+							"dataSourceSpecBinding": map[string]interface{}{
+								"settlementDataProperty":     "trading.settled",
+								"tradingTerminationProperty": "trading.terminated",
+							},
+						},
+					},
+					"simple": map[string]interface{}{
+						"factorLong":           "0.15",
+						"factorShort":          "0.25",
+						"maxMoveUp":            "10",
+						"minMoveDown":          "-5",
+						"probabilityOfTrading": "0.1",
+					},
+				},
+			},
+		},
 	}
-	return users, nil
-}
 
-// SignSubmitTx will sign and then submit a transaction
-func (w *walletWrapper) SignSubmitTx(userToken string, command string) error {
-	err := w.SendCommand([]byte(command), userToken)
+	_, err := w.sendTransaction(user, "proposalSubmission", newMarket)
 	return err
 }
 
-// SendCommand will send a signed command to the wallet
-func (w *walletWrapper) SendCommand(submission []byte, token string) error {
-	postBuffer := bytes.NewBuffer(submission)
+// GetFirstKey gives us the first public key linked to our wallet
+func (w walletWrapper) GetFirstKey(longLivenToken string) (string, error) {
+	post, _ := json.Marshal(map[string]interface{}{
+		"id":      "1",
+		"jsonrpc": "2.0",
+		"method":  "client.list_keys",
+		"params": map[string]string{
+			"token": longLivenToken,
+		},
+	})
+	body, err := w.sendRequest(post)
 
-	URL := "http://" + w.walletURL + "/api/v1/command"
-
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodPost, URL, postBuffer)
+	var values listKeysResult = listKeysResult{}
+	err = json.Unmarshal(body, &values)
 	if err != nil {
-		return err
+		fmt.Println(err)
 	}
 
-	bearer := "Bearer " + token
-	req.Header.Add("Authorization", bearer)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
+	if len(values.Result.Keys) > 0 {
+		return values.Result.Keys[0].PublicKey, nil
 	}
-
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	sb := string(body)
-	if strings.Contains(sb, "error") {
-		log.Println(sb)
-		return fmt.Errorf(sb)
-	}
-	return nil
+	return "", nil
 }
 
 // SendBatchOrders sends a set of new order commands to the wallet
@@ -264,13 +211,6 @@ func (w *walletWrapper) SendBatchOrders(user UserDetails,
 	cancels []*commandspb.OrderCancellation,
 	amends []*commandspb.OrderAmendment,
 	orders []*commandspb.OrderSubmission) error {
-	m := jsonpb.Marshaler{}
-
-	// Create the request
-	submitTxReq := &walletpb.SubmitTransactionRequest{
-		PubKey:    user.pubKey,
-		Propagate: true,
-	}
 
 	command := &walletpb.SubmitTransactionRequest_BatchMarketInstructions{
 		BatchMarketInstructions: &commandspb.BatchMarketInstructions{},
@@ -279,131 +219,14 @@ func (w *walletWrapper) SendBatchOrders(user UserDetails,
 	command.BatchMarketInstructions.Amendments = amends
 	command.BatchMarketInstructions.Submissions = orders
 
-	submitTxReq.Command = command
-
-	cmd, err := m.MarshalToString(submitTxReq)
-	if err != nil {
-		return err
-	}
-	return w.SignSubmitTx(user.token, cmd)
+	_, err := w.sendTransaction(user, "orderSubmission", command)
+	return err
 }
 
 // SendOrder sends a new order command to the wallet
 func (w *walletWrapper) SendOrder(user UserDetails, os *commandspb.OrderSubmission) error {
-	m := jsonpb.Marshaler{}
-
-	submitTxReq := &walletpb.SubmitTransactionRequest{
-		PubKey:    user.pubKey,
-		Propagate: true,
-		Command: &walletpb.SubmitTransactionRequest_OrderSubmission{
-			OrderSubmission: os,
-		},
-	}
-
-	cmd, err := m.MarshalToString(submitTxReq)
-	if err != nil {
-		return err
-	}
-	return w.SignSubmitTx(user.token, cmd)
-}
-
-// SendNewMarketProposal will build and send a new market proposal to the wallet
-func (w *walletWrapper) SendNewMarketProposal(marketIndex int, user UserDetails) error {
-
-	m := jsonpb.Marshaler{}
-
-	ref := fmt.Sprintf("PerfBotProposalRef%d", marketIndex)
-	desc := fmt.Sprintf("PerfBotDesc%d", marketIndex)
-	title := fmt.Sprintf("PerfBotProposalTitle%d", marketIndex)
-
-	submitTxReq := &walletpb.SubmitTransactionRequest{
-		PubKey:    user.pubKey,
-		Propagate: true,
-		Command: &walletpb.SubmitTransactionRequest_ProposalSubmission{
-			ProposalSubmission: &commandspb.ProposalSubmission{
-				Reference: ref,
-				Rationale: &proto.ProposalRationale{
-					Description: desc,
-					Title:       title,
-				},
-				Terms: &proto.ProposalTerms{
-					ClosingTimestamp:   w.SecondsFromNowInSecs(15),
-					EnactmentTimestamp: w.SecondsFromNowInSecs(30),
-					Change: &proto.ProposalTerms_NewMarket{
-						NewMarket: &proto.NewMarket{
-							Changes: &proto.NewMarketConfiguration{
-								DecimalPlaces: 5,
-								Instrument: &proto.InstrumentConfiguration{
-									Code: "CRYPTO:BTCUSD/NOV22",
-									Name: "NOV 2022 BTC vs USD future",
-									Product: &proto.InstrumentConfiguration_Future{
-										Future: &proto.FutureProduct{
-											SettlementAsset: "fUSDC",
-											QuoteName:       "BTCUSD",
-											DataSourceSpecBinding: &proto.DataSourceSpecToFutureBinding{
-												SettlementDataProperty:     "trading.settled",
-												TradingTerminationProperty: "trading.termination",
-											},
-											DataSourceSpecForTradingTermination: proto.NewDataSourceDefinition(
-												proto.DataSourceDefinitionTypeExt,
-											).SetOracleConfig(&proto.DataSourceSpecConfiguration{
-												Signers: []*v1.Signer{
-													{
-														Signer: &v1.Signer_PubKey{
-															PubKey: &v1.PubKey{Key: "0xDEADBEEF"},
-														},
-													},
-												},
-												Filters: []*v1.Filter{
-													{Key: &v1.PropertyKey{
-														Name: "trading.termination",
-														Type: v1.PropertyKey_TYPE_BOOLEAN,
-													}},
-												},
-											}),
-											DataSourceSpecForSettlementData: proto.NewDataSourceDefinition(
-												proto.DataSourceDefinitionTypeExt,
-											).SetOracleConfig(&proto.DataSourceSpecConfiguration{
-												Signers: []*v1.Signer{
-													{
-														Signer: &v1.Signer_PubKey{
-															PubKey: &v1.PubKey{Key: "0xDEADBEEF"},
-														},
-													},
-												},
-												Filters: []*v1.Filter{
-													{Key: &v1.PropertyKey{
-														Name: "trading.settled",
-														Type: v1.PropertyKey_TYPE_INTEGER,
-													}},
-												},
-											}),
-										},
-									},
-								},
-								RiskParameters: &proto.NewMarketConfiguration_Simple{
-									Simple: &proto.SimpleModelParams{
-										FactorLong:           0.15,
-										FactorShort:          0.25,
-										MaxMoveUp:            10,
-										MinMoveDown:          -5,
-										ProbabilityOfTrading: 0.1,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	cmd, err := m.MarshalToString(submitTxReq)
-	if err != nil {
-		return err
-	}
-
-	return w.SignSubmitTx(user.token, cmd)
+	_, err := w.sendTransaction(user, "orderSubmission", os)
+	return err
 }
 
 func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string, orderCount int) error {
@@ -433,20 +256,9 @@ func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string
 	lp.Buys = buys
 	lp.Sells = sells
 
-	m := jsonpb.Marshaler{}
+	_, err := w.sendTransaction(user, "liquidityProvisionSubmission", &lp)
 
-	submitTxReq := &walletpb.SubmitTransactionRequest{
-		PubKey:    user.pubKey,
-		Propagate: true,
-		Command: &walletpb.SubmitTransactionRequest_LiquidityProvisionSubmission{
-			LiquidityProvisionSubmission: &lp,
-		},
-	}
-	cmd, err := m.MarshalToString(submitTxReq)
-	if err != nil {
-		return err
-	}
-	return w.SignSubmitTx(user.token, cmd)
+	return err
 }
 
 // SendCancelAll will build and send a cancel all command to the wallet
@@ -455,36 +267,20 @@ func (w *walletWrapper) SendCancelAll(user UserDetails, marketID string) error {
 		MarketId: marketID,
 	}
 
-	m := jsonpb.Marshaler{}
-
-	submitTxReq := &walletpb.SubmitTransactionRequest{
-		PubKey:    user.pubKey,
-		Propagate: true,
-		Command: &walletpb.SubmitTransactionRequest_OrderCancellation{
-			OrderCancellation: &cancel,
-		},
-	}
-	cmd, err := m.MarshalToString(submitTxReq)
+	_, err := w.sendTransaction(user, "orderCancellation", &cancel)
 	if err != nil {
 		return err
 	}
-	return w.SignSubmitTx(user.token, cmd)
+	return err
 }
 
 // SendVote will build and send a vote command to the wallet
-func (w walletWrapper) SendVote(user UserDetails, vote *commandspb.VoteSubmission) error {
-	m := jsonpb.Marshaler{}
+func (w walletWrapper) SendVote(user UserDetails, propID string) error {
+	vote := commandspb.VoteSubmission{
+		ProposalId: propID,
+		Value:      proto.Vote_VALUE_YES,
+	}
 
-	submitTxReq := &walletpb.SubmitTransactionRequest{
-		PubKey:    user.pubKey,
-		Propagate: true,
-		Command: &walletpb.SubmitTransactionRequest_VoteSubmission{
-			VoteSubmission: vote,
-		},
-	}
-	cmd, err := m.MarshalToString(submitTxReq)
-	if err != nil {
-		return err
-	}
-	return w.SignSubmitTx(user.token, cmd)
+	_, err := w.sendTransaction(user, "voteSubmission", &vote)
+	return err
 }
