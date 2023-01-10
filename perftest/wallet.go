@@ -77,6 +77,10 @@ func (w walletWrapper) sendRequest(request []byte) ([]byte, error) {
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf(resp.Status)
+	}
+
 	reply, err := io.ReadAll(resp.Body)
 
 	if err != nil {
