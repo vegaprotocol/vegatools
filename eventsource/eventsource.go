@@ -9,7 +9,7 @@ import (
 
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 func sendAllEvents(sendEvents func([]*eventspb.BusEvent) error, evtFile *os.File,

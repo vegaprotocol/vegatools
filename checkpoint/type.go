@@ -11,9 +11,9 @@ import (
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	events "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/jsonpb"
 	"golang.org/x/crypto/sha3"
+	"google.golang.org/protobuf/proto"
 )
 
 type all struct {

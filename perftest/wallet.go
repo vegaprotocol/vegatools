@@ -256,7 +256,7 @@ func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string
 	lp.Buys = buys
 	lp.Sells = sells
 
-	_, err := w.sendTransaction(user, "liquidityProvisionSubmission", lp)
+	_, err := w.sendTransaction(user, "liquidityProvisionSubmission", &lp)
 
 	return err
 }
@@ -267,7 +267,7 @@ func (w *walletWrapper) SendCancelAll(user UserDetails, marketID string) error {
 		MarketId: marketID,
 	}
 
-	_, err := w.sendTransaction(user, "orderCancellation", cancel)
+	_, err := w.sendTransaction(user, "orderCancellation", &cancel)
 	if err != nil {
 		return err
 	}
@@ -281,6 +281,6 @@ func (w walletWrapper) SendVote(user UserDetails, propID string) error {
 		Value:      proto.Vote_VALUE_YES,
 	}
 
-	_, err := w.sendTransaction(user, "voteSubmission", vote)
+	_, err := w.sendTransaction(user, "voteSubmission", &vote)
 	return err
 }
