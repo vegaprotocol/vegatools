@@ -50,7 +50,6 @@ func (w walletWrapper) sendTransaction(user UserDetails, subType string, subData
 		"method":  "client.send_transaction",
 		"id":      "1",
 		"params": map[string]interface{}{
-			"token":       user.token,
 			"publicKey":   user.pubKey,
 			"sendingMode": "TYPE_SYNC",
 			"transaction": map[string]interface{}{
@@ -59,10 +58,10 @@ func (w walletWrapper) sendTransaction(user UserDetails, subType string, subData
 		},
 	})
 
-	return w.sendRequest(transaction)
+	return w.sendRequest(transaction, user.token)
 }
 
-func (w walletWrapper) sendRequest(request []byte) ([]byte, error) {
+func (w walletWrapper) sendRequest(request []byte, token string) ([]byte, error) {
 	postBody := bytes.NewBuffer(request)
 
 	URL := "http://" + w.walletURL + "/api/v2/requests"
@@ -72,6 +71,7 @@ func (w walletWrapper) sendRequest(request []byte) ([]byte, error) {
 		return nil, err
 	}
 	req.Header.Add("origin", "perfbot")
+	req.Header.Add("Authorization", fmt.Sprintf("VWT %s", token))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -183,16 +183,13 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 }
 
 // GetFirstKey gives us the first public key linked to our wallet
-func (w walletWrapper) GetFirstKey(longLivenToken string) (string, error) {
+func (w walletWrapper) GetFirstKey(longLivedToken string) (string, error) {
 	post, _ := json.Marshal(map[string]interface{}{
 		"id":      "1",
 		"jsonrpc": "2.0",
 		"method":  "client.list_keys",
-		"params": map[string]string{
-			"token": longLivenToken,
-		},
 	})
-	body, err := w.sendRequest(post)
+	body, err := w.sendRequest(post, longLivedToken)
 
 	var values listKeysResult = listKeysResult{}
 	err = json.Unmarshal(body, &values)
