@@ -298,6 +298,7 @@ func (p *perfLoadTesting) seedPeggedOrders(marketIDs []string, peggedOrderCount,
 			if err != nil {
 				return err
 			}
+			time.Sleep(time.Millisecond * 25)
 		}
 	}
 	return nil
