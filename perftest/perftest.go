@@ -314,6 +314,7 @@ func (p *perfLoadTesting) seedPriceLevels(marketIDs []string, users, priceLevels
 				Size:        1,
 				Side:        proto.Side_SIDE_BUY,
 				Type:        proto.Order_TYPE_LIMIT,
+				Reference:   "PriceLevelBuyOrder",
 				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 			if err != nil {
 				log.Println("Failed to send price level buy order", err)
@@ -329,6 +330,7 @@ func (p *perfLoadTesting) seedPriceLevels(marketIDs []string, users, priceLevels
 				Size:        1,
 				Side:        proto.Side_SIDE_SELL,
 				Type:        proto.Order_TYPE_LIMIT,
+				Reference:   "PriceLevelSellOrder",
 				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 			if err != nil {
 				log.Println("Failed to send price level buy order", err)
