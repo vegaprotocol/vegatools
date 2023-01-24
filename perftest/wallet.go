@@ -11,7 +11,6 @@ import (
 
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 )
 
 // WalletWrapper holds details about the wallet
@@ -209,14 +208,12 @@ func (w *walletWrapper) SendBatchOrders(user UserDetails,
 	amends []*commandspb.OrderAmendment,
 	orders []*commandspb.OrderSubmission) error {
 
-	command := &walletpb.SubmitTransactionRequest_BatchMarketInstructions{
-		BatchMarketInstructions: &commandspb.BatchMarketInstructions{},
-	}
-	command.BatchMarketInstructions.Cancellations = cancels
-	command.BatchMarketInstructions.Amendments = amends
-	command.BatchMarketInstructions.Submissions = orders
+	command := &commandspb.BatchMarketInstructions{}
+	command.Cancellations = cancels
+	command.Amendments = amends
+	command.Submissions = orders
 
-	_, err := w.sendTransaction(user, "orderSubmission", command)
+	_, err := w.sendTransaction(user, "batchMarketInstructions", command)
 	return err
 }
 
