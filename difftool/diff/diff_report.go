@@ -405,31 +405,39 @@ func diffDeposits(coreSnapshot *Result, dn *Result) Status {
 	return getSuccessStatus("deposits", core, datanode)
 }
 
+func keyIntersection[K comparable, V any](mapA map[K]V, mapB map[K]V) []K {
+	result := []K{}
+	for k := range mapA {
+		if _, ok := mapB[k]; ok {
+			result = append(result, k)
+		}
+	}
+	return result
+}
+
 // diffWithdrawals compares *live* withdarawls from the core snapshot with the same from datanode.
 func diffWithdrawals(coreSnapshot *Result, dn *Result) Status {
 	core := coreSnapshot.Withdrawals
-	datanode := []*vega.Withdrawal{}
-	coreWIDs := map[string]struct{}{}
-	for _, w := range core {
-		coreWIDs[w.Id] = struct{}{}
+	datanode := dn.Withdrawals
+
+	coreByID := map[string]*vega.Withdrawal{}
+	datanodeByID := map[string]*vega.Withdrawal{}
+
+	for _, w := range coreSnapshot.Withdrawals {
+		coreByID[w.Id] = w
 	}
 
-	// filter only live withdrawals from datanode
 	for _, w := range dn.Withdrawals {
-		if _, ok := coreWIDs[w.Id]; ok {
-			datanode = append(datanode, w)
-		}
+		datanodeByID[w.Id] = w
 	}
 
-	sort.Slice(core, func(i, j int) bool { return core[i].Id < core[j].Id })
-	sort.Slice(datanode, func(i, j int) bool { return datanode[i].Id < datanode[j].Id })
-	if len(core) != len(datanode) {
-		return getSizeMismatchStatus("withdrawals", core, datanode)
-	}
+	// Only compare if withdrawal is both core and datanode; core may have more as it currently
+	// never deletes any, but a datanode without history will initially have none.
+	// Issue about core behavior: https://github.com/vegaprotocol/vega/issues/7440
+	intersection := keyIntersection(coreByID, datanodeByID)
 
-	for i, a := range core {
-		d := datanode[i]
-		if a.String() != d.String() {
+	for _, id := range intersection {
+		if coreByID[id].String() != datanodeByID[id].String() {
 			return getValueMismatchStatus("withdrawals", core, datanode)
 		}
 	}
