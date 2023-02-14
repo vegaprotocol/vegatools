@@ -268,7 +268,6 @@ func (s *snap) getNetLimits() *vega.NetworkLimits {
 				GenesisLoaded:        limits.GenesisLoaded,
 				ProposeMarketEnabled: limits.ProposeMarketEnabled,
 				ProposeAssetEnabled:  limits.ProposeAssetEnabled,
-				BootstrapBlockCount:  limits.BlockCount,
 			}
 			if limits.ProposeAssetEnabledFrom > 0 {
 				nl.ProposeAssetEnabledFrom = limits.ProposeAssetEnabledFrom
