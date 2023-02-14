@@ -29,6 +29,18 @@ func (d *dnWrapper) getNetworkParam(param string) (string, error) {
 	return response.NetworkParameter.Value, nil
 }
 
+func (d *dnWrapper) getStake(partyID string) (int64, error) {
+	request := &datanode.GetStakeRequest{
+		PartyId: partyID,
+	}
+
+	response, err := d.dataNode.GetStake(context.Background(), request)
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseInt(response.CurrentStakeAvailable, 10, 64)
+}
+
 func (d *dnWrapper) getAssets() (map[string]string, error) {
 	request := &datanode.ListAssetsRequest{}
 

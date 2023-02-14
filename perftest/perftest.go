@@ -104,12 +104,15 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, gan
 			if index >= voters {
 				break
 			}
-			sendVegaTokens(user.pubKey, ganacheURL)
+			stake, _ := p.dataNode.getStake(user.pubKey)
+			if stake == 0 {
+				sendVegaTokens(user.pubKey, ganacheURL)
+			}
 			time.Sleep(time.Second * 1)
 		}
 	}
 
-	// If the first user has not tokens, top everyone up
+	// If the first user has no tokens, top everyone up
 	// quickly without checking if they need it
 	asset := assets["fUSDC"]
 	amount, _ := p.dataNode.getAssetsPerUser(p.users[0].pubKey, asset)
@@ -137,20 +140,51 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, gan
 			}
 			time.Sleep(time.Millisecond * 5)
 		}
-
-	}
-	time.Sleep(time.Second * 5)
-
-	for _, user := range p.users {
-		for amount, _ = p.dataNode.getAssetsPerUser(user.pubKey, asset); amount < 5000000000; {
-			err := topUpAsset(faucetURL, user.pubKey, asset, 100000000)
-			if err != nil {
-				return nil
+	} else {
+		// We just need to top everyone back up to the same amount
+		for _, user := range p.users {
+			amount, _ := p.dataNode.getAssetsPerUser(user.pubKey, asset)
+			if amount >= 5000000000 {
+				time.Sleep(time.Millisecond * 50)
+				continue
 			}
+			topUpTimes := 1 + ((5000000000 - amount) / 100000000)
+			for i := int64(0); i < topUpTimes; i++ {
+				err := topUpAsset(faucetURL, user.pubKey, asset, 100000000)
+				if err != nil {
+					return err
+				}
+				time.Sleep(time.Millisecond * 5)
+			}
+		}
+	}
+
+	// Wait until everyone has the right amount of assets
+	for _, user := range p.users {
+		amount, _ = p.dataNode.getAssetsPerUser(user.pubKey, asset)
+		time.Sleep(time.Millisecond * 50)
+		for amount < 5000000000 {
 			time.Sleep(time.Second * 1)
 			amount, _ = p.dataNode.getAssetsPerUser(user.pubKey, asset)
 		}
 	}
+
+	// Wait until all the stakes have come through
+	for index, user := range p.users {
+		if index >= voters {
+			break
+		}
+		stake, err := p.dataNode.getStake(user.pubKey)
+		time.Sleep(time.Millisecond * 50)
+		if err != nil {
+			return err
+		}
+		for stake <= 0 {
+			time.Sleep(time.Second * 1)
+			stake, _ = p.dataNode.getStake(user.pubKey)
+		}
+	}
+
 	return nil
 }
 
@@ -194,7 +228,7 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters, maxLPSh
 			if err != nil {
 				return nil, err
 			}
-			time.Sleep(time.Second * 7)
+			time.Sleep(time.Second * 3)
 			propID, err := p.dataNode.getPendingProposalID()
 			if err != nil {
 				return nil, err
@@ -660,7 +694,7 @@ func Run(opts Opts) error {
 
 	// Send off a controlled amount of orders and cancels
 	if opts.BatchSize > 0 {
-		fmt.Print("Sending load transactions...")
+		fmt.Print("Sending batched load transactions...")
 		err = plt.sendBatchTradingLoad(marketIDs, opts.UserCount, opts.CommandsPerSecond, opts.RuntimeSeconds, opts.BatchSize, opts.PriceLevels, opts.StartingMidPrice, opts.MoveMid)
 		if err != nil {
 			fmt.Println("FAILED")
