@@ -34,6 +34,7 @@ func init() {
 	perfTestCmd.Flags().Int64VarP(&opts.StartingMidPrice, "startingmidprice", "s", 10000, "mid price to use at the start")
 	perfTestCmd.Flags().BoolVarP(&opts.MoveMid, "movemidprice", "M", false, "allow the mid price we place orders around to move randomly")
 	perfTestCmd.Flags().BoolVarP(&opts.FillPriceLevels, "fillpricelevel", "F", false, "place an order at every available price level")
+	perfTestCmd.Flags().BoolVarP(&opts.InitialiseOnly, "initialiseonly", "i", false, "initialise everything and then exit")
 	perfTestCmd.MarkFlagRequired("address")
 	perfTestCmd.MarkFlagRequired("wallet")
 	perfTestCmd.MarkFlagRequired("faucet")

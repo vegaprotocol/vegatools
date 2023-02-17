@@ -38,6 +38,7 @@ type Opts struct {
 	PriceLevels       int
 	StartingMidPrice  int64
 	FillPriceLevels   bool
+	InitialiseOnly    bool
 }
 
 type perfLoadTesting struct {
@@ -98,7 +99,7 @@ func (p *perfLoadTesting) LoadUsers(tokenFilePath string, userCount int) error {
 	return nil
 }
 
-func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, ganacheURL string, voters int) error {
+func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, ganacheURL string, voters, markets int) error {
 	if len(ganacheURL) > 0 {
 		for index, user := range p.users {
 			if index >= voters {
@@ -128,17 +129,14 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, faucetURL, gan
 		}
 
 		// Add some more to the special accounts as we might need it for price level orders
-		for t := 0; t < 100; t++ {
-			err := topUpAsset(faucetURL, p.users[0].pubKey, asset, 100000000)
-			if err != nil {
-				return err
+		for t := 0; t < markets+10; t++ {
+			for v := 0; v < voters; v++ {
+				err := topUpAsset(faucetURL, p.users[v].pubKey, asset, 100000000)
+				if err != nil {
+					return err
+				}
+				time.Sleep(time.Millisecond * 5)
 			}
-			time.Sleep(time.Millisecond * 5)
-			err = topUpAsset(faucetURL, p.users[1].pubKey, asset, 100000000)
-			if err != nil {
-				return err
-			}
-			time.Sleep(time.Millisecond * 5)
 		}
 	} else {
 		// We just need to top everyone back up to the same amount
@@ -244,7 +242,8 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters, maxLPSh
 			}
 		}
 	}
-	time.Sleep(time.Second * 6)
+	// We need to wait at least 5 seconds for the markets to move from enacted to pending
+	time.Sleep(time.Second * 10)
 
 	// Move markets out of auction
 	markets = p.dataNode.getMarkets()
@@ -282,6 +281,7 @@ func (p *perfLoadTesting) proposeAndEnactMarket(numberOfMarkets, voters, maxLPSh
 					Type:        proto.Order_TYPE_LIMIT,
 					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 			}
+			time.Sleep(time.Second * 1)
 		}
 	} else {
 		return nil, fmt.Errorf("failed to get open market")
@@ -649,7 +649,7 @@ func Run(opts Opts) error {
 
 	// Send some tokens to any newly created users
 	fmt.Print("Depositing tokens and assets...")
-	err = plt.depositTokens(assets, opts.FaucetURL, opts.GanacheURL, opts.Voters)
+	err = plt.depositTokens(assets, opts.FaucetURL, opts.GanacheURL, opts.Voters, opts.MarketCount)
 	if err != nil {
 		fmt.Println("FAILED")
 		return err
@@ -690,6 +690,12 @@ func Run(opts Opts) error {
 			return err
 		}
 		fmt.Println("Complete")
+	}
+
+	// If we are only initialising, stop now and return
+	if opts.InitialiseOnly {
+		fmt.Println("Initialisation complete")
+		return nil
 	}
 
 	// Send off a controlled amount of orders and cancels
