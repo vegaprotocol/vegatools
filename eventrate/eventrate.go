@@ -14,11 +14,12 @@ import (
 
 // Opts are the command line options passed to the sub command
 type Opts struct {
-	ServerAddr       string
-	Buckets          int
-	SecondsPerBucket int
-	EventCountDump   int
-	ReportStyle      bool
+	ServerAddr          string
+	Buckets             int
+	SecondsPerBucket    int
+	EventCountDump      int
+	ReportStyle         bool
+	FinalReportRowCount int
 }
 
 func min(a, b uint64) uint64 {
@@ -90,6 +91,9 @@ func Run(opts Opts) error {
 		return fmt.Errorf("error reading events: %v", err)
 	}
 
+	reportCount := 0
+	var avgEvents uint64
+	var avgBytes uint64
 	for {
 		time.Sleep(time.Second * time.Duration(opts.SecondsPerBucket))
 		mu.Lock()
@@ -119,18 +123,20 @@ func Run(opts Opts) error {
 			maxBytes = max(maxBytes, i.Bytes)
 			totalBytes += i.Bytes
 		}
-		avgEvents := totalEvents / uint64(len(historicData))
-		avgBytes := totalBytes / uint64(len(historicData))
-		fmt.Printf("%s Events:Bandwidth (", blockTime.Format(time.UnixDate))
-		for i := len(historicData) - 1; i > 0; i-- {
-			fmt.Printf("[%d:%s], ", historicData[i].Events, fixUnits(historicData[i].Bytes))
-		}
-		fmt.Printf("[%d:%s]) Min:[%d:%s] Max:[%d:%s] Avg:[%d:%s]            \r",
-			historicData[0].Events, fixUnits(historicData[0].Bytes),
-			minEvents, fixUnits(minBytes), maxEvents, fixUnits(maxBytes), avgEvents, fixUnits(avgBytes))
+		avgEvents = totalEvents / uint64(len(historicData))
+		avgBytes = totalBytes / uint64(len(historicData))
+		if opts.FinalReportRowCount == 0 {
+			fmt.Printf("%s Events:Bandwidth (", blockTime.Format(time.UnixDate))
+			for i := len(historicData) - 1; i > 0; i-- {
+				fmt.Printf("[%d:%s], ", historicData[i].Events, fixUnits(historicData[i].Bytes))
+			}
+			fmt.Printf("[%d:%s]) Min:[%d:%s] Max:[%d:%s] Avg:[%d:%s]            \r",
+				historicData[0].Events, fixUnits(historicData[0].Bytes),
+				minEvents, fixUnits(minBytes), maxEvents, fixUnits(maxBytes), avgEvents, fixUnits(avgBytes))
 
-		if opts.ReportStyle {
-			fmt.Println()
+			if opts.ReportStyle {
+				fmt.Println()
+			}
 		}
 
 		if opts.EventCountDump > 0 {
@@ -158,5 +164,11 @@ func Run(opts Opts) error {
 				}
 			}
 		}
+		reportCount++
+		if reportCount == opts.FinalReportRowCount {
+			fmt.Printf("AverageEvents:%d:AverageBytes:%d\n", avgEvents, avgBytes)
+			break
+		}
 	}
+	return nil
 }
