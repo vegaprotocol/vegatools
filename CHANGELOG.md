@@ -67,6 +67,7 @@
 - [254](https://github.com/vegaprotocol/vegatools/issues/254) - Updated auth to use VWT header value
 - [256](https://github.com/vegaprotocol/vegatools/issues/256) - Fix batch orders 
 - [260](https://github.com/vegaprotocol/vegatools/issues/260) - Better handling of staking assets in perftool 
+- [264](https://github.com/vegaprotocol/vegatools/issues/264) - Eventrate tool can now output a simple report and then exit for use in scripts 
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
