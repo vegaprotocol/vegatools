@@ -29,6 +29,18 @@ func (d *dnWrapper) getNetworkParam(param string) (string, error) {
 	return response.NetworkParameter.Value, nil
 }
 
+func (d *dnWrapper) getStake(partyID string) (int64, error) {
+	request := &datanode.GetStakeRequest{
+		PartyId: partyID,
+	}
+
+	response, err := d.dataNode.GetStake(context.Background(), request)
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseInt(response.CurrentStakeAvailable, 10, 64)
+}
+
 func (d *dnWrapper) getAssets() (map[string]string, error) {
 	request := &datanode.ListAssetsRequest{}
 
@@ -98,20 +110,19 @@ func (d *dnWrapper) getPendingProposalID() (string, error) {
 }
 
 func (d *dnWrapper) waitForMarketEnactment(marketID string, maxWaitSeconds int) error {
-	request := &datanode.ListGovernanceDataRequest{
-		ProposalReference: &marketID,
+	request := &datanode.GetGovernanceDataRequest{
+		ProposalId: &marketID,
 	}
 
 	for i := 0; i < maxWaitSeconds; i++ {
-		response, err := d.dataNode.ListGovernanceData(context.Background(), request)
+		response, err := d.dataNode.GetGovernanceData(context.Background(), request)
 		if err != nil {
 			return err
 		}
 
-		for _, proposal := range response.Connection.Edges {
-			if proposal.Node.Proposal.State == proto.Proposal_STATE_ENACTED {
-				return nil
-			}
+		gd := response.GetData()
+		if gd.Proposal.State == proto.Proposal_STATE_ENACTED {
+			return nil
 		}
 		time.Sleep(time.Second)
 	}

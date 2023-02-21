@@ -92,6 +92,7 @@ func (w walletWrapper) sendRequest(request []byte, token string) ([]byte, error)
 }
 
 func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
+	marketName := fmt.Sprintf("JUN 2023 BTV vs USD future %d", offset)
 	newMarket := map[string]interface{}{
 		"rationale": map[string]interface{}{
 			"description": "desc",
@@ -107,7 +108,7 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 					"positionDecimalPlaces": "5",
 					"instrument": map[string]interface{}{
 						"code": "CRYPTO:BTCUSD/NOV22",
-						"name": "NOV 2022 BTC vs USD future",
+						"name": marketName,
 						"future": map[string]interface{}{
 							"settlementAsset": "fUSDC",
 							"quoteName":       "BTCUSD",
