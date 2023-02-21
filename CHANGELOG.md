@@ -74,6 +74,7 @@
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
 - [91](https://github.com/vegaprotocol/vegatools/pull/91) - Output of `snapshotdb` is now valid json
 - [173](https://github.com/vegaprotocol/vegatools/issues/173) - Add `MarketTracker` to checkpoint parser
+- [262](https://github.com/vegaprotocol/vegatools/issues/262) - Update vega dependency, ignore slippage factors in market and last block in epoch
 
 ## 0.41.1
 *2021-08-31*
