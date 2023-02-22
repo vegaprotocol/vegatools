@@ -243,11 +243,11 @@ func diffDelegations(coreSnapshot *Result, dn *Result) Status {
 
 // diffEpoch compares the timestamps of epoch from core snapshot and datanode.
 func diffEpoch(coreSnapshot *Result, dn *Result) Status {
-	core := coreSnapshot.Epoch.String()
-	datanode := dn.Epoch.String()
+	core := coreSnapshot.Epoch
+	datanode := dn.Epoch
 
-	if core != datanode {
-		return getSimpleValueMismatchStatus("epoch", core, datanode)
+	if core.Seq != datanode.Seq || core.Timestamps.StartTime != datanode.Timestamps.StartTime || core.Timestamps.ExpiryTime != datanode.Timestamps.ExpiryTime {
+		return getSimpleValueMismatchStatus("epoch", core.String(), datanode.String())
 	}
 
 	return getSimpleSuccessStatus("epoch")

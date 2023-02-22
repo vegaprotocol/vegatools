@@ -70,12 +70,14 @@
 - [260](https://github.com/vegaprotocol/vegatools/issues/260) - Better handling of staking assets in perftool 
 - [264](https://github.com/vegaprotocol/vegatools/issues/264) - Eventrate tool can now output a simple report and then exit for use in scripts 
 - [266](https://github.com/vegaprotocol/vegatools/issues/266) - Eventrate tool uses correct gov prop call and new option to only initialise the markets 
+- [268](https://github.com/vegaprotocol/vegatools/issues/268) - Streamlatency tool to measure latency difference between two different event streams 
 
 
 ### 🐛 Fixes
 - [78](https://github.com/vegaprotocol/vegatools/pull/78) - Fix build with missing dependency
 - [91](https://github.com/vegaprotocol/vegatools/pull/91) - Output of `snapshotdb` is now valid json
 - [173](https://github.com/vegaprotocol/vegatools/issues/173) - Add `MarketTracker` to checkpoint parser
+- [262](https://github.com/vegaprotocol/vegatools/issues/262) - Update vega dependency, ignore slippage factors in market and last block in epoch
 
 ## 0.41.1
 *2021-08-31*
