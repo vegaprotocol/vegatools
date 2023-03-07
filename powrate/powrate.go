@@ -1,4 +1,4 @@
-package signingrate
+package powrate
 
 import (
 	"fmt"
@@ -66,8 +66,8 @@ func Run(opts Opts) error {
 		return fmt.Errorf("test seconds must be > 1 and < 100")
 	}
 
-	fmt.Println("Vega Wallet Transaction Signing Benchmark")
-	fmt.Println("|  POW Difficulty  | Total Signing Count |  Signings Per Second  |")
+	fmt.Printf("Vega PoW Benchmark (Difficulty %d-%d, %d seconds per level)\n", opts.MinPoWLevel, opts.MaxPoWLevel, opts.TestSeconds)
+	fmt.Println("|  PoW Difficulty  | Total PoW Count | PoW Operations Per Second |")
 	fmt.Println("------------------------------------------------------------------")
 
 	var waitGroup sync.WaitGroup
@@ -77,7 +77,7 @@ func Run(opts Opts) error {
 		stop := make(chan int)
 		timeout := make(chan int)
 
-		signCount := 0
+		operationsCount := 0
 		waitGroup.Add(1)
 		go pow(uint(difficulty), work, stop, &waitGroup)
 		go wait(opts.TestSeconds, timeout)
@@ -85,14 +85,14 @@ func Run(opts Opts) error {
 		for !shouldQuit {
 			select {
 			case <-work:
-				signCount++
+				operationsCount++
 			case <-timeout:
 				stop <- 0
 				shouldQuit = true
 			}
 		}
 		waitGroup.Wait()
-		fmt.Printf(" %-20d| %20d  |\n", signCount, signCount/opts.TestSeconds)
+		fmt.Printf(" %-16d| %24d  |\n", operationsCount, operationsCount/opts.TestSeconds)
 	}
 	fmt.Println("------------------------------------------------------------------")
 	return nil
