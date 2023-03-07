@@ -96,3 +96,6 @@ This creates a market and a set of users and then generates a consistent flow of
 
 ### EventRate
 This listens to an unfiltered event bus stream and reports the number of events arriving per time bucket (default 1 second) and the amount of network bandwidth it used to receive them. The bucket length and the number of historic buckets it uses to generate the average values can be set on the commandline. 
+
+### SigningRate
+This runs a benchmark using the same encryption used to sign each transaction. It reports back the number of transactions per second the machine can sign and can be used to help set the proof of work difficulty value for a network. It will also allow uses to get a feel for the rate in which a wallet service will be able to sign and forward on transactions if run on the same machine.
