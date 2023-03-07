@@ -18,7 +18,7 @@ var (
 func init() {
 	rootCmd.AddCommand(powRateCmd)
 	powRateCmd.Flags().IntVarP(&powRateOpts.MinPoWLevel, "minimumpowdifficulty", "a", 1, "lowest PoW difficulty to test")
-	powRateCmd.Flags().IntVarP(&powRateOpts.MaxPoWLevel, "maximumpowdifficulty", "b", 20, "highest PoW difficulty to test")
+	powRateCmd.Flags().IntVarP(&powRateOpts.MaxPoWLevel, "maximumpowdifficulty", "b", 25, "highest PoW difficulty to test")
 	powRateCmd.Flags().IntVarP(&powRateOpts.TestSeconds, "testseconds", "s", 10, "length of time in seconds to test each difficulty level")
 }
 
