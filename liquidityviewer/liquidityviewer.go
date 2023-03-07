@@ -116,7 +116,7 @@ func getMarketToDisplay(dataclient api.TradingDataServiceClient, marketID string
 		os.Exit(0)
 	}
 
-	fmt.Println("Using market:", index)
+	fmt.Println("Using market:", input)
 
 	return validMarkets[index]
 }
