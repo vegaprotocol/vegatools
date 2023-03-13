@@ -11,9 +11,12 @@ import (
 
 // Opts are the command line options passed to the sub command
 type Opts struct {
-	MinPoWLevel int
-	MaxPoWLevel int
-	TestSeconds int
+	MinPoWLevel       int
+	MaxPoWLevel       int
+	TestSeconds       int
+	SecondsPerBlock   int
+	TxPerBlock        int
+	DefaultDifficulty int
 }
 
 func getRandomBlockHash() string {
@@ -66,11 +69,16 @@ func Run(opts Opts) error {
 		return fmt.Errorf("test seconds must be > 1 and < 100")
 	}
 
+	if opts.DefaultDifficulty < opts.MinPoWLevel || opts.DefaultDifficulty > opts.MaxPoWLevel {
+		return fmt.Errorf("default difficulty value must be between the min and max testable values")
+	}
+
 	fmt.Printf("Vega PoW Benchmark (Difficulty %d-%d, %d seconds per level)\n", opts.MinPoWLevel, opts.MaxPoWLevel, opts.TestSeconds)
 	fmt.Println("|  PoW Difficulty  | Total PoW Count | PoW Operations Per Second |")
 	fmt.Println("------------------------------------------------------------------")
 
 	var waitGroup sync.WaitGroup
+	var powTimes map[int]float32 = make(map[int]float32)
 	for difficulty := opts.MinPoWLevel; difficulty <= opts.MaxPoWLevel; difficulty++ {
 		fmt.Printf("|  %-3d             |", difficulty)
 		work := make(chan int, 100)
@@ -93,7 +101,38 @@ func Run(opts Opts) error {
 		}
 		waitGroup.Wait()
 		fmt.Printf(" %-16d| %24d  |\n", operationsCount, operationsCount/opts.TestSeconds)
+
+		// Store the time per calc for use later
+		powTimes[difficulty] = float32(opts.TestSeconds) / float32(operationsCount)
 	}
 	fmt.Println("------------------------------------------------------------------")
+
+	// Loop through all the timings starting at the default difficulty and add up the time
+	totalTime := float32(0.0)
+	powCalcs := 0
+	foundValue := false
+	for difficulty := opts.DefaultDifficulty; difficulty <= opts.MaxPoWLevel; difficulty++ {
+		for i := 0; i < opts.TxPerBlock; i++ {
+			totalTime += powTimes[difficulty]
+			if totalTime > float32(opts.SecondsPerBlock) {
+				foundValue = true
+				break
+			}
+			powCalcs++
+		}
+		if foundValue {
+			break
+		}
+	}
+	if foundValue {
+		fmt.Printf("For an average blocktime of %d seconds\n", opts.SecondsPerBlock)
+		fmt.Printf("and a starting difficulty of %d\n", opts.DefaultDifficulty)
+		fmt.Printf("and the maximum number of transactions per block of %d\n", opts.TxPerBlock)
+		fmt.Printf("the maximum number of PoW calcs per linked block is %d\n", powCalcs)
+		fmt.Println("------------------------------------------------------------------")
+	} else {
+		fmt.Println("not enough data to generate maximum PoW value")
+	}
+
 	return nil
 }
