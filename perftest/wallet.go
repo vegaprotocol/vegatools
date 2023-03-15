@@ -103,9 +103,11 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 			"enactmentTimestamp": w.SecondsFromNowInSecs(30),
 			"newMarket": map[string]interface{}{
 				"changes": map[string]interface{}{
-					"lpPriceRange":          "10",
-					"decimalPlaces":         "5",
-					"positionDecimalPlaces": "5",
+					"linearSlippageFactor":    "0.001",
+					"quadraticSlippageFactor": "0.0",
+					"lpPriceRange":            "10",
+					"decimalPlaces":           "5",
+					"positionDecimalPlaces":   "5",
 					"instrument": map[string]interface{}{
 						"code": "CRYPTO:BTCUSD/NOV22",
 						"name": marketName,
