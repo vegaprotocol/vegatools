@@ -103,8 +103,8 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 			"enactmentTimestamp": w.SecondsFromNowInSecs(30),
 			"newMarket": map[string]interface{}{
 				"changes": map[string]interface{}{
-					"linearSlippageFactor":    "1",
-					"quadraticSlippageFactor": "1",
+					"linearSlippageFactor":    "0.001",
+					"quadraticSlippageFactor": "0.0",
 					"lpPriceRange":            "10",
 					"decimalPlaces":           "5",
 					"positionDecimalPlaces":   "5",
