@@ -8,9 +8,9 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
-type APITest func(ctx context.Context, client v2.TradingDataServiceClient) time.Duration
+type apiTest func(ctx context.Context, client v2.TradingDataServiceClient) time.Duration
 
-func Worker(ctx context.Context, client v2.TradingDataServiceClient, apiTest APITest, reqCh <-chan struct{}, resultCh chan<- time.Duration, doneCh chan<- struct{}) {
+func worker(ctx context.Context, client v2.TradingDataServiceClient, apiTest apiTest, reqCh <-chan struct{}, resultCh chan<- time.Duration, doneCh chan<- struct{}) {
 	defer func() {
 		doneCh <- struct{}{}
 	}()
@@ -29,11 +29,11 @@ func Worker(ctx context.Context, client v2.TradingDataServiceClient, apiTest API
 	}
 }
 
-type Averagable interface {
+type averagable interface {
 	int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64 | time.Duration
 }
 
-func mean[T Averagable](values []T) T {
+func mean[T averagable](values []T) T {
 	if len(values) == 0 {
 		return 0
 	}
@@ -49,7 +49,7 @@ func mean[T Averagable](values []T) T {
 	return total / T(len(values))
 }
 
-func median[T Averagable](values []T) T {
+func median[T averagable](values []T) T {
 	if len(values) == 0 {
 		return 0
 	}

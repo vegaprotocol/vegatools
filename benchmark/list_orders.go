@@ -17,6 +17,7 @@ import (
 )
 
 var (
+	// ListOrdersCmd is the command that will be run when running a ListOrders benchmark
 	ListOrdersCmd = &cobra.Command{
 		Use:   "ListOrders",
 		Short: "Test orders API",
@@ -95,7 +96,7 @@ func listOrders(command *cobra.Command, args []string) {
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
 			for i := 0; i < workers; i++ {
-				go Worker(ctx, client, listOrdersRequest, reqCh, resultCh, doneCh)
+				go worker(ctx, client, listOrdersRequest, reqCh, resultCh, doneCh)
 			}
 
 			wg := sync.WaitGroup{}
