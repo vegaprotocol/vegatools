@@ -3,7 +3,7 @@ package cmd
 import (
 	"time"
 
-	benchmark "code.vegaprotocol.io/vegatools/grpc-api-benchmark"
+	benchmark "code.vegaprotocol.io/vegatools/grpcapibenchmark"
 
 	"github.com/spf13/cobra"
 )

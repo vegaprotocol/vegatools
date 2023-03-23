@@ -1,4 +1,4 @@
-package grpc_api_benchmark
+package grpcapibenchmark
 
 import (
 	"context"
