@@ -1,4 +1,4 @@
-package benchmark
+package grpc_api_benchmark
 
 import (
 	"context"
@@ -68,7 +68,7 @@ func listOrders(command *cobra.Command, args []string) {
 	for _, url := range urls {
 		conn, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()), ratelimit.WithSecret())
 		if err != nil {
-			log.Printf("could not corrent to %s, %v", url, err)
+			log.Printf("could not connect to %s, %v", url, err)
 			continue
 		}
 		client := v2.NewTradingDataServiceClient(conn)

@@ -1,4 +1,4 @@
-package benchmark
+package grpc_api_benchmark
 
 import (
 	"context"
@@ -65,7 +65,5 @@ func median[T averagable](values []T) T {
 	if len(values)%2 == 0 {
 		return (values[middle-1] + values[middle]) / 2
 	}
-
-	middle = len(values) / 2
 	return values[middle]
 }
