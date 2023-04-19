@@ -108,6 +108,8 @@ func diffOrders(coreSnapshot *Result, dn *Result) Status {
 
 	for i, a := range core {
 		d := datanode[i]
+		// core may increment UpdatedAt, but if nothing changes it doesn't send an event
+		d.UpdatedAt = a.UpdatedAt
 		if a.String() != d.String() {
 			return getValueMismatchStatus("orders", core, datanode)
 		}
