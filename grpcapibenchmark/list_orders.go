@@ -170,16 +170,16 @@ func parsePersistentFlags(command *cobra.Command) {
 
 func listOrdersRequest(ctx context.Context, client v2.TradingDataServiceClient) time.Duration {
 	start := time.Now()
-	var market *string
-	var party *string
 	var ref *string
+	parties := []string{}
+	markets := []string{}
 
 	if marketID != "" {
-		market = &marketID
+		markets = append(markets, marketID)
 	}
 
 	if partyID != "" {
-		party = &partyID
+		parties = append(parties, partyID)
 	}
 
 	if reference != "" {
@@ -209,10 +209,12 @@ func listOrdersRequest(ctx context.Context, client v2.TradingDataServiceClient) 
 	}
 
 	if _, err := client.ListOrders(ctx, &v2.ListOrdersRequest{
-		PartyId:   party,
-		MarketId:  market,
-		Reference: ref,
-		DateRange: dateRange,
+		Filter: &v2.OrderFilter{
+			PartyIds:  parties,
+			MarketIds: markets,
+			Reference: ref,
+			DateRange: dateRange,
+		},
 	}); err != nil {
 		return 0
 	}
