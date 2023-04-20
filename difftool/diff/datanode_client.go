@@ -220,7 +220,10 @@ func (dnc *dataNodeClient) listAccounts() ([]*dn.AccountBalance, error) {
 
 func (dnc *dataNodeClient) listOrders() ([]*vega.Order, error) {
 	liveOnly := true
-	orderResp, err := dnc.datanode.ListOrders(context.Background(), &dn.ListOrdersRequest{LiveOnly: &liveOnly})
+	orderResp, err := dnc.datanode.ListOrders(context.Background(), &dn.ListOrdersRequest{
+		Filter: &dn.OrderFilter{
+			LiveOnly: &liveOnly},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -411,7 +414,8 @@ func (dnc *dataNodeClient) listPositions() ([]*vega.Position, error) {
 }
 
 func (dnc *dataNodeClient) listLiquidityProvisions(market string) ([]*vega.LiquidityProvision, error) {
-	resp, err := dnc.datanode.ListLiquidityProvisions(context.Background(), &dn.ListLiquidityProvisionsRequest{MarketId: &market})
+	live := true
+	resp, err := dnc.datanode.ListLiquidityProvisions(context.Background(), &dn.ListLiquidityProvisionsRequest{MarketId: &market, Live: &live})
 	if err != nil {
 		return nil, err
 	}

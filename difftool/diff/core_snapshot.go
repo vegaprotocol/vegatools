@@ -215,8 +215,6 @@ func (s *snap) getMarkets() []*vega.Market {
 		case *snapshot.Payload_ExecutionMarkets:
 			markets := []*vega.Market{}
 			for _, m := range c.GetExecutionMarkets().Markets {
-				m.Market.LinearSlippageFactor = ""
-				m.Market.QuadraticSlippageFactor = ""
 				markets = append(markets, m.Market)
 			}
 			return markets
