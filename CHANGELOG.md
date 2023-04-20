@@ -71,7 +71,8 @@
 - [264](https://github.com/vegaprotocol/vegatools/issues/264) - Eventrate tool can now output a simple report and then exit for use in scripts 
 - [266](https://github.com/vegaprotocol/vegatools/issues/266) - Eventrate tool uses correct gov prop call and new option to only initialise the markets 
 - [268](https://github.com/vegaprotocol/vegatools/issues/268) - Streamlatency tool to measure latency difference between two different event streams 
-- [270](https://github.com/vegaprotocol/vegatools/issues/270) - signingrate tool to benchmark a server to see at what rate they can sign transactions 
+- [270](https://github.com/vegaprotocol/vegatools/issues/270) - signingrate tool to benchmark a server to see at what rate they can sign transactions
+- [281](https://github.com/vegaprotocol/vegatools/issues/281) - add a toggle to perftest to enble/disable lp users from creating initial orders 
 
 
 ### 🐛 Fixes
