@@ -421,7 +421,7 @@ func (dnc *dataNodeClient) listLiquidityProvisions(market string) ([]*vega.Liqui
 	}
 	lps := make([]*vega.LiquidityProvision, 0, len(resp.LiquidityProvisions.Edges))
 	for _, lpe := range resp.LiquidityProvisions.Edges {
-		if lpe.Node.Status == vega.LiquidityProvision_STATUS_ACTIVE || lpe.Node.Status == vega.LiquidityProvision_STATUS_UNDEPLOYED {
+		if lpe.Node.Status == vega.LiquidityProvision_STATUS_PENDING ||  lpe.Node.Status == vega.LiquidityProvision_STATUS_ACTIVE || lpe.Node.Status == vega.LiquidityProvision_STATUS_UNDEPLOYED {
 			lps = append(lps, lpe.Node)
 		}
 	}
