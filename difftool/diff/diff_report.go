@@ -520,7 +520,15 @@ func diffTransfers(coreSnapshot *Result, dn *Result) Status {
 	}
 
 	for i, a := range core {
-		d := datanode[i]
+		// shadow to make sure the original data is not changed
+		a := *a
+		d := *(datanode[i])
+
+		// We ignore the difference in the timestamp, as the transfer timestamp
+		// is updated when the network is started from the checkpoint.
+		a.Timestamp = 0
+		d.Timestamp = 0
+
 		if a.String() != d.String() {
 			return getValueMismatchStatus("transfers", core, datanode)
 		}
