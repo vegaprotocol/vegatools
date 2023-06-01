@@ -81,6 +81,7 @@
 - [173](https://github.com/vegaprotocol/vegatools/issues/173) - Add `MarketTracker` to checkpoint parser
 - [262](https://github.com/vegaprotocol/vegatools/issues/262) - Update vega dependency, ignore slippage factors in market and last block in epoch
 - [279](https://github.com/vegaprotocol/vegatools/issues/279) - Update to work with new datanode API for querying live orders / liquidity provisions
+- [286](https://github.com/vegaprotocol/vegatools/pull/286) - Add support for pagination in the accounts and delegations queries to data-node
 
 ## 0.41.1
 *2021-08-31*
