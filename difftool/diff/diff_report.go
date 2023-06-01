@@ -520,16 +520,23 @@ func diffTransfers(coreSnapshot *Result, dn *Result) Status {
 	}
 
 	for i, a := range core {
-		// shadow to make sure the original data is not changed
-		a := *a
-		d := *(datanode[i])
+		d := datanode[i]
+		coreTransferTimestamp := a.Timestamp
+		dnTransferTimestamp := d.Timestamp
 
 		// We ignore the difference in the timestamp, as the transfer timestamp
 		// is updated when the network is started from the checkpoint.
 		a.Timestamp = 0
 		d.Timestamp = 0
 
-		if a.String() != d.String() {
+		transfetMatch := a.String() == d.String()
+
+		// restore the original value as copy is not trivial due to Mutex
+		// inside of the proto message
+		a.Timestamp = coreTransferTimestamp
+		d.Timestamp = dnTransferTimestamp
+
+		if !transfetMatch {
 			return getValueMismatchStatus("transfers", core, datanode)
 		}
 	}
