@@ -207,15 +207,36 @@ func (dnc *dataNodeClient) Collect() (*Result, error) {
 }
 
 func (dnc *dataNodeClient) listAccounts() ([]*dn.AccountBalance, error) {
-	accResp, err := dnc.datanode.ListAccounts(context.Background(), &dn.ListAccountsRequest{})
-	if err != nil {
-		return nil, err
+	result := []*dn.AccountBalance{}
+
+	lastRecordCursor := ""
+	for {
+		requestInput := dn.ListAccountsRequest{}
+		if len(lastRecordCursor) > 0 {
+			requestInput = dn.ListAccountsRequest{
+				Pagination: &dn.Pagination{
+					After: &lastRecordCursor,
+				},
+			}
+		}
+
+		accResp, err := dnc.datanode.ListAccounts(context.Background(), &requestInput)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, ae := range accResp.Accounts.Edges {
+			result = append(result, ae.Node)
+		}
+
+		if accResp.Accounts == nil || accResp.Accounts.PageInfo == nil || !accResp.Accounts.PageInfo.HasNextPage {
+			break
+		}
+
+		lastRecordCursor = accResp.Accounts.PageInfo.EndCursor
 	}
-	accounts := make([]*dn.AccountBalance, 0, len(accResp.Accounts.Edges))
-	for _, ae := range accResp.Accounts.Edges {
-		accounts = append(accounts, ae.Node)
-	}
-	return accounts, nil
+
+	return result, nil
 }
 
 func (dnc *dataNodeClient) listOrders() ([]*vega.Order, error) {
@@ -291,15 +312,36 @@ func (dnc *dataNodeClient) getVegaTime() (int64, error) {
 }
 
 func (dnc *dataNodeClient) listDelegations() ([]*vega.Delegation, error) {
-	delegationResp, err := dnc.datanode.ListDelegations(context.Background(), &dn.ListDelegationsRequest{})
-	if err != nil {
-		return nil, err
+	result := []*vega.Delegation{}
+
+	lastRecordCursor := ""
+	for {
+		requestInput := dn.ListDelegationsRequest{}
+		if len(lastRecordCursor) > 0 {
+			requestInput = dn.ListDelegationsRequest{
+				Pagination: &dn.Pagination{
+					After: &lastRecordCursor,
+				},
+			}
+		}
+
+		delegationResp, err := dnc.datanode.ListDelegations(context.Background(), &requestInput)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, d := range delegationResp.Delegations.Edges {
+			result = append(result, d.Node)
+		}
+
+		if delegationResp.Delegations == nil || delegationResp.Delegations.PageInfo == nil || !delegationResp.Delegations.PageInfo.HasNextPage {
+			break
+		}
+
+		lastRecordCursor = delegationResp.Delegations.PageInfo.EndCursor
 	}
-	delegations := make([]*vega.Delegation, 0, len(delegationResp.Delegations.Edges))
-	for _, d := range delegationResp.Delegations.Edges {
-		delegations = append(delegations, d.Node)
-	}
-	return delegations, nil
+
+	return result, nil
 }
 
 func (dnc *dataNodeClient) getEpoch() (*vega.Epoch, error) {
@@ -421,7 +463,7 @@ func (dnc *dataNodeClient) listLiquidityProvisions(market string) ([]*vega.Liqui
 	}
 	lps := make([]*vega.LiquidityProvision, 0, len(resp.LiquidityProvisions.Edges))
 	for _, lpe := range resp.LiquidityProvisions.Edges {
-		if lpe.Node.Status == vega.LiquidityProvision_STATUS_PENDING ||  lpe.Node.Status == vega.LiquidityProvision_STATUS_ACTIVE || lpe.Node.Status == vega.LiquidityProvision_STATUS_UNDEPLOYED {
+		if lpe.Node.Status == vega.LiquidityProvision_STATUS_PENDING || lpe.Node.Status == vega.LiquidityProvision_STATUS_ACTIVE || lpe.Node.Status == vega.LiquidityProvision_STATUS_UNDEPLOYED {
 			lps = append(lps, lpe.Node)
 		}
 	}
