@@ -212,6 +212,13 @@ func (p *perfLoadTesting) checkNetworkLimits(opts Opts) error {
 	if opts.BatchSize > int(maxBatchSize) {
 		return fmt.Errorf("supplied order batch size is greater than network param (%d>%d)", opts.BatchSize, maxBatchSize)
 	}
+
+	// Make sure if we are adding price levels that we have enough space to put them all in given the mid price
+	if opts.FillPriceLevels {
+		if opts.PriceLevels > int(opts.StartingMidPrice) {
+			return fmt.Errorf("unable to fill price levels because the starting mid price is too low (%d<%d)", opts.StartingMidPrice, opts.PriceLevels)
+		}
+	}
 	return nil
 }
 
@@ -629,6 +636,7 @@ func (p *perfLoadTesting) sendBatchTradingLoad(marketIDs []string, opts Opts) er
 // Run is the main function of `perftest` package
 func Run(opts Opts) error {
 
+	fmt.Println(opts)
 	f, err := os.OpenFile("perftest.log", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
@@ -715,6 +723,13 @@ func Run(opts Opts) error {
 
 	// If we are only initialising, stop now and return
 	if opts.InitialiseOnly {
+		// Make one more check that assets are topped up
+		err = plt.depositTokens(assets, opts)
+		if err != nil {
+			fmt.Println("FAILED")
+			return err
+		}
+
 		fmt.Println("Initialisation complete")
 		return nil
 	}
