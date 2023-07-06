@@ -121,22 +121,56 @@ func (s *snap) getLps() []*vega.LiquidityProvision {
 // getStake returns stake linking from the core snapshot. To make it compatible with datanode, the timestamps are converted to have
 // microsecond resolution.
 func (s *snap) getStake() []*v1.StakeLinking {
+	stakeLinkings := []*v1.StakeLinking{}
 	for _, c := range s.chunk.Data {
 		switch c.Data.(type) {
 		case *snapshot.Payload_StakingAccounts:
-			sl := []*v1.StakeLinking{}
+
 			for _, sa := range c.GetStakingAccounts().Accounts {
-				sl = append(sl, sa.Events...)
+				stakeLinkings = append(stakeLinkings, sa.Events...)
 			}
-			for _, s := range sl {
+			for _, s := range stakeLinkings {
 				s.FinalizedAt = (s.FinalizedAt / 1000) * 1000
 			}
-			return sl
+		case *snapshot.Payload_StakeVerifierDeposited:
+			for _, pending := range c.GetStakeVerifierDeposited().PendingDeposited {
+				sl := &v1.StakeLinking{
+					Id:              pending.Id,
+					Type:            v1.StakeLinking_TYPE_LINK,
+					Ts:              pending.BlockTime,
+					Party:           pending.VegaPublicKey,
+					Amount:          pending.Amount,
+					TxHash:          pending.TxId,
+					BlockHeight:     pending.BlockNumber,
+					BlockTime:       pending.BlockTime,
+					LogIndex:        pending.LogIndex,
+					EthereumAddress: pending.EthereumAddress,
+					Status:          v1.StakeLinking_STATUS_PENDING,
+				}
+				stakeLinkings = append(stakeLinkings, sl)
+			}
+		case *snapshot.Payload_StakeVerifierRemoved:
+			for _, pending := range c.GetStakeVerifierRemoved().PendingRemoved {
+				sl := &v1.StakeLinking{
+					Id:              pending.Id,
+					Type:            v1.StakeLinking_TYPE_UNLINK,
+					Ts:              pending.BlockTime,
+					Party:           pending.VegaPublicKey,
+					Amount:          pending.Amount,
+					TxHash:          pending.TxId,
+					BlockHeight:     pending.BlockNumber,
+					BlockTime:       pending.BlockTime,
+					LogIndex:        pending.LogIndex,
+					EthereumAddress: pending.EthereumAddress,
+					Status:          v1.StakeLinking_STATUS_PENDING,
+				}
+				stakeLinkings = append(stakeLinkings, sl)
+			}
 		default:
 			continue
 		}
 	}
-	return []*v1.StakeLinking{}
+	return stakeLinkings
 }
 
 // getAccounts returns account balances from the core snapshot. To make it compatible with datanode, network owner and no market are replaced with empty string.
