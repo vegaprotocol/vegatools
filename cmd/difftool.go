@@ -30,8 +30,8 @@ func init() {
 	diffToolCmd.Flags().StringVarP(&diffToolOpts.datanode, "datanode", "d", "", "datanode url")
 	diffToolCmd.MarkFlagRequired("snap-db-path")
 	diffToolCmd.MarkFlagRequired("datanode")
-
 }
+
 func runDiffToolCmd(cmd *cobra.Command, args []string) error {
 	temp := os.TempDir()
 	if !strings.HasSuffix(temp, string(os.PathSeparator)) {
@@ -40,7 +40,7 @@ func runDiffToolCmd(cmd *cobra.Command, args []string) error {
 	println(temp)
 	snapshotPath := temp + "snapshot.dat"
 
-	err := snapshotdb.Run(diffToolOpts.snapshotDatabasePath, false, snapshotPath, snapshotDBOpts.heightToOutput, "proto")
+	err := snapshotdb.Run(diffToolOpts.snapshotDatabasePath, false, snapshotPath, diffToolOpts.heightToOutput, "proto")
 	defer os.Remove(snapshotPath)
 	if err != nil {
 		return err
