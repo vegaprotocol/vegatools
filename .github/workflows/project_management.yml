@@ -1,10 +1,11 @@
+# yamllint disable rule:line-length
 ---
 
 
 name: "Project Board Automation"
 
 "on":
-  pull_request_target:
+  pull_request:
     branches: [develop, master]
     types: [synchronize, opened, reopened, labeled, unlabeled, ready_for_review, review_requested, converted_to_draft, closed]
   pull_request_review:
@@ -15,7 +16,7 @@ env:
   ORGANIZATION: vegaprotocol
   PROJECT_NUMBER: 106
   PR_URL: ${{ github.event.pull_request.html_url }}
-  GH_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+  GH_TOKEN: ${{ secrets.PROJECT_MANAGE_ACTION }}
   EXCLUDE_LABEL: 'no-issue'
   IN_PROGRESS_COLUMN_NAME: '"In Progress"'
   REVIEW_REQUIRED_COLUMN_NAME: '"Waiting Review"'
@@ -39,11 +40,10 @@ jobs:
       #######
       ## Gather data, reopen closed issues and ensure work item is on the board
       #######
-      # yamllint disable rule:line-length
       - name: "Get linked issue id and state"
         id: linked-issue
         env:
-          GH_TOKEN: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
+          GH_TOKEN: ${{ secrets.PROJECT_MANAGE_ACTION }}
         run: |
           gh api graphql -f query='
             query($pr_url: URI!) {
@@ -74,7 +74,7 @@ jobs:
            contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) != true
         uses: actions/github-script@v6.1.1
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{secrets.PROJECT_MANAGE_ACTION}}
           script: |
             console.log("Linked Issue Found!");
       - name: "Check for linked issue exclusion label"
@@ -84,7 +84,7 @@ jobs:
            contains(github.event.pull_request.labels.*.name, env.EXCLUDE_LABEL) == true
         uses: actions/github-script@v6.1.1
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{secrets.PROJECT_MANAGE_ACTION}}
           script: |
             console.log("Exclusion label added, or a bot-PR no linked issue required!");
       - name: "Fail if no linked issue or exclusion label"
@@ -92,7 +92,7 @@ jobs:
         if: steps.linked.outcome == 'skipped' && steps.exclude-linked.outcome == 'skipped'
         uses: actions/github-script@v6.1.1
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{secrets.PROJECT_MANAGE_ACTION}}
           script: |
             console.log("No linked issue or exclusion label!");
             core.setFailed("Link an issue and rerun, or, add the exclusion label!");
@@ -101,7 +101,7 @@ jobs:
         if: steps.linked.outcome == 'success' && steps.exclude-linked.outcome == 'success'
         uses: actions/github-script@v6.1.1
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{secrets.PROJECT_MANAGE_ACTION}}
           script: |
             console.log("Remove exclusion label, linked issue found!");
             core.setFailed("Remove exclusion label, linked issue found!");
@@ -382,14 +382,13 @@ jobs:
     steps:
       - name: "Checkout"
         id: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.3
       - name: "Check changelog entry"
         id: check-changelog
-        uses: Zomzog/changelog-checker@v1.2.0
+        uses: Zomzog/changelog-checker@v1.3.0
         with:
           fileName: CHANGELOG.md
           noChangelogLabel: "no-changelog"
           checkNotification: Simple
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # yamllint enable rule:line-length
+          GITHUB_TOKEN: ${{ secrets.PROJECT_MANAGE_ACTION }}
