@@ -258,7 +258,7 @@ func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 			marketIds = append(marketIds, market.Id)
 			if market.State != proto.Market_STATE_ACTIVE {
 				// Send in a liquidity provision so we can get the market out of auction
-				for j := 0; j < opts.Voters; j++ {
+				for j := 0; j < opts.LpUserCount; j++ {
 					p.wallet.SendLiquidityProvision(p.users[j], market.Id, opts.LPOrdersPerSide)
 				}
 				p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: market.Id,
