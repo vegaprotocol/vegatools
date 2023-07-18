@@ -33,3 +33,4 @@ vet: deps
 .PHONY: clean
 clean:
 	@rm -rf ./build
+

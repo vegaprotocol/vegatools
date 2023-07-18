@@ -9,3 +9,4 @@ RUN env CGO_ENABLED=0 go build -a -ldflags '-extldflags "-static"' -o vegatools 
 FROM scratch
 COPY --from=builder /go/src/project/vegatools /
 ENTRYPOINT ["/vegatools"]
+
