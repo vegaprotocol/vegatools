@@ -103,7 +103,6 @@ func (p *perfLoadTesting) LoadUsers(opts Opts) error {
 }
 
 func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) error {
-	fmt.Println("First LP user:", p.users[0].pubKey)
 	if len(opts.GanacheURL) > 0 {
 		for index, user := range p.users {
 			if index >= opts.Voters {
