@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"time"
 
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -105,7 +104,6 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 				"changes": map[string]interface{}{
 					"linearSlippageFactor":    "0.001",
 					"quadraticSlippageFactor": "0.0",
-					"lpPriceRange":            "10",
 					"decimalPlaces":           "5",
 					"positionDecimalPlaces":   "5",
 					"instrument": map[string]interface{}{
@@ -175,6 +173,13 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 						"minMoveDown":          "-5",
 						"probabilityOfTrading": "0.1",
 					},
+					"liquiditySlaParameters": map[string]interface{}{
+						"priceRange":                      "1",
+						"commitmentMinTimeFraction":       "1.0",
+						"providersFeeCalculationTimeStep": 60000000000,
+						"performanceHysteresisEpochs":     60,
+						"slaCompetitionFactor":            "1.0",
+					},
 				},
 			},
 		},
@@ -226,33 +231,13 @@ func (w *walletWrapper) SendOrder(user UserDetails, os *commandspb.OrderSubmissi
 	return err
 }
 
-func (w *walletWrapper) SendLiquidityProvision(user UserDetails, marketID string, orderCount int) error {
+func (w *walletWrapper) SendLiquidityCommitment(user UserDetails, marketID string, commitment uint64) error {
 	lp := commandspb.LiquidityProvisionSubmission{
 		MarketId:         marketID,
 		Reference:        "MarketLiquidity",
 		Fee:              "0.01",
-		CommitmentAmount: "1000000000",
+		CommitmentAmount: fmt.Sprint(commitment),
 	}
-
-	// Generate the buy and sell side LP orders
-	buys := make([]*proto.LiquidityOrder, orderCount)
-	sells := make([]*proto.LiquidityOrder, orderCount)
-	for i := 0; i < orderCount; i++ {
-		buys[i] = &proto.LiquidityOrder{
-			Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_BID,
-			Proportion: 10,
-			Offset:     strconv.FormatInt(int64(1000+(i*10)), 10),
-		}
-		sells[i] = &proto.LiquidityOrder{
-			Reference:  proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
-			Proportion: 10,
-			Offset:     strconv.FormatInt(int64(1000+(i*10)), 10),
-		}
-	}
-
-	lp.Buys = buys
-	lp.Sells = sells
-
 	_, err := w.sendTransaction(user, "liquidityProvisionSubmission", &lp)
 
 	return err

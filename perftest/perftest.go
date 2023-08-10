@@ -33,7 +33,6 @@ type Opts struct {
 	MarketCount       int
 	Voters            int
 	MoveMid           bool
-	LPOrdersPerSide   int
 	BatchSize         int
 	PeggedOrders      int
 	PriceLevels       int
@@ -50,6 +49,8 @@ type perfLoadTesting struct {
 	dataNode dnWrapper
 
 	wallet walletWrapper
+
+	stakeScale float64
 }
 
 func (p *perfLoadTesting) connectToDataNode(dataNodeAddr string) (map[string]string, error) {
@@ -102,6 +103,7 @@ func (p *perfLoadTesting) LoadUsers(opts Opts) error {
 }
 
 func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) error {
+	fmt.Println("First LP user:", p.users[0].pubKey)
 	if len(opts.GanacheURL) > 0 {
 		for index, user := range p.users {
 			if index >= opts.Voters {
@@ -189,17 +191,13 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) err
 }
 
 func (p *perfLoadTesting) checkNetworkLimits(opts Opts) error {
-	// Check the limit of the number of orders per side in the LP shape
-	networkParam, err := p.dataNode.getNetworkParam("market.liquidityProvision.shapes.maxSize")
+	// Get the stake to liquidity scaling value
+	networkParam, err := p.dataNode.getNetworkParam("market.liquidityV2.stakeToCcyVolume")
 	if err != nil {
-		fmt.Println("Failed to get LP maximum shape size")
+		fmt.Println("Failed to get stakeToCcyVolume value")
 		return err
 	}
-	maxLPShape, _ := strconv.ParseInt(networkParam, 0, 32)
-
-	if opts.LPOrdersPerSide > int(maxLPShape) {
-		return fmt.Errorf("supplied lp size greater than network param (%d>%d)", opts.LPOrdersPerSide, maxLPShape)
-	}
+	p.stakeScale, _ = strconv.ParseFloat(networkParam, 64)
 
 	// Check the maximum number of orders in a batch
 	networkParam, err = p.dataNode.getNetworkParam("spam.protection.max.batchSize")
@@ -257,10 +255,6 @@ func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 		for _, market := range markets {
 			marketIds = append(marketIds, market.Id)
 			if market.State != proto.Market_STATE_ACTIVE {
-				// Send in a liquidity provision so we can get the market out of auction
-				for j := 0; j < opts.LpUserCount; j++ {
-					p.wallet.SendLiquidityProvision(p.users[j], market.Id, opts.LPOrdersPerSide)
-				}
 				p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: market.Id,
 					Price:       fmt.Sprint(opts.StartingMidPrice + 100),
 					Size:        100,
@@ -285,6 +279,29 @@ func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_LIMIT,
 					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+				time.Sleep(time.Second * 5)
+				// Send in a liquidity provision so we can get the market out of auction
+				for j := 0; j < opts.LpUserCount; j++ {
+					commitmentAmount := uint64(1000000000.0 * p.stakeScale)
+					orderSize := (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
+
+					// Send in an order for both buy and sell side to cover the commitment
+					// Orders go before the commitment otherwise we can be punished for not having the orders on in time
+					p.wallet.SendOrder(p.users[j], &commandspb.OrderSubmission{MarketId: market.Id,
+						Price:       fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels+1)),
+						Size:        orderSize,
+						Side:        proto.Side_SIDE_SELL,
+						Type:        proto.Order_TYPE_LIMIT,
+						TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+					p.wallet.SendOrder(p.users[j], &commandspb.OrderSubmission{MarketId: market.Id,
+						Price:       fmt.Sprint(opts.StartingMidPrice - int64(opts.PriceLevels+1)),
+						Size:        orderSize,
+						Side:        proto.Side_SIDE_BUY,
+						Type:        proto.Order_TYPE_LIMIT,
+						TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+
+					p.wallet.SendLiquidityCommitment(p.users[j], market.Id, commitmentAmount)
+				}
 			}
 			time.Sleep(time.Second * 1)
 		}
