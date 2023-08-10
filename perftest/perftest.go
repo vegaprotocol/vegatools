@@ -36,6 +36,7 @@ type Opts struct {
 	BatchSize         int
 	PeggedOrders      int
 	PriceLevels       int
+	SLAUpdateSeconds  int
 	StartingMidPrice  int64
 	FillPriceLevels   bool
 	InitialiseOnly    bool
@@ -155,7 +156,7 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) err
 				if err != nil {
 					return err
 				}
-				time.Sleep(time.Millisecond * 5)
+				time.Sleep(time.Millisecond * 10)
 			}
 		}
 	}
@@ -279,28 +280,8 @@ func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 					Type:        proto.Order_TYPE_LIMIT,
 					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 				time.Sleep(time.Second * 5)
-				// Send in a liquidity provision so we can get the market out of auction
-				for j := 0; j < opts.LpUserCount; j++ {
-					commitmentAmount := uint64(1000000000.0 * p.stakeScale)
-					orderSize := (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
-
-					// Send in an order for both buy and sell side to cover the commitment
-					// Orders go before the commitment otherwise we can be punished for not having the orders on in time
-					p.wallet.SendOrder(p.users[j], &commandspb.OrderSubmission{MarketId: market.Id,
-						Price:       fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels+1)),
-						Size:        orderSize,
-						Side:        proto.Side_SIDE_SELL,
-						Type:        proto.Order_TYPE_LIMIT,
-						TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-					p.wallet.SendOrder(p.users[j], &commandspb.OrderSubmission{MarketId: market.Id,
-						Price:       fmt.Sprint(opts.StartingMidPrice - int64(opts.PriceLevels+1)),
-						Size:        orderSize,
-						Side:        proto.Side_SIDE_BUY,
-						Type:        proto.Order_TYPE_LIMIT,
-						TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-
-					p.wallet.SendLiquidityCommitment(p.users[j], market.Id, commitmentAmount)
-				}
+				// Send in liquidity provisions so we can get the market out of auction
+				p.sendSLAOrders(market.Id, false, opts)
 			}
 			time.Sleep(time.Second * 1)
 		}
@@ -410,6 +391,49 @@ func (p *perfLoadTesting) seedPriceLevels(marketIDs []string, opts Opts) error {
 	return nil
 }
 
+func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts Opts) error {
+	for l := 0; l < opts.LpUserCount; l++ {
+		batch := &BatchOrders{}
+
+		if deleteFirst {
+			// Cancel all LP orders
+			batch.cancels = append(batch.cancels, &commandspb.OrderCancellation{MarketId: marketID})
+		}
+
+		// Send new ones
+		commitmentAmount := uint64(1000000000.0 * p.stakeScale)
+		orderSize := (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
+
+		// Send in an order for both buy and sell side to cover the commitment
+		// Orders go before the commitment otherwise we can be punished for not having the orders on in time
+		batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+			Price:       fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels+1)),
+			Size:        orderSize,
+			Side:        proto.Side_SIDE_SELL,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+		batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+			Price:       fmt.Sprint(opts.StartingMidPrice - int64(opts.PriceLevels+1)),
+			Size:        orderSize,
+			Side:        proto.Side_SIDE_BUY,
+			Type:        proto.Order_TYPE_LIMIT,
+			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+
+		err := p.wallet.SendBatchOrders(p.users[l], batch.cancels, batch.amends, batch.orders)
+		if err != nil {
+			return err
+		}
+
+		if !deleteFirst {
+			err = p.wallet.SendLiquidityCommitment(p.users[l], marketID, commitmentAmount)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, opts Opts) error {
 	// Start load testing by sending off lots of orders at a given rate
 	now := time.Now()
@@ -423,6 +447,8 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, opts Opts) error {
 	// Work out how many transactions we need for the length of the run
 	numberOfTransactions := opts.RuntimeSeconds * opts.CommandsPerSecond
 	orderCount := 0
+	lastSLAUpdateTime := time.Now()
+
 	for i := 0; i < numberOfTransactions; i++ {
 		// Pick a random market to send the trade on
 		marketID := marketIDs[rand.Intn(len(marketIDs))]
@@ -431,7 +457,11 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, opts Opts) error {
 
 		user := p.users[userOffset]
 		choice := rand.Intn(100)
-		if choice < 3 {
+		if lastSLAUpdateTime.Add(time.Second * time.Duration(opts.SLAUpdateSeconds)).Before(time.Now()) {
+			// We have waited the required amount of time to update all the liquidity providers
+			p.sendSLAOrders(marketID, true, opts)
+			lastSLAUpdateTime = time.Now()
+		} else if choice < 3 {
 			// Perform a cancel all
 			err := p.wallet.SendCancelAll(user, marketID)
 			if err != nil {
@@ -541,6 +571,9 @@ func (p *perfLoadTesting) sendBatchTradingLoad(marketIDs []string, opts Opts) er
 
 	// Work out how many transactions we need for the length of the run
 	numberOfTransactions := opts.RuntimeSeconds * opts.CommandsPerSecond
+
+	lastSLAUpdateTime := time.Now()
+
 	for i := 0; i < numberOfTransactions; i++ {
 		// Pick a random market to send the trade on
 		marketID := marketIDs[rand.Intn(len(marketIDs))]
@@ -556,7 +589,10 @@ func (p *perfLoadTesting) sendBatchTradingLoad(marketIDs []string, opts Opts) er
 		}
 
 		choice := rand.Intn(100)
-		if choice < 3 {
+		if lastSLAUpdateTime.Add(time.Second * time.Duration(opts.SLAUpdateSeconds)).Before(time.Now()) {
+			// We have waited 5 seconds, time to update all the liquidity providers
+			p.sendSLAOrders(marketID, true, opts)
+		} else if choice < 3 {
 			// Perform a cancel all
 			batch.cancels = append(batch.cancels, &commandspb.OrderCancellation{MarketId: marketID})
 

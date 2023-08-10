@@ -31,6 +31,7 @@ func init() {
 	perfTestCmd.Flags().IntVarP(&opts.BatchSize, "batchsize", "b", 0, "set size of batch orders")
 	perfTestCmd.Flags().IntVarP(&opts.PeggedOrders, "peggedorders", "p", 0, "set number of pegged orders to load the market with")
 	perfTestCmd.Flags().IntVarP(&opts.PriceLevels, "pricelevels", "L", 100, "number of price levels per side")
+	perfTestCmd.Flags().IntVarP(&opts.SLAUpdateSeconds, "slaupdate", "S", 10, "number of seconds between SLA updates")
 	perfTestCmd.Flags().Int64VarP(&opts.StartingMidPrice, "startingmidprice", "s", 10000, "mid price to use at the start")
 	perfTestCmd.Flags().BoolVarP(&opts.MoveMid, "movemidprice", "M", false, "allow the mid price we place orders around to move randomly")
 	perfTestCmd.Flags().BoolVarP(&opts.FillPriceLevels, "fillpricelevel", "F", false, "place an order at every available price level")
