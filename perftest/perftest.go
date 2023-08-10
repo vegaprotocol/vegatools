@@ -37,6 +37,7 @@ type Opts struct {
 	PeggedOrders      int
 	PriceLevels       int
 	SLAUpdateSeconds  int
+	SLAPriceLevels    int
 	StartingMidPrice  int64
 	FillPriceLevels   bool
 	InitialiseOnly    bool
@@ -404,20 +405,22 @@ func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts 
 		commitmentAmount := uint64(1000000000.0 * p.stakeScale)
 		orderSize := (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
 
-		// Send in an order for both buy and sell side to cover the commitment
-		// Orders go before the commitment otherwise we can be punished for not having the orders on in time
-		batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
-			Price:       fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels+1)),
-			Size:        orderSize,
-			Side:        proto.Side_SIDE_SELL,
-			Type:        proto.Order_TYPE_LIMIT,
-			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
-			Price:       fmt.Sprint(opts.StartingMidPrice - int64(opts.PriceLevels+1)),
-			Size:        orderSize,
-			Side:        proto.Side_SIDE_BUY,
-			Type:        proto.Order_TYPE_LIMIT,
-			TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+		for p := 0; p < opts.SLAPriceLevels; p++ {
+			// Send in an order for both buy and sell side to cover the commitment
+			// Orders go before the commitment otherwise we can be punished for not having the orders on in time
+			batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+				Price:       fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels+1+p)),
+				Size:        orderSize / uint64(opts.SLAPriceLevels),
+				Side:        proto.Side_SIDE_SELL,
+				Type:        proto.Order_TYPE_LIMIT,
+				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+				Price:       fmt.Sprint(opts.StartingMidPrice - int64(opts.PriceLevels+1+p)),
+				Size:        orderSize / uint64(opts.SLAPriceLevels),
+				Side:        proto.Side_SIDE_BUY,
+				Type:        proto.Order_TYPE_LIMIT,
+				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+		}
 
 		err := p.wallet.SendBatchOrders(p.users[l], batch.cancels, batch.amends, batch.orders)
 		if err != nil {
