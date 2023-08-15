@@ -139,7 +139,7 @@ func displayNumberOfVersions(versions int) error {
 	return nil
 }
 
-// Run is the main entry point for this tool
+// SnapshotRun is the main entry point for this tool
 func SnapshotRun(dbpath string, versionsOnly bool, outputPath string, heightToOutput int64, outputFormat string) error {
 	// Attempt to open the database
 	options := &opt.Options{
