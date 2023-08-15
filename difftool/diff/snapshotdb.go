@@ -1,4 +1,4 @@
-package snapshotdb
+package diff
 
 import (
 	"bufio"
@@ -8,10 +8,10 @@ import (
 	"os"
 
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	db "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	db "github.com/tendermint/tm-db"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -139,8 +139,8 @@ func displayNumberOfVersions(versions int) error {
 	return nil
 }
 
-// Run is the main entry point for this tool
-func Run(dbpath string, versionsOnly bool, outputPath string, heightToOutput int64, outputFormat string) error {
+// SnapshotRun is the main entry point for this tool
+func SnapshotRun(dbpath string, versionsOnly bool, outputPath string, heightToOutput int64, outputFormat string) error {
 	// Attempt to open the database
 	options := &opt.Options{
 		ErrorIfMissing: true,

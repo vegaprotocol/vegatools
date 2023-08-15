@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"code.vegaprotocol.io/vegatools/stream"
+	"code.vegaprotocol.io/vega/vegatools/stream"
 
 	"google.golang.org/protobuf/proto"
 )
