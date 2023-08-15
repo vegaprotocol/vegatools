@@ -7,7 +7,7 @@ import (
 	"time"
 
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"code.vegaprotocol.io/vegatools/stream"
+	"code.vegaprotocol.io/vega/vegatools/stream"
 )
 
 // Opts are the command line options passed to the sub command

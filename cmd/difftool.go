@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vegatools/difftool/diff"
-	"code.vegaprotocol.io/vegatools/snapshotdb"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +39,7 @@ func runDiffToolCmd(cmd *cobra.Command, args []string) error {
 	println(temp)
 	snapshotPath := temp + "snapshot.dat"
 
-	err := snapshotdb.Run(diffToolOpts.snapshotDatabasePath, false, snapshotPath, diffToolOpts.heightToOutput, "proto")
+	err := diff.SnapshotRun(diffToolOpts.snapshotDatabasePath, false, snapshotPath, diffToolOpts.heightToOutput, "proto")
 	defer os.Remove(snapshotPath)
 	if err != nil {
 		return err

@@ -1,4 +1,4 @@
-package snapshotdb
+package diff
 
 import (
 	"bufio"
@@ -139,8 +139,8 @@ func displayNumberOfVersions(versions int) error {
 	return nil
 }
 
-// Run is the main entry point for this tool
-func Run(dbpath string, versionsOnly bool, outputPath string, heightToOutput int64, outputFormat string) error {
+// SnapshotRun is the main entry point for this tool
+func SnapshotRun(dbpath string, versionsOnly bool, outputPath string, heightToOutput int64, outputFormat string) error {
 	// Attempt to open the database
 	options := &opt.Options{
 		ErrorIfMissing: true,

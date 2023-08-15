@@ -29,20 +29,6 @@ go env -w CGO_ENABLED=0
 
 ## Available tools
 
-### Stream
-
-Stream is a simple utility used to connect to a vega validator and listen to ALL events it produce.
-
-Here's an example of how to run it:
-```console
-vegatools stream --address=n09.testnet.vega.xyz:3002
-```
-
-This will listen to all event from this testnet node, run the following commands for a detailed help and filtering
-```console
-vegatools stream -h
-```
-
 ### MarketDepthViewer
 
 MarketDepthViewer is a utility that will display the market depth of a given market running on a node.
@@ -73,10 +59,6 @@ The basic command to run it is:
 ```console
 vegatools marketstakeviewer --address=n09.testnet.vega.xyz:3002
 ```
-
-### Checkpoint
-
-Checkpoint forces the vega node to generate a checkpoint file.
 
 ### DelegationViewer
 
