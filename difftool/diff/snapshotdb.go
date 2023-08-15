@@ -8,10 +8,10 @@ import (
 	"os"
 
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	db "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	db "github.com/tendermint/tm-db"
 	"google.golang.org/protobuf/proto"
 )
 
