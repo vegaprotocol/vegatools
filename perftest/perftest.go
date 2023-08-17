@@ -167,7 +167,6 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) err
 		amount, _ = p.dataNode.getAssetsPerUser(user.pubKey, asset)
 		time.Sleep(time.Millisecond * 50)
 		for amount < 5000000000 {
-			fmt.Println("User ", user.userName, " has ", amount)
 			err := topUpAsset(opts.FaucetURL, user.pubKey, asset, 100000000)
 			if err != nil {
 				return err
