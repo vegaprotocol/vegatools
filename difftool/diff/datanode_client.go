@@ -270,15 +270,36 @@ func (dnc *dataNodeClient) listMarkets() ([]*vega.Market, error) {
 }
 
 func (dnc *dataNodeClient) listParties() ([]*vega.Party, error) {
-	partiesResp, err := dnc.datanode.ListParties(context.Background(), &dn.ListPartiesRequest{})
-	if err != nil {
-		return nil, err
+	response := []*vega.Party{}
+
+	lastRecordCursor := ""
+	for {
+		requestInput := &dn.ListPartiesRequest{}
+		if len(lastRecordCursor) > 0 {
+			requestInput = &dn.ListPartiesRequest{
+				Pagination: &dn.Pagination{
+					After: &lastRecordCursor,
+				},
+			}
+		}
+
+		partiesResp, err := dnc.datanode.ListParties(context.Background(), requestInput)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, pe := range partiesResp.Parties.Edges {
+			response = append(response, pe.Node)
+		}
+
+		if partiesResp.Parties == nil || partiesResp.Parties.PageInfo == nil || !partiesResp.Parties.PageInfo.HasNextPage {
+			break
+		}
+
+		lastRecordCursor = partiesResp.Parties.PageInfo.EndCursor
 	}
-	parties := make([]*vega.Party, 0, len(partiesResp.Parties.Edges))
-	for _, pe := range partiesResp.Parties.Edges {
-		parties = append(parties, pe.Node)
-	}
-	return parties, nil
+
+	return response, nil
 }
 
 func (dnc *dataNodeClient) getNetworkLimits() (*vega.NetworkLimits, error) {
