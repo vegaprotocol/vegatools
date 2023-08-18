@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vegatools/pull/) -
+- [299](https://github.com/vegaprotocol/vegatools/issues/299) - Removed stream, snapshot and checkpoint tools as they are migrated to the core repo
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vegatools/pull/) -
