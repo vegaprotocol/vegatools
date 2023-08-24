@@ -74,6 +74,7 @@
 - [270](https://github.com/vegaprotocol/vegatools/issues/270) - signingrate tool to benchmark a server to see at what rate they can sign transactions
 - [281](https://github.com/vegaprotocol/vegatools/issues/281) - add a toggle to perftest to enable/disable lp users from creating initial orders 
 - [288](https://github.com/vegaprotocol/vegatools/issues/288) - stop processing per testing if the number of price levels is greater than the mid price
+- [297](https://github.com/vegaprotocol/vegatools/issues/297) - update perftool to use the new SLA liquidity system
 
 
 ### 🐛 Fixes
