@@ -79,6 +79,10 @@ func (w walletWrapper) sendRequest(request []byte, token string) ([]byte, error)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		reply, err := io.ReadAll(resp.Body)
+		if err == nil {
+			fmt.Println(string(reply))
+		}
 		return nil, fmt.Errorf(resp.Status)
 	}
 
@@ -174,11 +178,10 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 						"probabilityOfTrading": "0.1",
 					},
 					"liquiditySlaParameters": map[string]interface{}{
-						"priceRange":                      "1",
-						"commitmentMinTimeFraction":       "1.0",
-						"providersFeeCalculationTimeStep": 60000000000,
-						"performanceHysteresisEpochs":     60,
-						"slaCompetitionFactor":            "1.0",
+						"priceRange":                  "1",
+						"commitmentMinTimeFraction":   "1.0",
+						"performanceHysteresisEpochs": 60,
+						"slaCompetitionFactor":        "1.0",
 					},
 				},
 			},

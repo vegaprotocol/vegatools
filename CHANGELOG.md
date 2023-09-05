@@ -85,6 +85,7 @@
 - [279](https://github.com/vegaprotocol/vegatools/issues/279) - Update to work with new datanode API for querying live orders / liquidity provisions
 - [286](https://github.com/vegaprotocol/vegatools/pull/286) - Add support for pagination in the accounts and delegations queries to data-node
 - [286](https://github.com/vegaprotocol/vegatools/pull/298) - Add support for pagination in the parties query to data-node
+- [302](https://github.com/vegaprotocol/vegatools/issues/302) - Removed old market proposal field and renamed network param
 
 ## 0.41.1
 *2021-08-31*

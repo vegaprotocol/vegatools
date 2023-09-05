@@ -197,7 +197,7 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) err
 
 func (p *perfLoadTesting) checkNetworkLimits(opts Opts) error {
 	// Get the stake to liquidity scaling value
-	networkParam, err := p.dataNode.getNetworkParam("market.liquidityV2.stakeToCcyVolume")
+	networkParam, err := p.dataNode.getNetworkParam("market.liquidity.stakeToCcyVolume")
 	if err != nil {
 		fmt.Println("Failed to get stakeToCcyVolume value")
 		return err
