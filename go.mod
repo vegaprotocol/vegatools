@@ -3,8 +3,9 @@ module code.vegaprotocol.io/vegatools
 go 1.19
 
 require (
-	code.vegaprotocol.io/shared v0.0.0-20221010085458-55c50711135f
-	code.vegaprotocol.io/vega v0.72.8
+	code.vegaprotocol.io/shared v0.0.0-20230119125558-bda6563e1c7a
+	code.vegaprotocol.io/vega v0.73.0-preview.8
+	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cosmos/iavl v0.20.0
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/gdamore/tcell/v2 v2.5.2
@@ -21,12 +22,9 @@ require (
 
 require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
-	github.com/btcsuite/btcd v0.22.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
-	github.com/cometbft/cometbft-db v0.7.0 // indirect
 	github.com/confio/ics23/go v0.9.0 // indirect
-	github.com/cosmos/gorocksdb v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
@@ -35,6 +33,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2 // indirect
 	github.com/didip/tollbooth/v7 v7.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect

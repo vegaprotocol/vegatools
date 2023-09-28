@@ -75,6 +75,7 @@
 - [281](https://github.com/vegaprotocol/vegatools/issues/281) - add a toggle to perftest to enable/disable lp users from creating initial orders 
 - [288](https://github.com/vegaprotocol/vegatools/issues/288) - stop processing per testing if the number of price levels is greater than the mid price
 - [297](https://github.com/vegaprotocol/vegatools/issues/297) - update perftool to use the new SLA liquidity system
+- [304](https://github.com/vegaprotocol/vegatools/issues/304) - update perftool to support stop orders
 
 
 ### 🐛 Fixes

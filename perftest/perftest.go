@@ -38,6 +38,7 @@ type Opts struct {
 	PriceLevels       int
 	SLAUpdateSeconds  int
 	SLAPriceLevels    int
+	StopOrders        int
 	StartingMidPrice  int64
 	FillPriceLevels   bool
 	InitialiseOnly    bool
@@ -392,6 +393,57 @@ func (p *perfLoadTesting) seedPriceLevels(marketIDs []string, opts Opts) error {
 			time.Sleep(time.Millisecond * 25)
 		}
 		fmt.Printf(".")
+	}
+	return nil
+}
+
+func (p *perfLoadTesting) seedStopOrders(marketIDs []string, opts Opts) error {
+	// We need to go through all markets and all users
+	for _, marketID := range marketIDs {
+		order := &commandspb.OrderSubmission{
+			MarketId:    marketID,
+			Size:        1,
+			Side:        proto.Side_SIDE_SELL,
+			Type:        proto.Order_TYPE_MARKET,
+			Reference:   "StopLossOrder",
+			ReduceOnly:  true,
+			TimeInForce: proto.Order_TIME_IN_FORCE_IOC}
+		for userOffset := opts.LpUserCount; userOffset < (opts.LpUserCount + opts.NormalUserCount); userOffset++ {
+			user := p.users[userOffset]
+
+			// We need a position before we can place a stop order
+			err := p.wallet.SendOrder(user, &commandspb.OrderSubmission{
+				MarketId:    marketID,
+				Size:        1,
+				Side:        proto.Side_SIDE_BUY,
+				Type:        proto.Order_TYPE_MARKET,
+				TimeInForce: proto.Order_TIME_IN_FORCE_IOC,
+			})
+			if err != nil {
+				return err
+			}
+
+			time.Sleep(1 * time.Second)
+
+			sos := &commandspb.StopOrdersSubmission{
+				RisesAbove: &commandspb.StopOrderSetup{
+					OrderSubmission: order,
+					Trigger: &commandspb.StopOrderSetup_Price{
+						Price: fmt.Sprint(opts.StartingMidPrice + 1000),
+					},
+				},
+				FallsBelow: &commandspb.StopOrderSetup{
+					OrderSubmission: order,
+					Trigger: &commandspb.StopOrderSetup_Price{
+						Price: fmt.Sprint(opts.StartingMidPrice - 1000),
+					},
+				},
+			}
+			err = p.wallet.SendStopOrder(user, sos)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -773,6 +825,16 @@ func Run(opts Opts) error {
 	if opts.FillPriceLevels {
 		fmt.Print("Adding an order to every price level in each market...")
 		err = plt.seedPriceLevels(marketIDs, opts)
+		if err != nil {
+			fmt.Println("FAILED")
+			return err
+		}
+		fmt.Println("Complete")
+	}
+
+	// Do we need to place stop orders for all users
+	if opts.StopOrders > 0 {
+		err = plt.seedStopOrders(marketIDs, opts)
 		if err != nil {
 			fmt.Println("FAILED")
 			return err
