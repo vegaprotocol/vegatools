@@ -217,6 +217,18 @@ func (p *perfLoadTesting) checkNetworkLimits(opts Opts) error {
 		return fmt.Errorf("supplied order batch size is greater than network param (%d>%d)", opts.BatchSize, maxBatchSize)
 	}
 
+	// Check the maximum number of stop orders per market per user
+	networkParam, err = p.dataNode.getNetworkParam("spam.protection.max.stopOrdersPerMarket")
+	if err != nil {
+		fmt.Println("Failed to get maximum order batch size")
+		return err
+	}
+	maxStopOrders, _ := strconv.ParseInt(networkParam, 0, 32)
+
+	if opts.StopOrders > int(maxStopOrders) {
+		return fmt.Errorf("supplied stop orders size is greater than network param (%d>%d)", opts.StopOrders, maxStopOrders)
+	}
+
 	// Make sure if we are adding price levels that we have enough space to put them all in given the mid price
 	if opts.FillPriceLevels {
 		if opts.PriceLevels > int(opts.StartingMidPrice) {
