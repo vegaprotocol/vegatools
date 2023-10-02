@@ -846,6 +846,7 @@ func Run(opts Opts) error {
 
 	// Do we need to place stop orders for all users
 	if opts.StopOrders > 0 {
+		fmt.Print("Adding stop orders for every user and market...")
 		err = plt.seedStopOrders(marketIDs, opts)
 		if err != nil {
 			fmt.Println("FAILED")
