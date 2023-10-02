@@ -200,6 +200,14 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 						"performanceHysteresisEpochs": 60,
 						"slaCompetitionFactor":        "1.0",
 					},
+					"liquidityMonitoringParameters": map[string]interface{}{
+						"targetStakeParameters": map[string]interface{}{
+							"timeWindow":    "100",
+							"scalingFactor": "1.0",
+						},
+						"triggeringRatio":  "1.0",
+						"auctionExtension": "10",
+					},
 				},
 			},
 		},
