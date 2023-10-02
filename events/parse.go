@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 )
