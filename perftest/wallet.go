@@ -10,6 +10,7 @@ import (
 
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // WalletWrapper holds details about the wallet
@@ -40,6 +41,22 @@ type listKeysResult struct {
 	Jsonrpc string
 	Result  keys
 	ID      string
+}
+
+func (w walletWrapper) sendTransactionString(user UserDetails, subType string, subData string) ([]byte, error) {
+	transactionStr := `{
+		"jsonrpc": "2.0",
+		"method":  "client.send_transaction",
+		"id":      "1",
+		"params": {
+			"publicKey":"` + user.pubKey + `",
+			"sendingMode": "TYPE_SYNC",
+			"transaction":{"` + subType + `":` + subData + `
+			}
+		}
+	}`
+
+	return w.sendRequest([]byte(transactionStr), user.token)
 }
 
 func (w walletWrapper) sendTransaction(user UserDetails, subType string, subData interface{}) ([]byte, error) {
@@ -183,6 +200,14 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 						"performanceHysteresisEpochs": 60,
 						"slaCompetitionFactor":        "1.0",
 					},
+					"liquidityMonitoringParameters": map[string]interface{}{
+						"targetStakeParameters": map[string]interface{}{
+							"timeWindow":    "100",
+							"scalingFactor": "1.0",
+						},
+						"triggeringRatio":  "1.0",
+						"auctionExtension": "10",
+					},
 				},
 			},
 		},
@@ -211,6 +236,12 @@ func (w walletWrapper) GetFirstKey(longLivedToken string) (string, error) {
 		return values.Result.Keys[0].PublicKey, nil
 	}
 	return "", nil
+}
+
+func (w *walletWrapper) SendStopOrder(user UserDetails, sos *commandspb.StopOrdersSubmission) error {
+	sosString, _ := protojson.Marshal(sos)
+	_, err := w.sendTransactionString(user, "stopOrdersSubmission", string(sosString))
+	return err
 }
 
 // SendBatchOrders sends a set of new order commands to the wallet
