@@ -4,11 +4,13 @@ go 1.19
 
 require (
 	code.vegaprotocol.io/shared v0.0.0-20221010085458-55c50711135f
-	code.vegaprotocol.io/vega v0.72.8
+	code.vegaprotocol.io/vega v0.72.2-0.20231002121031-72d73a0c2b6c
+	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cosmos/iavl v0.20.0
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/gdamore/tcell/v2 v2.5.2
 	github.com/gogo/protobuf v1.3.2
+	github.com/golang/protobuf v1.5.3
 	github.com/prometheus-community/pro-bing v0.1.0
 	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/cobra v1.6.1
@@ -21,12 +23,9 @@ require (
 
 require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
-	github.com/btcsuite/btcd v0.22.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
-	github.com/cometbft/cometbft-db v0.7.0 // indirect
 	github.com/confio/ics23/go v0.9.0 // indirect
-	github.com/cosmos/gorocksdb v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
@@ -40,7 +39,6 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-pkgz/expirable-cache v0.1.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect

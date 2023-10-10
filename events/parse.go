@@ -114,7 +114,6 @@ func evtToJSON(evtIn, out string, types map[eventspb.BusEventType]struct{}, num 
 		select {
 		case e, ok := <-ch:
 			if e == nil && !ok {
-				fmt.Println("Channel closed")
 				return nil
 			}
 			if _, ok := types[e.Type]; !ok {
@@ -122,12 +121,10 @@ func evtToJSON(evtIn, out string, types map[eventspb.BusEventType]struct{}, num 
 			}
 			es, err := marshaler.MarshalToString(e)
 			if err != nil {
-				fmt.Printf("Error marshalling %#v to JSON string: %v", e, err)
 				return err
 			}
 			parsed++
 			if _, err := outF.WriteString(es + nl); err != nil {
-				fmt.Printf("Error writing '%s%s' to output file: %v", es, nl, err)
 				return err
 			}
 			if num > 0 && parsed >= num {
@@ -135,13 +132,50 @@ func evtToJSON(evtIn, out string, types map[eventspb.BusEventType]struct{}, num 
 			}
 		case err, ok := <-ech:
 			if err == nil && !ok {
-				fmt.Println("Channel closed")
 				return nil
 			}
-			fmt.Printf("ERROR READING INPUT: %v", err)
 			return err
 		}
 	}
+}
+
+func readRawEvent(eventFile *os.File, offset int64) (event []byte, seqNum uint64,
+	totalBytesRead uint32, err error,
+) {
+	sizeBytes := make([]byte, 4)
+	read, err := eventFile.ReadAt(sizeBytes, offset)
+
+	if err == io.EOF {
+		return nil, 0, 0, nil
+	} else if err != nil {
+		return nil, 0, 0, fmt.Errorf("error reading message size from events file:%w", err)
+	}
+
+	if read < 4 {
+		return nil, 0, 0, nil
+	}
+
+	messageOffset := offset + 4
+
+	msgSize := binary.BigEndian.Uint32(sizeBytes)
+	seqNumAndMsgBytes := make([]byte, msgSize)
+	read, err = eventFile.ReadAt(seqNumAndMsgBytes, messageOffset)
+	if err == io.EOF {
+		return nil, 0, 0, nil
+	} else if err != nil {
+		return nil, 0, 0, fmt.Errorf("error reading message bytes from events file:%w", err)
+	}
+
+	if read < int(msgSize) {
+		return nil, 0, 0, nil
+	}
+
+	seqNumBytes := seqNumAndMsgBytes[:8]
+	seqNum = binary.BigEndian.Uint64(seqNumBytes)
+	msgBytes := seqNumAndMsgBytes[8:]
+	totalBytesRead = 4 + msgSize
+
+	return msgBytes, seqNum, totalBytesRead, nil
 }
 
 func startFileRead(ctx context.Context, file string) (<-chan *eventspb.BusEvent, <-chan error) {
@@ -164,7 +198,7 @@ func startFileRead(ctx context.Context, file string) (<-chan *eventspb.BusEvent,
 			close(ech)
 		}()
 
-		sizeBytes := make([]byte, 4)
+		// sizeBytes := make([]byte, 4)
 		var offset int64 = 0
 
 		// read the input file and push everything onto a channel
@@ -173,35 +207,26 @@ func startFileRead(ctx context.Context, file string) (<-chan *eventspb.BusEvent,
 			case <-ctx.Done():
 				return
 			default:
-
-				read, err := eventFile.ReadAt(sizeBytes, offset)
-
-				if err == io.EOF {
-					return // close everything, we're done
-				}
-
+				rawEvent, _, read, err := readRawEvent(eventFile, offset)
 				if err != nil {
-					ech <- fmt.Errorf("error whilst reading message size from events file:%w", err)
 					return
 				}
 
-				offset += int64(read)
-				msgSize := binary.BigEndian.Uint32(sizeBytes)
-				msgBytes := make([]byte, msgSize)
-				read, err = eventFile.ReadAt(msgBytes, offset)
-				if err != nil {
-					ech <- fmt.Errorf("error whilst reading message bytes from events file:%w", err)
+				if read == 0 {
 					return
 				}
 
 				offset += int64(read)
 
-				event := &eventspb.BusEvent{}
-				if err = proto.Unmarshal(msgBytes, event); err != nil {
+				// We have to deserialize the busEvent here (even though we output the raw busEvent)
+				// to be able to skip the first few events before we get a BeginBlock and to be
+				// able to sleep between blocks.
+				busEvent := &eventspb.BusEvent{}
+				if err := proto.Unmarshal(rawEvent, busEvent); err != nil {
 					ech <- fmt.Errorf("failed to unmarshal bus event: %w", err)
-					return
+				} else {
+					ch <- busEvent
 				}
-				ch <- event
 			}
 		}
 	}()
