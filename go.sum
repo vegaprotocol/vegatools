@@ -1,7 +1,7 @@
 code.vegaprotocol.io/shared v0.0.0-20221010085458-55c50711135f h1:ivaWSXN7XKESShqYw/QFuT6b2mvThWPQLO7lW5sadHs=
 code.vegaprotocol.io/shared v0.0.0-20221010085458-55c50711135f/go.mod h1:XzX67GsyOHzvytMr0QOHX4CCTdCZDYKUUi88rx40Nt0=
-code.vegaprotocol.io/vega v0.72.2-0.20231002121031-72d73a0c2b6c h1:v4J9+3hoQZSB7+4+ZPt3OzixEpHuCaH12b+AaZc4dBU=
-code.vegaprotocol.io/vega v0.72.2-0.20231002121031-72d73a0c2b6c/go.mod h1:sxgOoTEyoE9AznP8ruKGBlIBQVpwawX1krdO3otf78I=
+code.vegaprotocol.io/vega v0.72.2-0.20231009171444-ea897a91e615 h1:S49iq9yz8k7qemQ3RMJo3upx5O0rLGBtpmgzuUZ1MBA=
+code.vegaprotocol.io/vega v0.72.2-0.20231009171444-ea897a91e615/go.mod h1:sxgOoTEyoE9AznP8ruKGBlIBQVpwawX1krdO3otf78I=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
