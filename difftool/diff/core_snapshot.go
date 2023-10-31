@@ -107,6 +107,8 @@ func (s *snap) getLps() []*vega.LiquidityProvision {
 		switch c.Data.(type) {
 		case *snapshot.Payload_LiquidityProvisions:
 			lps = append(lps, c.GetLiquidityProvisions().LiquidityProvisions...)
+		case *snapshot.Payload_LiquidityV2Provisions:
+			lps = append(lps, c.GetLiquidityV2Provisions().LiquidityProvisions...)
 		default:
 			continue
 		}
