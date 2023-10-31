@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/vegatools/pull/) -
 
 ### 🛠 Improvements
+- [57](https://github.com/vegaprotocol/vegatools/pull/57) - Hello
 - [57](https://github.com/vegaprotocol/vegatools/pull/57) - Add changelog and new project boards actions
 - [36](https://github.com/vegaprotocol/vegatools/pull/36) - Update code to the last version of the protos repo
 - [38](https://github.com/vegaprotocol/vegatools/pull/38) - Added new delegation tool
