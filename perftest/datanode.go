@@ -93,18 +93,22 @@ func (d *dnWrapper) getMarkets() []*proto.Market {
 	return marketIDs
 }
 
-func (d *dnWrapper) getPendingProposalID() (string, error) {
+func (d *dnWrapper) getPendingProposalID(seconds int) (string, error) {
 	request := &datanode.ListGovernanceDataRequest{}
 
-	response, err := d.dataNode.ListGovernanceData(context.Background(), request)
-	if err != nil {
-		log.Println(err)
-	}
-
-	for _, proposal := range response.Connection.Edges {
-		if proposal.Node.Proposal.State == proto.Proposal_STATE_OPEN {
-			return proposal.Node.Proposal.Id, nil
+	for i := 0; i < seconds; i++ {
+		response, err := d.dataNode.ListGovernanceData(context.Background(), request)
+		if err != nil {
+			log.Println(err)
 		}
+
+		for _, proposal := range response.Connection.Edges {
+			if proposal.Node.Proposal.State == proto.Proposal_STATE_OPEN {
+				return proposal.Node.Proposal.Id, nil
+			}
+		}
+		// Nothing found yet, wait a bit and loop
+		time.Sleep(time.Second)
 	}
 	return "", fmt.Errorf("no pending proposals found")
 }

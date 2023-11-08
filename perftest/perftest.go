@@ -246,8 +246,7 @@ func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 			if err != nil {
 				return nil, err
 			}
-			time.Sleep(time.Second * 5)
-			propID, err := p.dataNode.getPendingProposalID()
+			propID, err := p.dataNode.getPendingProposalID(20)
 			if err != nil {
 				return nil, err
 			}
