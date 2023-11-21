@@ -208,6 +208,12 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 						"triggeringRatio":  "1.0",
 						"auctionExtension": "10",
 					},
+					"liquidationStrategy": map[string]interface{}{
+						"disposalTimeStep":    "10",
+						"disposalFraction":    "0.1",
+						"fullDisposalSize":    "20",
+						"maxFractionConsumed": "0.01",
+					},
 				},
 			},
 		},
