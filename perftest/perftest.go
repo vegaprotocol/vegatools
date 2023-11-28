@@ -253,9 +253,8 @@ func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 				marketIds = append(marketIds, market.Id)
 			}
 			return marketIds, nil
-		} else {
-			return nil, fmt.Errorf("failed to get open market")
 		}
+		return nil, fmt.Errorf("failed to get open market")
 	}
 
 	if len(markets) == 0 {
