@@ -13,7 +13,7 @@ require (
 	github.com/prometheus-community/pro-bing v0.1.0
 	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/cobra v1.6.1
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
 	go.nanomsg.org/mangos/v3 v3.4.2
 	google.golang.org/grpc v1.53.0
