@@ -42,6 +42,7 @@ type Opts struct {
 	StartingMidPrice  int64
 	FillPriceLevels   bool
 	InitialiseOnly    bool
+	DoNotInitialise   bool
 	UseLPsForOrders   bool
 }
 
@@ -106,6 +107,10 @@ func (p *perfLoadTesting) LoadUsers(opts Opts) error {
 }
 
 func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) error {
+	if opts.DoNotInitialise {
+		return nil
+	}
+
 	if len(opts.GanacheURL) > 0 {
 		for index, user := range p.users {
 			if index >= opts.Voters {
@@ -240,6 +245,18 @@ func (p *perfLoadTesting) checkNetworkLimits(opts Opts) error {
 
 func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 	markets := p.dataNode.getMarkets()
+
+	if opts.DoNotInitialise {
+		marketIds := []string{}
+		if len(markets) >= opts.MarketCount {
+			for _, market := range markets {
+				marketIds = append(marketIds, market.Id)
+			}
+			return marketIds, nil
+		}
+		return nil, fmt.Errorf("failed to get open market")
+	}
+
 	if len(markets) == 0 {
 		for i := 0; i < opts.MarketCount; i++ {
 			err := p.wallet.NewMarket(i, p.users[0])
@@ -310,6 +327,9 @@ func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 }
 
 func (p *perfLoadTesting) seedPeggedOrders(marketIDs []string, opts Opts) error {
+	if opts.DoNotInitialise {
+		return nil
+	}
 	// Loop through every market
 	for _, marketID := range marketIDs {
 		for i := 0; i < opts.PeggedOrders; i++ {
@@ -360,6 +380,9 @@ func (p *perfLoadTesting) seedPeggedOrders(marketIDs []string, opts Opts) error 
 }
 
 func (p *perfLoadTesting) seedPriceLevels(marketIDs []string, opts Opts) error {
+	if opts.DoNotInitialise {
+		return nil
+	}
 	for _, marketID := range marketIDs {
 		// Buys first
 		for i := opts.StartingMidPrice - 1; i > opts.StartingMidPrice-int64(opts.PriceLevels); i-- {
@@ -409,6 +432,9 @@ func (p *perfLoadTesting) seedPriceLevels(marketIDs []string, opts Opts) error {
 }
 
 func (p *perfLoadTesting) seedStopOrders(marketIDs []string, opts Opts) error {
+	if opts.DoNotInitialise {
+		return nil
+	}
 	// We need to go through all markets and all users
 	for _, marketID := range marketIDs {
 		order := &commandspb.OrderSubmission{
@@ -856,13 +882,14 @@ func Run(opts Opts) error {
 
 	// If we are only initialising, stop now and return
 	if opts.InitialiseOnly {
+		fmt.Print("Depositing tokens and assets...")
 		// Make one more check that assets are topped up
 		err = plt.depositTokens(assets, opts)
 		if err != nil {
 			fmt.Println("FAILED")
 			return err
 		}
-
+		fmt.Println("Complete")
 		fmt.Println("Initialisation complete")
 		return nil
 	}
