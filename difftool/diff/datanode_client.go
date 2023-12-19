@@ -459,7 +459,7 @@ func (dnc *dataNodeClient) listTransfers() ([]*v1.Transfer, error) {
 	}
 	transfers := make([]*v1.Transfer, 0, len(resp.Transfers.Edges))
 	for _, te := range resp.Transfers.Edges {
-		transfers = append(transfers, te.Node)
+		transfers = append(transfers, te.Node.Transfer)
 	}
 	return transfers, nil
 }
