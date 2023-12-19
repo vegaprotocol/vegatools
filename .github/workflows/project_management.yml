@@ -99,7 +99,7 @@ jobs:
       - name: "Fail if linked issue AND exclusion label"
         id: linked-and-nochangelog
         if: steps.linked.outcome == 'success' && steps.exclude-linked.outcome == 'success'
-        uses: actions/github-script@v6.1.1
+        uses: actions/github-script@v6.4.1
         with:
           github-token: ${{secrets.PROJECT_MANAGE_ACTION}}
           script: |
