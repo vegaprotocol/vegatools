@@ -271,6 +271,25 @@ func (w *walletWrapper) SendOrder(user UserDetails, os *commandspb.OrderSubmissi
 	return err
 }
 
+func (w *walletWrapper) SendAMM(user UserDetails, marketID string, midPrice uint64, commitment uint64) error {
+	am := commandspb.SubmitAMM{
+		MarketId:          marketID,
+		CommitmentAmount:  fmt.Sprint(commitment),
+		SlippageTolerance: "0.1",
+		ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+			UpperBound:              fmt.Sprint(midPrice + 1000),
+			LowerBound:              fmt.Sprint(midPrice - 1000),
+			Base:                    fmt.Sprint(midPrice),
+			MarginRatioAtUpperBound: "0.1", // 10x leverage
+			MarginRatioAtLowerBound: "0.1", // 10x leverage
+		},
+	}
+
+	_, err := w.sendTransaction(user, "submitAmm", &am)
+
+	return err
+}
+
 func (w *walletWrapper) SendLiquidityCommitment(user UserDetails, marketID string, commitment uint64) error {
 	lp := commandspb.LiquidityProvisionSubmission{
 		MarketId:         marketID,

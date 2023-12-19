@@ -39,6 +39,7 @@ type Opts struct {
 	SLAUpdateSeconds  int
 	SLAPriceLevels    int
 	StopOrders        int
+	AMMs              int
 	StartingMidPrice  int64
 	FillPriceLevels   bool
 	InitialiseOnly    bool
@@ -548,8 +549,7 @@ func (p *perfLoadTesting) sendTradingLoad(marketIDs []string, opts Opts) error {
 	for i := 0; i < numberOfTransactions; i++ {
 		// Pick a random market to send the trade on
 		marketID := marketIDs[rand.Intn(len(marketIDs))]
-		var userOffset int
-		userOffset = opts.LpUserCount + rand.Intn(opts.NormalUserCount)
+		userOffset := opts.LpUserCount + rand.Intn(opts.NormalUserCount)
 
 		user := p.users[userOffset]
 		choice := rand.Intn(100)
@@ -673,8 +673,7 @@ func (p *perfLoadTesting) sendBatchTradingLoad(marketIDs []string, opts Opts) er
 	for i := 0; i < numberOfTransactions; i++ {
 		// Pick a random market to send the trade on
 		marketID := marketIDs[rand.Intn(len(marketIDs))]
-		var userOffset int
-		userOffset = opts.LpUserCount + rand.Intn(opts.NormalUserCount)
+		userOffset := opts.LpUserCount + rand.Intn(opts.NormalUserCount)
 
 		user := p.users[userOffset]
 
