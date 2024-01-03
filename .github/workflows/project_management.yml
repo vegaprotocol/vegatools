@@ -382,7 +382,7 @@ jobs:
     steps:
       - name: "Checkout"
         id: checkout
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v3.6.0
       - name: "Check changelog entry"
         id: check-changelog
         uses: Zomzog/changelog-checker@v1.3.0
