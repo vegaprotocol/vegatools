@@ -124,9 +124,7 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 			"newMarket": map[string]interface{}{
 				"changes": map[string]interface{}{
 					"markPriceConfiguration": map[string]interface{}{
-						"decayWeight":        "0.001",
 						"decayPower":         1,
-						"cashAmount":         "1000000",
 						"compositePriceType": 3, // LAST TRADE
 					},
 					"linearSlippageFactor":    "0.001",
