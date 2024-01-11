@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine AS builder
+FROM golang:1.21-alpine AS builder
 # Install git: required for fetching the Go dependencies.
 RUN apk update && apk add --no-cache git
 ENV GOPROXY=direct GOSUMDB=off
