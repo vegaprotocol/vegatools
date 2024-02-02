@@ -193,8 +193,8 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 					"simple": map[string]interface{}{
 						"factorLong":           "0.15",
 						"factorShort":          "0.25",
-						"maxMoveUp":            "10",
-						"minMoveDown":          "-5",
+						"maxMoveUp":            "1000",
+						"minMoveDown":          "-1000",
 						"probabilityOfTrading": "0.1",
 					},
 					"liquiditySlaParameters": map[string]interface{}{
