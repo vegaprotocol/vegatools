@@ -1,6 +1,6 @@
 module code.vegaprotocol.io/vegatools
 
-go 1.21.5
+go 1.22.0
 
 require (
 	code.vegaprotocol.io/shared v0.0.0-20230119125558-bda6563e1c7a
