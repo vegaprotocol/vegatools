@@ -8,7 +8,7 @@ require (
 	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cosmos/iavl v0.20.0
 	github.com/ethereum/go-ethereum v1.11.6
-	github.com/gdamore/tcell/v2 v2.7.0
+	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/gogo/protobuf v1.3.2
 	github.com/prometheus-community/pro-bing v0.1.0
 	github.com/shopspring/decimal v1.3.1
@@ -67,8 +67,8 @@ require (
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/term v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
