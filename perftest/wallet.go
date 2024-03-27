@@ -129,8 +129,8 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 					},
 					"linearSlippageFactor":    "0.001",
 					"quadraticSlippageFactor": "0.0",
-					"decimalPlaces":           "5",
-					"positionDecimalPlaces":   "5",
+					"decimalPlaces":           "2",
+					"positionDecimalPlaces":   "2",
 					"instrument": map[string]interface{}{
 						"code": "CRYPTO:BTCUSD/NOV22",
 						"name": marketName,
