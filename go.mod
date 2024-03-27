@@ -14,7 +14,7 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
-	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
+	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d
 	go.nanomsg.org/mangos/v3 v3.4.2
 	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.30.0
