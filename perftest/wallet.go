@@ -194,9 +194,9 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 					"simple": map[string]interface{}{
 						"factorLong":           "0.15",
 						"factorShort":          "0.25",
-						"maxMoveUp":            "1000",
-						"minMoveDown":          "-1000",
-						"probabilityOfTrading": "0.1",
+						"maxMoveUp":            "1000000",
+						"minMoveDown":          "-1000000",
+						"probabilityOfTrading": "0.9",
 					},
 					"liquiditySlaParameters": map[string]interface{}{
 						"priceRange":                  "1",
@@ -211,6 +211,15 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 						},
 						"triggeringRatio":  "1.0",
 						"auctionExtension": "10",
+					},
+					"priceMonitoringParameters": map[string]interface{}{
+						"triggers": []interface{}{
+							map[string]interface{}{
+								"horizon":          "6000000",
+								"probability":      "0.999999999",
+								"auctionExtension": 1,
+							},
+						},
 					},
 					"liquidationStrategy": map[string]interface{}{
 						"disposalTimeStep":    "10",
