@@ -44,6 +44,7 @@ type Opts struct {
 	InitialiseOnly    bool
 	DoNotInitialise   bool
 	UseLPsForOrders   bool
+	BatchOnly         bool
 }
 
 type perfLoadTesting struct {
@@ -781,6 +782,70 @@ func (p *perfLoadTesting) sendBatchTradingLoad(marketIDs []string, opts Opts) er
 	return nil
 }
 
+func (p *perfLoadTesting) sendBatchOnlyLoad(marketIDs []string, opts Opts) error {
+	midPrice := opts.StartingMidPrice
+	batchCount := 0
+
+	// Work out how many batches we need for the length of the run
+	numberOfBatches := opts.RuntimeSeconds * opts.CommandsPerSecond
+
+	for i := 0; i < opts.RuntimeSeconds; i++ {
+		now := time.Now()
+
+		var userOffset int
+		userOffset = opts.LpUserCount + rand.Intn(opts.NormalUserCount)
+
+		user := p.users[userOffset]
+		marketID := marketIDs[rand.Intn(len(marketIDs))]
+
+		for i := 0; i < opts.CommandsPerSecond; i++ {
+			batch := BatchOrders{}
+
+			// Each batch will have a cancel all
+			batch.cancels = append(batch.cancels, &commandspb.OrderCancellation{MarketId: marketID})
+
+			// Now add the fixed number of random limit orders
+			for c := 0; c < opts.BatchSize; c++ {
+				// Insert a new order to fill up the book
+				priceOffset := rand.Int63n(int64(opts.PriceLevels*2)) - int64(opts.PriceLevels)
+				if priceOffset > 0 {
+					// Send a sell
+					batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+						Price:       fmt.Sprint((midPrice - 1) + priceOffset),
+						Size:        1,
+						Side:        proto.Side_SIDE_SELL,
+						Type:        proto.Order_TYPE_LIMIT,
+						TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+				} else {
+					// Send a buy
+					batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+						Price:       fmt.Sprint(midPrice + priceOffset),
+						Size:        1,
+						Side:        proto.Side_SIDE_BUY,
+						Type:        proto.Order_TYPE_LIMIT,
+						TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+				}
+			}
+			err := p.wallet.SendBatchOrders(user, batch.cancels, batch.amends, batch.orders)
+			if err != nil {
+				return err
+			}
+			batchCount++
+		}
+		// If we are still under 1 second, wait before moving on to the next set of orders
+		timeUsed := time.Since(now).Seconds()
+
+		// Add in a delay to keep us processing at a per second rate
+		if timeUsed < 1.0 {
+			milliSecondsLeft := int((1.0 - timeUsed) * 1000.0)
+			time.Sleep(time.Millisecond * time.Duration(milliSecondsLeft))
+		}
+		fmt.Printf("\rSending load batches...[%d/%d]", batchCount, numberOfBatches)
+	}
+	fmt.Printf("\rSending load batches...")
+	return nil
+}
+
 // Run is the main function of `perftest` package
 func Run(opts Opts) error {
 
@@ -895,7 +960,14 @@ func Run(opts Opts) error {
 	}
 
 	// Send off a controlled amount of orders and cancels
-	if opts.BatchSize > 0 {
+	if opts.BatchOnly {
+		fmt.Print("Sending batched load transactions...")
+		err = plt.sendBatchOnlyLoad(marketIDs, opts)
+		if err != nil {
+			fmt.Println("FAILED")
+			return err
+		}
+	} else if opts.BatchSize > 0 {
 		fmt.Print("Sending batched load transactions...")
 		err = plt.sendBatchTradingLoad(marketIDs, opts)
 		if err != nil {

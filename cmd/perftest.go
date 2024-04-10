@@ -40,6 +40,7 @@ func init() {
 	perfTestCmd.Flags().BoolVarP(&opts.InitialiseOnly, "initialiseonly", "i", false, "initialise everything and then exit")
 	perfTestCmd.Flags().BoolVarP(&opts.DoNotInitialise, "donotinitialise", "I", false, "skip the initialise steps")
 	perfTestCmd.Flags().BoolVarP(&opts.UseLPsForOrders, "uselpsfororders", "U", true, "allow lp users to place orders during setup")
+	perfTestCmd.Flags().BoolVarP(&opts.BatchOnly, "batchonly", "B", false, "all transactions are sent in batches")
 	perfTestCmd.MarkFlagRequired("address")
 	perfTestCmd.MarkFlagRequired("wallet")
 	perfTestCmd.MarkFlagRequired("faucet")
