@@ -149,7 +149,11 @@ func Run(opts Opts) error {
 				var temp []eventCount = []eventCount{}
 				mu.Lock()
 				for key, value := range eventCounts {
-					temp = append(temp, eventCount{eventspb.BusEventType_name[key], value})
+					name := eventspb.BusEventType_name[key]
+					if len(name) == 0 {
+						name = fmt.Sprintf("UNKNOWN (%d)", key)
+					}
+					temp = append(temp, eventCount{name, value})
 				}
 				mu.Unlock()
 
