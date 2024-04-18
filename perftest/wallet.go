@@ -236,6 +236,65 @@ func (w walletWrapper) NewMarket(offset int, user UserDetails) error {
 	return err
 }
 
+func (w walletWrapper) NewSpotMarket(offset int, user UserDetails) error {
+	//	marketName := fmt.Sprintf("JUN 2023 BTV vs USD future %d", offset)
+	newMarket := map[string]interface{}{
+		"rationale": map[string]interface{}{
+			"description": "desc",
+			"title":       "title",
+		},
+		"terms": map[string]interface{}{
+			"closingTimestamp":   w.SecondsFromNowInSecs(15),
+			"enactmentTimestamp": w.SecondsFromNowInSecs(30),
+			"newSpotMarket": map[string]interface{}{
+				"changes": map[string]interface{}{
+					"tickSize":           "1",
+					"sizeDecimalPlaces":  "2",
+					"priceDecimalPlaces": "2",
+					"instrument": map[string]interface{}{
+						"name": "NAME",
+						"code": "CODE",
+						"spot": map[string]interface{}{
+							"baseAsset":  "fBTC",
+							"quoteAsset": "fUSDC",
+							"name":       "OURPRODUCT",
+						},
+					},
+					"simple": map[string]interface{}{
+						"factorLong":           "0.15",
+						"factorShort":          "0.25",
+						"maxMoveUp":            "1000000",
+						"minMoveDown":          "-1000000",
+						"probabilityOfTrading": "0.9",
+					},
+					"slaParams": map[string]interface{}{
+						"priceRange":                  "1",
+						"commitmentMinTimeFraction":   "1.0",
+						"performanceHysteresisEpochs": 60,
+						"slaCompetitionFactor":        "1.0",
+					},
+					"targetStakeParameters": map[string]interface{}{
+						"timeWindow":    "10",
+						"scalingFactor": "5.0",
+					},
+					"priceMonitoringParameters": map[string]interface{}{
+						"triggers": []interface{}{
+							map[string]interface{}{
+								"horizon":          "6000000",
+								"probability":      "0.999999999",
+								"auctionExtension": 1,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := w.sendTransaction(user, "proposalSubmission", newMarket)
+	return err
+}
+
 // GetFirstKey gives us the first public key linked to our wallet
 func (w walletWrapper) GetFirstKey(longLivedToken string) (string, error) {
 	post, _ := json.Marshal(map[string]interface{}{

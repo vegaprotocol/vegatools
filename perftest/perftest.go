@@ -45,6 +45,7 @@ type Opts struct {
 	DoNotInitialise   bool
 	UseLPsForOrders   bool
 	BatchOnly         bool
+	SpotMarkets       bool
 }
 
 type perfLoadTesting struct {
@@ -122,6 +123,20 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) err
 				sendVegaTokens(user.pubKey, opts.GanacheURL)
 			}
 			time.Sleep(time.Second * 1)
+		}
+	}
+
+	// If we are using spot markets we need to top up both assets
+	if opts.SpotMarkets {
+		asset := assets["fBTC"]
+		for _, user := range p.users {
+			for t := 0; t < 50; t++ {
+				err := topUpAsset(opts.FaucetURL, user.pubKey, asset, 1000000)
+				if err != nil {
+					return err
+				}
+				time.Sleep(time.Millisecond * 5)
+			}
 		}
 	}
 
@@ -260,9 +275,16 @@ func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 
 	if len(markets) == 0 {
 		for i := 0; i < opts.MarketCount; i++ {
-			err := p.wallet.NewMarket(i, p.users[0])
-			if err != nil {
-				return nil, err
+			if opts.SpotMarkets {
+				err := p.wallet.NewSpotMarket(i, p.users[0])
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				err := p.wallet.NewMarket(i, p.users[0])
+				if err != nil {
+					return nil, err
+				}
 			}
 			propID, err := p.dataNode.getPendingProposalID(20)
 			if err != nil {
@@ -292,25 +314,25 @@ func (p *perfLoadTesting) proposeAndEnactMarket(opts Opts) ([]string, error) {
 			if market.State != proto.Market_STATE_ACTIVE {
 				p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: market.Id,
 					Price:       fmt.Sprint(opts.StartingMidPrice + 100),
-					Size:        100,
+					Size:        5,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_LIMIT,
 					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 				p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: market.Id,
 					Price:       fmt.Sprint(opts.StartingMidPrice - 100),
-					Size:        100,
+					Size:        5,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_LIMIT,
 					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 				p.wallet.SendOrder(p.users[0], &commandspb.OrderSubmission{MarketId: market.Id,
 					Price:       fmt.Sprint(opts.StartingMidPrice),
-					Size:        5,
+					Size:        1,
 					Side:        proto.Side_SIDE_BUY,
 					Type:        proto.Order_TYPE_LIMIT,
 					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 				p.wallet.SendOrder(p.users[1], &commandspb.OrderSubmission{MarketId: market.Id,
 					Price:       fmt.Sprint(opts.StartingMidPrice),
-					Size:        5,
+					Size:        1,
 					Side:        proto.Side_SIDE_SELL,
 					Type:        proto.Order_TYPE_LIMIT,
 					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
@@ -496,21 +518,34 @@ func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts 
 		}
 
 		// Send new ones
-		commitmentAmount := uint64(1000000000.0 * p.stakeScale)
-		orderSize := (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
+		var (
+			commitmentAmount uint64
+			orderSizeBuy     uint64
+			orderSizeSell    uint64
+		)
+		// Spot markets scale order size depending on the side of the book the orders are placed.
+		if opts.SpotMarkets {
+			commitmentAmount = uint64(10000000.0 * p.stakeScale)
+			orderSizeBuy = (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
+			orderSizeSell = (commitmentAmount / uint64(opts.StartingMidPrice) * 2) / 10
+		} else {
+			commitmentAmount = uint64(1000000000.0 * p.stakeScale)
+			orderSizeBuy = (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
+			orderSizeSell = (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
+		}
 
 		for p := 0; p < opts.SLAPriceLevels; p++ {
 			// Send in an order for both buy and sell side to cover the commitment
 			// Orders go before the commitment otherwise we can be punished for not having the orders on in time
 			batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
 				Price:       fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels+1+p)),
-				Size:        orderSize / uint64(opts.SLAPriceLevels),
+				Size:        orderSizeSell / uint64(opts.SLAPriceLevels),
 				Side:        proto.Side_SIDE_SELL,
 				Type:        proto.Order_TYPE_LIMIT,
 				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
 			batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
 				Price:       fmt.Sprint(opts.StartingMidPrice - int64(opts.PriceLevels+1+p)),
-				Size:        orderSize / uint64(opts.SLAPriceLevels),
+				Size:        orderSizeBuy / uint64(opts.SLAPriceLevels),
 				Side:        proto.Side_SIDE_BUY,
 				Type:        proto.Order_TYPE_LIMIT,
 				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
