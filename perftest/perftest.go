@@ -526,13 +526,11 @@ func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts 
 		// Spot markets scale order size depending on the side of the book the orders are placed.
 		if opts.SpotMarkets {
 			commitmentAmount = uint64(10000000.0 * p.stakeScale)
-			orderSizeBuy = (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
-			orderSizeSell = (commitmentAmount / uint64(opts.StartingMidPrice) * 2) / 10
 		} else {
 			commitmentAmount = uint64(1000000000.0 * p.stakeScale)
-			orderSizeBuy = (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
-			orderSizeSell = (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
 		}
+		orderSizeBuy = (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
+		orderSizeSell = (commitmentAmount / uint64(opts.StartingMidPrice) * 2) / 10
 
 		for p := 0; p < opts.SLAPriceLevels; p++ {
 			// Send in an order for both buy and sell side to cover the commitment
