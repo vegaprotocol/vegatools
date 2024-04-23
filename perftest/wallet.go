@@ -258,7 +258,6 @@ func (w walletWrapper) NewSpotMarket(offset int, user UserDetails) error {
 						"spot": map[string]interface{}{
 							"baseAsset":  "fBTC",
 							"quoteAsset": "fUSDC",
-							"name":       "OURPRODUCT",
 						},
 					},
 					"simple": map[string]interface{}{
