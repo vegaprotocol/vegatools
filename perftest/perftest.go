@@ -138,6 +138,17 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) err
 				time.Sleep(time.Millisecond * 5)
 			}
 		}
+		// Add some more to the special accounts as we might need it for price level orders
+		for t := 0; t < opts.MarketCount*30; t++ {
+			for v := 0; v < opts.LpUserCount; v++ {
+				err := topUpAsset(opts.FaucetURL, p.users[v].pubKey, asset, 1000000)
+				if err != nil {
+					return err
+				}
+				time.Sleep(time.Millisecond * 5)
+			}
+		}
+
 	}
 
 	// If the first user has no tokens, top everyone up
@@ -156,7 +167,7 @@ func (p *perfLoadTesting) depositTokens(assets map[string]string, opts Opts) err
 		}
 
 		// Add some more to the special accounts as we might need it for price level orders
-		for t := 0; t < opts.MarketCount*10; t++ {
+		for t := 0; t < opts.MarketCount*30; t++ {
 			for v := 0; v < opts.LpUserCount; v++ {
 				err := topUpAsset(opts.FaucetURL, p.users[v].pubKey, asset, 100000000)
 				if err != nil {
@@ -529,8 +540,8 @@ func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts 
 		} else {
 			commitmentAmount = uint64(1000000000.0 * p.stakeScale)
 		}
-		orderSizeBuy = (commitmentAmount / uint64(opts.StartingMidPrice) * 2)
-		orderSizeSell = (commitmentAmount / uint64(opts.StartingMidPrice) * 2) / 10
+		orderSizeBuy = (commitmentAmount / uint64(opts.StartingMidPrice) * 2) / 10
+		orderSizeSell = (commitmentAmount / uint64(opts.StartingMidPrice) * 2) / 50
 
 		for p := 0; p < opts.SLAPriceLevels; p++ {
 			// Send in an order for both buy and sell side to cover the commitment
