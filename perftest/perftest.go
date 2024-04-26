@@ -494,25 +494,27 @@ func (p *perfLoadTesting) seedStopOrders(marketIDs []string, opts Opts) error {
 				return err
 			}
 
-			time.Sleep(1 * time.Second)
+			for orderCount := int64(0); orderCount < int64(opts.StopOrders); orderCount++ {
+				time.Sleep(100 * time.Millisecond)
 
-			sos := &commandspb.StopOrdersSubmission{
-				RisesAbove: &commandspb.StopOrderSetup{
-					OrderSubmission: order,
-					Trigger: &commandspb.StopOrderSetup_Price{
-						Price: fmt.Sprint(opts.StartingMidPrice + 1000),
+				sos := &commandspb.StopOrdersSubmission{
+					RisesAbove: &commandspb.StopOrderSetup{
+						OrderSubmission: order,
+						Trigger: &commandspb.StopOrderSetup_Price{
+							Price: fmt.Sprint(opts.StartingMidPrice + (1000 + orderCount)),
+						},
 					},
-				},
-				FallsBelow: &commandspb.StopOrderSetup{
-					OrderSubmission: order,
-					Trigger: &commandspb.StopOrderSetup_Price{
-						Price: fmt.Sprint(opts.StartingMidPrice - 1000),
+					FallsBelow: &commandspb.StopOrderSetup{
+						OrderSubmission: order,
+						Trigger: &commandspb.StopOrderSetup_Price{
+							Price: fmt.Sprint(opts.StartingMidPrice - (1000 + orderCount)),
+						},
 					},
-				},
-			}
-			err = p.wallet.SendStopOrder(user, sos)
-			if err != nil {
-				return err
+				}
+				err = p.wallet.SendStopOrder(user, sos)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
