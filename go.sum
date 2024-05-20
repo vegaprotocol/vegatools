@@ -1,7 +1,7 @@
 code.vegaprotocol.io/shared v0.0.0-20230119125558-bda6563e1c7a h1:sgniM6sgxPKAStJo2rNoYJR3NMlS/t55H12lvynkw5c=
 code.vegaprotocol.io/shared v0.0.0-20230119125558-bda6563e1c7a/go.mod h1:XzX67GsyOHzvytMr0QOHX4CCTdCZDYKUUi88rx40Nt0=
-code.vegaprotocol.io/vega v0.76.0 h1:Xl+OnHhnEpZ7N1Y4EqbQSsRca2iwFyBTnCBGMqa5muQ=
-code.vegaprotocol.io/vega v0.76.0/go.mod h1:oTKpFh+pTLJaDcjkdkSS0BhTm5miMRkduNxaabuY0cE=
+code.vegaprotocol.io/vega v0.76.2-0.20240520130421-ff0404a4a6cc h1:6SBDA1BDWWGPBv4Pmie7YS8MGkAgF+KBFRZTkpka1m8=
+code.vegaprotocol.io/vega v0.76.2-0.20240520130421-ff0404a4a6cc/go.mod h1:8BBcogM5b/HtC6gz0TCnhQ1ks7uPMDgQVs1NXmBS6MU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
 github.com/DataDog/zstd v1.5.2/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
@@ -331,8 +331,8 @@ golang.org/x/net v0.0.0-20220225172249-27dd8689420f/go.mod h1:CfG3xpIq0wQ8r1q4Su
 golang.org/x/net v0.0.0-20220607020251-c690dde0001d/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=
 golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=
 golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=
-golang.org/x/net v0.22.0 h1:9sGLhx7iRIHEiX0oAJ3MRZMUCElJgy7Br1nO+AMN3Tc=
-golang.org/x/net v0.22.0/go.mod h1:JKghWKKOSdJwpW2GEx0Ja7fmaKnMsbu+MWVZTokSYmg=
+golang.org/x/net v0.23.0 h1:7EYJ93RZ9vYSZAIb2x3lnuvqO5zneoD6IvWjuhfxjTs=
+golang.org/x/net v0.23.0/go.mod h1:JKghWKKOSdJwpW2GEx0Ja7fmaKnMsbu+MWVZTokSYmg=
 golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=

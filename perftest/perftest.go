@@ -46,6 +46,7 @@ type Opts struct {
 	UseLPsForOrders   bool
 	BatchOnly         bool
 	SpotMarkets       bool
+	AMMs              bool
 }
 
 type perfLoadTesting struct {
@@ -521,8 +522,46 @@ func (p *perfLoadTesting) seedStopOrders(marketIDs []string, opts Opts) error {
 	return nil
 }
 
+func (p *perfLoadTesting) sendAMMs(marketIDs []string, opts Opts) error {
+	if opts.DoNotInitialise {
+		return nil
+	}
+
+	upperBound := fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels))
+	lowerBound := fmt.Sprint(max(1, opts.StartingMidPrice-int64(opts.PriceLevels)))
+	base := fmt.Sprint(opts.StartingMidPrice)
+	upperLeverage := "0.1"
+	lowerLeverage := "0.1"
+
+	// We need to go through all markets and all users
+	for _, marketID := range marketIDs {
+		for l := 0; l < opts.LpUserCount; l++ {
+			user := p.users[l]
+			amm := &commandspb.SubmitAMM{
+				MarketId:          marketID,
+				CommitmentAmount:  "2000",
+				SlippageTolerance: "0.1",
+				ProposedFee:       "0.01",
+				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
+					UpperBound:           &upperBound,
+					LowerBound:           &lowerBound,
+					Base:                 base,
+					LeverageAtUpperBound: &upperLeverage,
+					LeverageAtLowerBound: &lowerLeverage,
+				},
+			}
+			err := p.wallet.SendAMM(user, amm)
+			if err != nil {
+				return err
+			}
+			time.Sleep(time.Millisecond * 250)
+		}
+	}
+	return nil
+}
+
 func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts Opts) error {
-	for l := 0; l < opts.LpUserCount; l++ {
+	/*	for l := 0; l < opts.LpUserCount; l++ {
 		batch := &BatchOrders{}
 
 		if deleteFirst {
@@ -573,7 +612,7 @@ func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts 
 				return err
 			}
 		}
-	}
+	}*/
 	return nil
 }
 
@@ -895,7 +934,7 @@ func (p *perfLoadTesting) sendBatchOnlyLoad(marketIDs []string, opts Opts) error
 // Run is the main function of `perftest` package
 func Run(opts Opts) error {
 
-	fmt.Println(opts)
+	fmt.Printf("%+v\n", opts)
 	f, err := os.OpenFile("perftest.log", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
@@ -1003,6 +1042,16 @@ func Run(opts Opts) error {
 		fmt.Println("Complete")
 		fmt.Println("Initialisation complete")
 		return nil
+	}
+
+	if opts.AMMs {
+		fmt.Print("Sending AMM submissions...")
+		err = plt.sendAMMs(marketIDs, opts)
+		if err != nil {
+			fmt.Println("FAILED")
+			return err
+		}
+		fmt.Println("Complete")
 	}
 
 	// Send off a controlled amount of orders and cancels
