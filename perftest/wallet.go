@@ -378,3 +378,8 @@ func (w walletWrapper) SendVote(user UserDetails, propID string) error {
 	_, err := w.sendTransaction(user, "voteSubmission", &vote)
 	return err
 }
+
+func (w *walletWrapper) SendAMM(user UserDetails, amm *commandspb.SubmitAMM) error {
+	_, err := w.sendTransaction(user, "submitAmm", amm)
+	return err
+}

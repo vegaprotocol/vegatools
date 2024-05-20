@@ -42,6 +42,7 @@ func init() {
 	perfTestCmd.Flags().BoolVarP(&opts.UseLPsForOrders, "uselpsfororders", "U", true, "allow lp users to place orders during setup")
 	perfTestCmd.Flags().BoolVarP(&opts.BatchOnly, "batchonly", "B", false, "all transactions are sent in batches")
 	perfTestCmd.Flags().BoolVarP(&opts.SpotMarkets, "spotmarkets", "P", false, "use spot markets")
+	perfTestCmd.Flags().BoolVarP(&opts.AMMs, "amms", "A", false, "send AMMs")
 	perfTestCmd.MarkFlagRequired("address")
 	perfTestCmd.MarkFlagRequired("wallet")
 	perfTestCmd.MarkFlagRequired("faucet")
