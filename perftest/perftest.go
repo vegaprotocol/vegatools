@@ -561,7 +561,7 @@ func (p *perfLoadTesting) sendAMMs(marketIDs []string, opts Opts) error {
 }
 
 func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts Opts) error {
-	/*	for l := 0; l < opts.LpUserCount; l++ {
+	for l := 0; l < opts.LpUserCount; l++ {
 		batch := &BatchOrders{}
 
 		if deleteFirst {
@@ -612,7 +612,7 @@ func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts 
 				return err
 			}
 		}
-	}*/
+	}
 	return nil
 }
 
