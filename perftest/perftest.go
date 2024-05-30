@@ -47,6 +47,7 @@ type Opts struct {
 	BatchOnly         bool
 	SpotMarkets       bool
 	AMMs              bool
+	SendSLAOrders     bool
 }
 
 type perfLoadTesting struct {
@@ -569,7 +570,6 @@ func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts 
 			batch.cancels = append(batch.cancels, &commandspb.OrderCancellation{MarketId: marketID})
 		}
 
-		// Send new ones
 		var (
 			commitmentAmount uint64
 			orderSizeBuy     uint64
@@ -584,30 +584,33 @@ func (p *perfLoadTesting) sendSLAOrders(marketID string, deleteFirst bool, opts 
 		orderSizeBuy = (commitmentAmount / uint64(opts.StartingMidPrice) * 2) / 10
 		orderSizeSell = (commitmentAmount / uint64(opts.StartingMidPrice) * 2) / 50
 
-		for p := 0; p < opts.SLAPriceLevels; p++ {
-			// Send in an order for both buy and sell side to cover the commitment
-			// Orders go before the commitment otherwise we can be punished for not having the orders on in time
-			batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
-				Price:       fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels+1+p)),
-				Size:        orderSizeSell / uint64(opts.SLAPriceLevels),
-				Side:        proto.Side_SIDE_SELL,
-				Type:        proto.Order_TYPE_LIMIT,
-				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-			batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
-				Price:       fmt.Sprint(opts.StartingMidPrice - int64(opts.PriceLevels+1+p)),
-				Size:        orderSizeBuy / uint64(opts.SLAPriceLevels),
-				Side:        proto.Side_SIDE_BUY,
-				Type:        proto.Order_TYPE_LIMIT,
-				TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
-		}
+		// If we are testing SPAM LPs, check if we should send any orders with our SLA commitment
+		if opts.SendSLAOrders {
+			for p := 0; p < opts.SLAPriceLevels; p++ {
+				// Send in an order for both buy and sell side to cover the commitment
+				// Orders go before the commitment otherwise we can be punished for not having the orders on in time
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels+1+p)),
+					Size:        orderSizeSell / uint64(opts.SLAPriceLevels),
+					Side:        proto.Side_SIDE_SELL,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+				batch.orders = append(batch.orders, &commandspb.OrderSubmission{MarketId: marketID,
+					Price:       fmt.Sprint(opts.StartingMidPrice - int64(opts.PriceLevels+1+p)),
+					Size:        orderSizeBuy / uint64(opts.SLAPriceLevels),
+					Side:        proto.Side_SIDE_BUY,
+					Type:        proto.Order_TYPE_LIMIT,
+					TimeInForce: proto.Order_TIME_IN_FORCE_GTC})
+			}
 
-		err := p.wallet.SendBatchOrders(p.users[l], batch.cancels, batch.amends, batch.orders)
-		if err != nil {
-			return err
+			err := p.wallet.SendBatchOrders(p.users[l], batch.cancels, batch.amends, batch.orders)
+			if err != nil {
+				return err
+			}
 		}
 
 		if !deleteFirst {
-			err = p.wallet.SendLiquidityCommitment(p.users[l], marketID, commitmentAmount)
+			err := p.wallet.SendLiquidityCommitment(p.users[l], marketID, commitmentAmount)
 			if err != nil {
 				return err
 			}
