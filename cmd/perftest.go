@@ -43,6 +43,7 @@ func init() {
 	perfTestCmd.Flags().BoolVarP(&opts.BatchOnly, "batchonly", "B", false, "all transactions are sent in batches")
 	perfTestCmd.Flags().BoolVarP(&opts.SpotMarkets, "spotmarkets", "P", false, "use spot markets")
 	perfTestCmd.Flags().BoolVarP(&opts.AMMs, "amms", "A", false, "send AMMs")
+	perfTestCmd.Flags().BoolVarP(&opts.SendSLAOrders, "sendslaorders", "o", true, "send SLA orders")
 	perfTestCmd.MarkFlagRequired("address")
 	perfTestCmd.MarkFlagRequired("wallet")
 	perfTestCmd.MarkFlagRequired("faucet")
