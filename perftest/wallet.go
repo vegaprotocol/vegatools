@@ -383,3 +383,8 @@ func (w *walletWrapper) SendAMM(user UserDetails, amm *commandspb.SubmitAMM) err
 	_, err := w.sendTransaction(user, "submitAmm", amm)
 	return err
 }
+
+func (w *walletWrapper) SendCancelAMM(user UserDetails, amm *commandspb.CancelAMM) error {
+	_, err := w.sendTransaction(user, "cancelAmm", amm)
+	return err
+}
