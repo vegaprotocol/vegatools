@@ -2,6 +2,8 @@ package perftest
 
 import (
 	"bufio"
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -14,9 +16,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	datanode "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 // Opts hold the command line values
@@ -523,6 +527,42 @@ func (p *perfLoadTesting) seedStopOrders(marketIDs []string, opts Opts) error {
 	return nil
 }
 
+func (p *perfLoadTesting) waitForAMMs(marketID, partyID string) error {
+	for i := 0; i < 10; i++ {
+		req := &datanode.ListAMMsRequest{
+			PartyId:  ptr.From(partyID),
+			MarketId: ptr.From(marketID),
+			Status:   ptr.From(v1.AMM_STATUS_ACTIVE),
+		}
+
+		resp, err := p.dataNode.dataNode.ListAMMs(context.Background(), req)
+		if err != nil {
+			return err
+		}
+		for _, amm := range resp.Amms.Edges {
+			if amm.Node.Status == v1.AMM_STATUS_ACTIVE {
+				return nil
+			}
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+
+	// print out what the error reason was
+	req := &datanode.ListAMMsRequest{
+		PartyId:  ptr.From(partyID),
+		MarketId: ptr.From(marketID),
+	}
+
+	resp, err := p.dataNode.dataNode.ListAMMs(context.Background(), req)
+	if err == nil {
+		for _, amm := range resp.Amms.Edges {
+			fmt.Println("found", amm.Node.Status, amm.Node.StatusReason, amm.Node.MarketId, amm.Node.PartyId)
+		}
+
+	}
+	return errors.New("AMM submission failed")
+}
+
 func (p *perfLoadTesting) sendAMMs(marketIDs []string, opts Opts) error {
 	if opts.DoNotInitialise {
 		return nil
@@ -531,16 +571,31 @@ func (p *perfLoadTesting) sendAMMs(marketIDs []string, opts Opts) error {
 	upperBound := fmt.Sprint(opts.StartingMidPrice + int64(opts.PriceLevels))
 	lowerBound := fmt.Sprint(max(1, opts.StartingMidPrice-int64(opts.PriceLevels)))
 	base := fmt.Sprint(opts.StartingMidPrice)
-	upperLeverage := "0.1"
-	lowerLeverage := "0.1"
+	upperLeverage := "10"
+	lowerLeverage := "10"
 
-	// We need to go through all markets and all users
+	// first cancel any existing AMMs
+	for _, marketID := range marketIDs {
+		for l := 0; l < opts.LpUserCount; l++ {
+			user := p.users[l]
+
+			// first cancel any AMM this part already has on the market
+			cancel := &commandspb.CancelAMM{
+				MarketId: marketID,
+				Method:   commandspb.CancelAMM_METHOD_IMMEDIATE,
+			}
+			p.wallet.SendCancelAMM(user, cancel)
+		}
+	}
+	time.Sleep(250 * time.Millisecond)
+
+	// now create new AMM's
 	for _, marketID := range marketIDs {
 		for l := 0; l < opts.LpUserCount; l++ {
 			user := p.users[l]
 			amm := &commandspb.SubmitAMM{
 				MarketId:          marketID,
-				CommitmentAmount:  "2000",
+				CommitmentAmount:  "100000000",
 				SlippageTolerance: "0.1",
 				ProposedFee:       "0.01",
 				ConcentratedLiquidityParameters: &commandspb.SubmitAMM_ConcentratedLiquidityParameters{
@@ -555,9 +610,19 @@ func (p *perfLoadTesting) sendAMMs(marketIDs []string, opts Opts) error {
 			if err != nil {
 				return err
 			}
-			time.Sleep(time.Millisecond * 250)
 		}
 	}
+
+	// now wait for them to appear active
+	for _, marketID := range marketIDs {
+		for l := 0; l < opts.LpUserCount; l++ {
+			user := p.users[l]
+			if err := p.waitForAMMs(marketID, user.pubKey); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
