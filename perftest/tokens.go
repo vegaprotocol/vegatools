@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	stakingBridgeAddress    = common.HexToAddress("0x9135f5afd6F055e731bca2348429482eE614CFfA")
+	stakingBridgeAddress    = common.HexToAddress("0x5E93B6db35EeD20C62E4a9f2a37d15e2D1359eA1")
 	vegaTokenAddress        = common.HexToAddress("0x67175Da1D5e966e40D11c4B2519392B2058373de")
 	contractOwnerPrivateKey = "a37f4c2a678aefb5037bf415a826df1540b330b7e471aa54184877ba901b9ef0"
 )
