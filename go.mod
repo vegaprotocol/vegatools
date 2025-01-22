@@ -4,7 +4,7 @@ go 1.21.5
 
 require (
 	code.vegaprotocol.io/shared v0.0.0-20230119125558-bda6563e1c7a
-	code.vegaprotocol.io/vega v0.76.2-0.20240520130421-ff0404a4a6cc
+	code.vegaprotocol.io/vega v0.79.0
 	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cosmos/iavl v0.20.0
 	github.com/ethereum/go-ethereum v1.11.6
