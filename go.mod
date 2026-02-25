@@ -1,6 +1,6 @@
 module code.vegaprotocol.io/vegatools
 
-go 1.21.5
+go 1.24.0
 
 require (
 	code.vegaprotocol.io/shared v0.0.0-20230119125558-bda6563e1c7a
@@ -10,7 +10,7 @@ require (
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/gdamore/tcell/v2 v2.7.0
 	github.com/gogo/protobuf v1.3.2
-	github.com/prometheus-community/pro-bing v0.1.0
+	github.com/prometheus-community/pro-bing v0.8.0
 	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
@@ -65,12 +65,12 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0 // indirect
-	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/term v0.18.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/crypto v0.47.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/term v0.39.0 // indirect
+	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
