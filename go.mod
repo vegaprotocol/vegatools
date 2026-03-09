@@ -11,7 +11,7 @@ require (
 	github.com/gdamore/tcell/v2 v2.7.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/prometheus-community/pro-bing v0.1.0
-	github.com/shopspring/decimal v1.3.1
+	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/syndtr/goleveldb v1.0.1-0.20220614013038-64ee5596c38a
