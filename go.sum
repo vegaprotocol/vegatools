@@ -2,6 +2,8 @@ code.vegaprotocol.io/shared v0.0.0-20230119125558-bda6563e1c7a h1:sgniM6sgxPKASt
 code.vegaprotocol.io/shared v0.0.0-20230119125558-bda6563e1c7a/go.mod h1:XzX67GsyOHzvytMr0QOHX4CCTdCZDYKUUi88rx40Nt0=
 code.vegaprotocol.io/vega v0.76.2-0.20240520130421-ff0404a4a6cc h1:6SBDA1BDWWGPBv4Pmie7YS8MGkAgF+KBFRZTkpka1m8=
 code.vegaprotocol.io/vega v0.76.2-0.20240520130421-ff0404a4a6cc/go.mod h1:8BBcogM5b/HtC6gz0TCnhQ1ks7uPMDgQVs1NXmBS6MU=
+code.vegaprotocol.io/vega v0.79.0 h1:jQVx4Jcst68DRYx7mZCRVqIVnFlEq7EnxWrcU4eCSOQ=
+code.vegaprotocol.io/vega v0.79.0/go.mod h1:6Qz3v5mEoGHtkBpOTHwg1lfWmV1drAiQ05TtM7OJMh8=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
 github.com/DataDog/zstd v1.5.2/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
